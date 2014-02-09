@@ -35,12 +35,12 @@ version. For more information, see http://www.gnu.org/
 
 class PlsRedirect(Exception):
     """Exception to signal that the web client should be redirected to a new URL.
-    
+
     The constructor of the class receives a string, which is the
     URL where the web browser is going to be redirected.
-    
+
     Begun by Javier Quinteros <javier@gfz-potsdam.de>, GEOFON team, June 2013
-    
+
     """
 
     def __init__(self, url):
@@ -96,9 +96,9 @@ class WIServiceError(WIError):
 
 def redirect_page(url, start_response):
     """Tells the web client through the WSGI module to redirect to an URL.
-    
+
     Begun by Javier Quinteros <javier@gfz-potsdam.de>, GEOFON team, June 2013
-    
+
     """
 
     response_headers = [('Location', url)]
@@ -107,9 +107,9 @@ def redirect_page(url, start_response):
 
 def send_html_response(status, body, start_response):
     """Sends an HTML response in WSGI style.
-    
+
     Begun by Javier Quinteros <javier@gfz-potsdam.de>, GEOFON team, June 2013
-    
+
     """
 
     response_headers = [('Content-Type', 'text/html; charset=UTF-8'),
@@ -119,9 +119,9 @@ def send_html_response(status, body, start_response):
 
 def send_plain_response(status, body, start_response):
     """Sends a plain response in WSGI style.
-    
+
     Begun by Javier Quinteros <javier@gfz-potsdam.de>, GEOFON team, June 2013
-    
+
     """
 
     response_headers = [('Content-Type', 'text/plain'),
@@ -136,7 +136,7 @@ def send_file_response(status, body, start_response):
 
     """
     response_headers = [('Content-Type', body.content_type),
-                   ('Content-Length', str(body.size)),
+                   # ('Content-Length', str(body.size)),
                         ('Content-Disposition', 'attachment; filename=%s' % (body.filename))]
     start_response(status, response_headers)
     return body
