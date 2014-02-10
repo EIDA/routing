@@ -48,7 +48,6 @@ class RoutingCache(object):
         # Dictionary with all the routes
         self.routingTable = dict()
 
-        print "Call update()"
         # Create/load the cache the first time that we start
         self.update()
 
@@ -141,6 +140,12 @@ class RoutingCache(object):
 
         if host.endswith('gfz-potsdam.de'):
             institution = 'GFZ'
+        elif host.endswith('knmi.nl'):
+            institution = 'ODC'
+        elif host.endswith('ethz.ch'):
+            institution = 'ETH'
+        elif host.endswith('resif.fr'):
+            institution = 'RESIF'
 
         return (realRoute, institution)
 
