@@ -146,8 +146,7 @@ def send_file_response(status, body, start_response):
                         ('Content-Disposition', 'attachment; filename=%s' %
                          (body.filename))]
     start_response(status, response_headers)
-    yield "Hola"
-    yield "mundo"
+    # Cycle through the iterator in order to retrieve one chunck at a time
     for data in body:
         yield data
     # return body
