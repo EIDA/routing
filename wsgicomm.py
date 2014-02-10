@@ -34,7 +34,7 @@ version. For more information, see http://www.gnu.org/
 
 
 class PlsRedirect(Exception):
-    """Exception to signal that the web client should be redirected to a new URL.
+    """Exception to signal that the web client must be redirected to a URL.
 
     The constructor of the class receives a string, which is the
     URL where the web browser is going to be redirected.
@@ -45,12 +45,14 @@ class PlsRedirect(Exception):
 
     def __init__(self, url):
         self.url = url
+
     def __str__(self):
         return repr(self.url)
 
 
 class WIError(Exception):
-    """Exception to signal that an error occurred while doing something, that the web client should see.
+    """Exception to signal that an error occurred while doing something,
+    that the web client should see.
 
     Inputs:
       status     - string, like "200 Good", "400 Bad"
@@ -59,13 +61,14 @@ class WIError(Exception):
 
     """
 
-    def __init__(self, status, body, verbosity = 1):
+    def __init__(self, status, body, verbosity=1):
         self.status = status
         self.body = body
         self.verbosity = verbosity
 
     def __str__(self):
-        return repr(self.status)+': '+repr(self.body)  # body but not verbosity(?)
+        # body but not verbosity(?)
+        return repr(self.status) + ': ' + repr(self.body)
 
 
 class WIContentError(WIError):
@@ -105,6 +108,7 @@ def redirect_page(url, start_response):
     start_response('301 Moved Permanently', response_headers)
     return ''
 
+
 def send_html_response(status, body, start_response):
     """Sends an HTML response in WSGI style.
 
@@ -113,9 +117,10 @@ def send_html_response(status, body, start_response):
     """
 
     response_headers = [('Content-Type', 'text/html; charset=UTF-8'),
-                   ('Content-Length', str(len(body)))]
+                        ('Content-Length', str(len(body)))]
     start_response(status, response_headers)
-    return [ body ]
+    return [body]
+
 
 def send_plain_response(status, body, start_response):
     """Sends a plain response in WSGI style.
@@ -125,9 +130,10 @@ def send_plain_response(status, body, start_response):
     """
 
     response_headers = [('Content-Type', 'text/plain'),
-                   ('Content-Length', str(len(body)))]
+                        ('Content-Length', str(len(body)))]
     start_response(status, response_headers)
-    return [ body ]
+    return [body]
+
 
 def send_file_response(status, body, start_response):
     """Sends a file or similar object.
@@ -136,8 +142,12 @@ def send_file_response(status, body, start_response):
 
     """
     response_headers = [('Content-Type', body.content_type),
-                   # ('Content-Length', str(body.size)),
-                        ('Content-Disposition', 'attachment; filename=%s' % (body.filename))]
+                        # ('Content-Length', str(body.size)),
+                        ('Content-Disposition', 'attachment; filename=%s' %
+                         (body.filename))]
     start_response(status, response_headers)
-    return body
-
+    yield "Hola"
+    yield "mundo"
+    for data in body:
+        yield data
+    # return body
