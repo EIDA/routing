@@ -142,11 +142,41 @@ def send_file_response(status, body, start_response):
 
     """
     response_headers = [('Content-Type', body.content_type),
-                        # ('Content-Length', str(body.size)),
+                        ('Content-Length', str(body.size)),
                         ('Content-Disposition', 'attachment; filename=%s' %
                          (body.filename))]
     start_response(status, response_headers)
+    return body
+
+
+def send_dynamicfile_response(status, body, start_response):
+    """Sends a file or similar object.
+
+    Caller must set the filename, size and content_type attributes of body.
+
+    """
+
     # Cycle through the iterator in order to retrieve one chunck at a time
+    loop = 0
     for data in body:
+        if loop == 0:
+            # The first thing to do is to send the headers.
+            # This needs to be done here so that we are sure that there is
+            # ACTUALLY data to send
+
+            # Content-length cannot be set because the file size is unknown
+            response_headers = [('Content-Type', body.content_type),
+                                ('Content-Disposition', 'attachment; filename=%s' %
+                                 (body.filename))]
+            start_response(status, response_headers)
+
+        # Increment the loop count
+        loop += 1
+        # and send data
         yield data
-    # return body
+
+    if loop == 0:
+        status = '204 No Content'
+        response_headers = []
+        start_response(status, response_headers)
+        print '204 sent'
