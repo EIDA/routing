@@ -122,6 +122,19 @@ def send_html_response(status, body, start_response):
     return [body]
 
 
+def send_xml_response(status, body, start_response):
+    """Sends an XML response in WSGI style.
+
+    Begun by Javier Quinteros <javier@gfz-potsdam.de>, GEOFON team, June 2013
+
+    """
+
+    response_headers = [('Content-Type', 'text/xml; charset=UTF-8'),
+                        ('Content-Length', str(len(body)))]
+    start_response(status, response_headers)
+    return [body]
+
+
 def send_plain_response(status, body, start_response):
     """Sends a plain response in WSGI style.
 
