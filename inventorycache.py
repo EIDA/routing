@@ -70,26 +70,28 @@ class InventoryCache(object):
         self.lastUpdated = datetime.datetime(2000, 1, 1)
 
         # Types of network. The columns are:
-        # CODE, DESCRIPTION, PERMANENT, RESTRICTED
+        # CODE, DESCRIPTION, PERMANENT, RESTRICTED (1: True; 2: False)
         self.nettypes = [("all", "All nets", None, None),
                          ("virt", "Virtual nets", None, None),
                          ("perm", "All permanent nets", True, None),
                          ("temp", "All temporary nets", False, None),
-                         ("open", "All public nets", None, False),
-                         ("restr", "All non-public nets", None, True),
-                         ("permo", "Public permanent nets", True, False),
-                         ("tempo", "Public temporary nets", False, False),
-                         ("permr", "Non-public permanent nets", True, True),
-                         ("tempr", "Non-public temporary nets", False, True)]
+                         ("open", "All public nets", None, 2),
+                         ("restr", "All non-public nets", None, 1),
+                         ("permo", "Public permanent nets", True, 2),
+                         ("tempo", "Public temporary nets", False, 2),
+                         ("permr", "Non-public permanent nets", True, 1),
+                         ("tempr", "Non-public temporary nets", False, 1)]
 
         # List of sensor types
         # Multiple sensortypes in the same line should be separated by space.
         self.senstypes = [('all', 'Any'),
+                          ('VBB', 'Very broad band'),
+                          ('BB', 'Broad band'),
                           ('VBB BB', 'Very Broad band and Broad band'),
-                          ('VBB', 'Very broad band'), ('BB', 'Broad band'),
+                          ('BB SM', 'Broad band / Strong motion'),
                           ('SP', 'Short Period'),
                           ('SM', 'Strong motion'),
-                          ('OBS', 'Ocean botton seismometer')]
+                          ('OBS', 'Ocean bottom seismometer')]
 
         self.phases = [('P', 'P/Pdiff'),
                        ('S', 'S/Sdiff')]
@@ -191,12 +193,20 @@ class InventoryCache(object):
         # Two steps parser is defined. In the first one, a dictionary of
         # sensors and dataloggers is constructed. In the second one, the
         # networks/stations/sensors/streams tree structure is built.
+        try:
+            invfile = open(self.inventory)
+        except IOError:
+            msg = 'Error: Arclink-inventory.xml could not be opened.'
+            logs.error(msg)
+            raise wsgicomm.WIInternalError, msg
+
         for parsetype in ['SENSDAT', 'NET_STA']:
 
             # Traverse through the networks
             # get an iterable
             try:
-                context = ET.iterparse(self.inventory, events=("start", "end"))
+                invfile.seek(0)
+                context = ET.iterparse(invfile, events=("start", "end"))
             except IOError:
                 msg = 'Error: Arclink-inventory.xml could not be opened.'
                 logs.error(msg)
@@ -244,9 +254,9 @@ class InventoryCache(object):
                         # Cast the attribute restricted
                         try:
                             if netw.get('restricted').lower() == 'true':
-                                restricted = True
+                                restricted = 1
                             elif netw.get('restricted').lower() == 'false':
-                                restricted = False
+                                restricted = 2
                             else:
                                 restricted = None
                         except:
@@ -300,13 +310,24 @@ class InventoryCache(object):
 
                             stationsDict[stat.get('publicID')] = len(ptStats)
 
+                            # Cast the attribute restricted
+                            try:
+                                if stat.get('restricted').lower() == 'true':
+                                    restricted = 1
+                                elif stat.get('restricted').lower() == 'false':
+                                    restricted = 2
+                                else:
+                                    restricted = None
+                            except:
+                                restricted = None
+
                             # Only store a reference to the network in the
                             # first column
                             ptStats.append([len(ptNets) - 1, len(ptSens), None,
                                             None, stat.get('code'), lat, lon,
                                             stat.get('description'),
                                             stat_start_date, stat_end_date,
-                                            elevation])
+                                            elevation, restricted])
                             last_child_station += 1
 
                             last_child_sensor = len(ptSens)
@@ -348,13 +369,24 @@ class InventoryCache(object):
                                     except:
                                         endDate = None
 
+                                    # Cast the attribute restricted
+                                    try:
+                                        if stream.get('restricted').lower() == 'true':
+                                            restricted = 1
+                                        elif stream.get('restricted').lower() == 'false':
+                                            restricted = 2
+                                        else:
+                                            restricted = None
+                                    except:
+                                        restricted = None
+
                                     auxCode = stream.get('code')
                                     auxDatLog = stream.get('datalogger')
                                     ptStre.append((len(ptSens) - 1,
                                                    auxCode, sens_type, denom,
                                                    numer,
                                                    dataloggers.get(auxDatLog),
-                                                   startDate, endDate))
+                                                   startDate, endDate, restricted))
                                     last_child_stream += 1
                                     stream.clear()
 
@@ -427,6 +459,8 @@ class InventoryCache(object):
 
                     root.clear()
 
+        invfile.close()
+
         # Resolving station references in virtual networks
         for netw in self.networks:
             if((netw[1] is None) and (netw[2] is None)):
@@ -464,20 +498,27 @@ class InventoryCache(object):
                             ' manually or the pickle version will be always' +
                             ' skipped.') % lockfile)
 
-    # Expand to a list of networks, stations, locations and channels
-    # The result is a list of (N, S, L, C) without wildcards.
     def expand(self, n='*', s='*', l='*', c='*',
                start=datetime.datetime(1980, 1, 1, 0, 0, 0),
                end=datetime.datetime.now()):
+        """Expand to a list of networks, stations, locations and channels
+        The result is a list of (N, S, L, C) without wildcards."""
+
         result = []
         for net in self.networks:
-            if (net[1] is None) or (net[2] is None):
+            # Check that the first and last station (children) are defined
+            # Also that the network is not restricted
+            if (net[1] is None) or (net[2] is None) or (net[7] == 1):
                 continue
             if fnmatch.fnmatch(net[0], n):
                 first_child_sta = net[1]
                 last_child_sta = net[2]
                 for staidx in xrange(first_child_sta, last_child_sta):
                     ptSta = self.stations[staidx]
+                    # print ptSta[0]
+                    # Check whether station is restricted or not
+                    if ptSta[11] == 1:
+                        continue
                     if fnmatch.fnmatch(ptSta[4], s):
                         first_child_loc = ptSta[1]
                         last_child_loc = ptSta[2]
@@ -489,6 +530,9 @@ class InventoryCache(object):
                                 for chaidx in xrange(first_child_cha,
                                                      last_child_cha):
                                     ptCha = self.streams[chaidx]
+                                    # Check whether stream is restricted or not
+                                    if ptCha[8] == 1:
+                                        continue
                                     if fnmatch.fnmatch(ptCha[1], c):
                                         if ((ptCha[7] is not None) and
                                            (start > ptCha[7])):
@@ -789,6 +833,7 @@ class InventoryCache(object):
 
         loc_ch = []
         spslist = []
+        restr = []
         for loc in range(first_child_sensor, last_child_sensor):
             first_child_stream = ptSens[loc][1]
             last_child_stream = ptSens[loc][2]
@@ -818,6 +863,8 @@ class InventoryCache(object):
                 except:
                     spslist.append(None)
 
+                restr.append(self.streams[ch][8])
+
         # Extra processing to select only one stream per station if there is a
         # preferred sampling rate
         if preferredsps is not None:
@@ -841,10 +888,11 @@ class InventoryCache(object):
 
             # If there is no information to satisfy the request
             loc_ch = [loc_ch[i] for i in selected]
+            restr = [restr[i] for i in selected]
 
-        loc_ch = sorted(loc_ch)
+        (loc_ch, restr) = zip(*sorted(zip(loc_ch, restr))) or ([],[])
 
-        return loc_ch
+        return (loc_ch, restr)
 
     # Public method that wraps a function to select networks based on the input
     # parameters.
@@ -878,7 +926,7 @@ class InventoryCache(object):
         return netList
 
     def getStations(self, params):
-        """Get a list of stations that satisfies the input parameters.
+        """Get a list of stations that satisfy the input parameters.
 
         This method is public and appends the necessary
         information to the stations actually selected by
@@ -907,7 +955,7 @@ class InventoryCache(object):
         return statsList
 
     def getStreams(self, params):
-        """Get a list of streams that satisfies the input parameters.
+        """Get a list of streams that satisfy the input parameters.
 
         This method is public and appends the necessary
         information to the streams that belong to the stations
@@ -1103,7 +1151,7 @@ class InventoryCache(object):
             for st in statsOK:
                 parent_net = ptStats[st][0]
 
-                loc_ch = self.__buildStreamsList(st, streams, sensortype,
+                (loc_ch, restricted) = self.__buildStreamsList(st, streams, sensortype,
                                                  preferredsps, start_date,
                                                  end_date)
 
@@ -1115,7 +1163,7 @@ class InventoryCache(object):
                                   ptStats[st][4], ptStats[st][5],
                                   ptStats[st][6], ptNets[parent_net][7],
                                   ptNets[parent_net][8], ptNets[parent_net][9],
-                                  ptNets[parent_net][10], loc_ch))
+                                  ptNets[parent_net][10], loc_ch, restricted))
 
         elif(latmin is not None and latmax is not None and lonmin is not None
              and lonmax is not None):
@@ -1135,7 +1183,7 @@ class InventoryCache(object):
 
                 # print st, streams, sensortype, start_date, end_date
 
-                loc_ch = self.__buildStreamsList(st, streams, sensortype,
+                (loc_ch, restricted) = self.__buildStreamsList(st, streams, sensortype,
                                                  preferredsps, start_date,
                                                  end_date)
 
@@ -1149,7 +1197,7 @@ class InventoryCache(object):
                                   ptStats[st][4], ptStats[st][5],
                                   ptStats[st][6], ptNets[parent_net][7],
                                   ptNets[parent_net][8], ptNets[parent_net][9],
-                                  ptNets[parent_net][10], loc_ch))
+                                  ptNets[parent_net][10], loc_ch, restricted))
 
         elif events is not None:
 
@@ -1173,7 +1221,7 @@ class InventoryCache(object):
 
                     if (minradius < dist) and (dist < maxradius) and \
                        (minazimuth < azi) and (azi < maxazimuth):
-                        loc_ch = self.__buildStreamsList(st, streams,
+                        (loc_ch, restricted) = self.__buildStreamsList(st, streams,
                                                          sensortype,
                                                          preferredsps,
                                                          start_date,
@@ -1192,7 +1240,7 @@ class InventoryCache(object):
                                           ptNets[parent_net][7],
                                           ptNets[parent_net][8],
                                           ptNets[parent_net][9],
-                                          ptNets[parent_net][10], loc_ch))
+                                          ptNets[parent_net][10], loc_ch, restricted))
 
                         # Stop the loop through events and go to next station
                         break
@@ -1205,7 +1253,7 @@ class InventoryCache(object):
 
         stats.insert(0, ('key', 'netcode', 'statcode', 'latitude', 'longitude',
                          'restricted', 'netclass', 'archive', 'netoperator',
-                         'streams'))
+                         'streams', 'streams_restricted'))
 
         return stats
 
