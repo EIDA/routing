@@ -168,7 +168,7 @@ class RoutingCache(object):
         try:
             context = ET.iterparse(self.routingFile, events=("start", "end"))
         except IOError:
-            msg = 'Error: irouting.xml could not be opened.'
+            msg = 'Error: routing.xml could not be opened.'
             print msg
             return
 

@@ -32,7 +32,7 @@ version. For more information, see http://www.gnu.org/
 
 import datetime
 import os
-import tempfile
+###import tempfile
 import math
 import cPickle as pickle
 import xml.etree.cElementTree as ET
@@ -44,7 +44,7 @@ import wsgicomm
 from seiscomp import logs
 import seiscomp3.Math as Math
 
-tempdir = tempfile.gettempdir()
+###tempdir = tempfile.gettempdir()
 
 
 class InventoryCache(object):
@@ -61,7 +61,8 @@ class InventoryCache(object):
 
         # Temporary file to store the internal representation of the cache
         # in pickle format
-        self.cachefile = os.path.join(tempdir, 'webinterface-cache.bin')
+        ###self.cachefile = os.path.join(tempdir, 'webinterface-cache.bin')
+        self.cachefile = os.path.join(os.path.dirname(inventory), 'webinterface-cache.bin')
 
         # Set how often the Cache should be updated (in seconds)
         self.time2refresh = 3600.0
@@ -208,7 +209,7 @@ class InventoryCache(object):
                 invfile.seek(0)
                 context = ET.iterparse(invfile, events=("start", "end"))
             except IOError:
-                msg = 'Error: Arclink-inventory.xml could not be opened.'
+                msg = 'Error while trying to parse Arclink-inventory.xml.'
                 logs.error(msg)
                 raise wsgicomm.WIInternalError, msg
 
@@ -478,6 +479,7 @@ class InventoryCache(object):
         if not os.path.exists(lockfile):
             try:
                 lck = open(lockfile, 'w')
+                os.chmod(lockfile, 0666)
                 lck.close()
             except:
                 logs.warning(('Error while attempting to create a lockfile' +
@@ -488,6 +490,7 @@ class InventoryCache(object):
                 return
 
             with open(self.cachefile, 'wb') as cache:
+                os.chmod(self.cachefile, 0666)
                 pickle.dump((ptNets, ptStats, ptSens, ptStre, self.streamidx),
                             cache)
 
@@ -724,11 +727,12 @@ class InventoryCache(object):
 
         # Select only one station
         try:
-            station = params.get('station')
-            if station == 'all':
-                station = None
+            # Split the list of stations if any
+            stations = params.get('station').split(',')
+            if stations[0] == 'all':
+                stations = None
         except:
-            station = None
+            stations = None
 
         # Filter and save indexes of networks in netsOK
         netsOK = self.__selectNetworks(params)
@@ -751,6 +755,11 @@ class InventoryCache(object):
 
             # Filter and add stations
             for s in list_of_children:
+
+                # Take the real network in which the station is
+                # That means, no virtual networks
+                realParent = self.stations[s][0]
+
                 # Discard if start is after the end of the network operation
                 if start and ptStats[s][9]:
                     if ptStats[s][9] < start:
@@ -763,37 +772,18 @@ class InventoryCache(object):
                         continue
 
                 # If there is a station selected look only at the codes
-                if station:
-                    try:
-                        netcode, netstart, netend, stcode = station.split('-')
-                        netstart = int(netstart)
-
-                        if netend == 'None':
-                            netend = None
-                        else:
-                            netend = int(netend)
-
-                    except ValueError:
-                        msg = 'Error! Start and/or end years in the ' + \
-                              'station code are invalid.'
-                        raise wsgicomm.WIClientError, msg
-
-                    # If the station code differs, skip to the next one
-                    if ptStats[s][4] != stcode:
-                        continue
-
-                    # If any of the network attributes differ, skip also
-                    elif((netstart != ptNets[i][4]) or
-                         (netend != ptNets[i][5])):
+                if stations:
+                    key = '%s-%s-%s-%s' % (ptNets[realParent][0], ptNets[realParent][4], ptNets[realParent][5], ptStats[s][4])
+                    if key not in stations:
                         continue
                     else:
                         # Once I found the code, insert it in the lists and
                         # leave the loop
                         statsOK.add(s)
-                        break
+
 
                 # Filter duplicated stations
-                if (ptNets[i][0], ptStats[s][4]) in statcodesOK:
+                if (ptNets[realParent][0], ptStats[s][4]) in statcodesOK:
                     continue
 
                 statcodesOK.add((ptNets[i][0], ptStats[s][4]))
@@ -917,8 +907,8 @@ class InventoryCache(object):
                                           ptNets[i][5]),
                             '%s%s%s (%s) - %s [%s]' %
                             (ptNets[i][0],
-                             '*' if self.networks[i][5] is not None else ' ',
-                             '+' if self.networks[i][7] else ' ',
+                             '*' if ptNets[i][8] == 't' else ' ',
+                             '+' if ptNets[i][7] == 1 else ' ',
                              ptNets[i][4], ptNets[i][6], ptNets[i][9])))
 
         netList.sort()
@@ -1020,7 +1010,7 @@ class InventoryCache(object):
         end_date = datetime.datetime(end_year, 12, 31, 23, 59, 59)
 
         # Get the network
-        # network = params.get('network')
+        network = params.get('network')
 
         # Get the station
         station = params.get('station')
@@ -1048,67 +1038,61 @@ class InventoryCache(object):
         try:
             networktype = params.get('networktype')
 
-            if networktype == 'all':
-                networktype = None
-
-            for nettype in self.nettypes:
-                if networktype == nettype[0]:
-                    break
+            if(networktype == 'all') or (networktype is None):
+                 networktype = None
             else:
-                raise Exception
+                for nettype in self.nettypes:
+                    if networktype == nettype[0]:
+                        break
+                else:
+                    raise Exception
 
         except:
-            raise wsgicomm.WIClientError, '"networktype" has a wrong value'
+            msg = 'Wrong value in parameter "networktype"'
+            raise wsgicomm.WIClientError, msg
 
         # Check for latitude and longitude parameters
         try:
-            latmin = float(params.get('minlat')) if 'minlat' in params \
-                else None
+            latmin = float(params.get('minlat')) if params.has_key('minlat') else None
         except (TypeError, ValueError):
-            raise wsgicomm.WIClientError, '"minlat" must be a float number.'
+            raise wsgicomm.WIClientError, 'Error: minlat must be a float number.'
 
         try:
-            latmax = float(params.get('maxlat')) if 'maxlat' in params \
-                else None
+            latmax = float(params.get('maxlat')) if params.has_key('maxlat') else None
         except (TypeError, ValueError):
-            raise wsgicomm.WIClientError, '"maxlat" must be a float number.'
+            raise wsgicomm.WIClientError, 'Error: maxlat must be a float number.'
 
         try:
-            lonmin = float(params.get('minlon')) if 'minlon' in params \
-                else None
+            lonmin = float(params.get('minlon')) if params.has_key('minlon') else None
         except (TypeError, ValueError):
-            raise wsgicomm.WIClientError, '"minlon" must be a float number.'
+            raise wsgicomm.WIClientError, 'Error: minlon must be a float number.'
 
         try:
-            lonmax = float(params.get('maxlon')) if 'maxlon' in params \
-                else None
+            lonmax = float(params.get('maxlon')) if params.has_key('maxlon') else None
         except (TypeError, ValueError):
-            raise wsgicomm.WIClientError, '"maxlon" must be a float number.'
+            raise wsgicomm.WIClientError, 'Error: maxlon must be a float number.'
+
 
         # Check for radius and azimuth parameters
         try:
-            minradius = float(params.get('minradius')) if 'minradius' in \
-                params else None
+            minradius = float(params.get('minradius')) if params.has_key('minradius') else None
         except (TypeError, ValueError):
-            raise wsgicomm.WIClientError, '"minradius" must be a float number.'
+            raise wsgicomm.WIClientError, 'Error: minradius must be a float number.'
 
         try:
-            maxradius = float(params.get('maxradius')) if 'maxradius' in \
-                params else None
+            maxradius = float(params.get('maxradius')) if params.has_key('maxradius') else None
         except (TypeError, ValueError):
-            raise wsgicomm.WIClientError, '"maxradius" must be a float number.'
+            raise wsgicomm.WIClientError, 'Error: maxradius must be a float number.'
 
         try:
-            minazimuth = float(params.get('minazimuth')) if 'minazimuth' in \
-                params else None
+            minazimuth = float(params.get('minazimuth')) if params.has_key('minazimuth') else None
         except (TypeError, ValueError):
-            raise wsgicomm.WIClientError, '"minazimuth" must be a float number'
+            raise wsgicomm.WIClientError, 'Error: minazimuth must be a float number.'
 
         try:
-            maxazimuth = float(params.get('maxazimuth')) if 'maxazimuth' in \
-                params else None
+            maxazimuth = float(params.get('maxazimuth')) if params.has_key('maxazimuth') else None
         except (TypeError, ValueError):
-            raise wsgicomm.WIClientError, '"maxazimuth" must be a float number'
+            raise wsgicomm.WIClientError, 'Error: maxazimuth must be a float number.'
 
         try:
             events = params.get('events', None)
@@ -1119,13 +1103,13 @@ class InventoryCache(object):
         # One or all stations have been selected and also lat/lon parameters
         if station and (latmin is not None or latmax is not None or lonmin is
                         not None or lonmax is not None):
-            msg = 'station and lat/lon parameters are incompatible.'
+            msg = 'Error: station and lat/lon parameters are incompatible.'
             raise wsgicomm.WIClientError, msg
 
         # One or all stations have been selected and also radius/azimuth params
         if station and (minradius is not None or maxradius is not None or
                         minazimuth is not None or maxazimuth is not None):
-            msg = 'station and radius/azimuth parameters are incompatible.'
+            msg = 'Error: station and radius/azimuth parameters are incompatible.'
             raise wsgicomm.WIClientError, msg
 
         # Lat/lon parameters have been selected and also radius/azimuth
@@ -1133,7 +1117,7 @@ class InventoryCache(object):
                 lonmax is not None) and (minradius is not None or maxradius is
                                          not None or minazimuth is not None or
                                          maxazimuth is not None):
-            msg = 'lat/lon and radius/azimuth parameters are incompatible.'
+            msg = 'Error: lat/lon and radius/azimuth parameters are incompatible.'
             raise wsgicomm.WIClientError, msg
 
         # These are the two lists to return
@@ -1178,10 +1162,12 @@ class InventoryCache(object):
                     continue
 
                 # Filter by longitude
-                if (ptStats[st][6] < lonmin) or (ptStats[st][6] > lonmax):
-                    continue
-
-                # print st, streams, sensortype, start_date, end_date
+                if(lonmin <= lonmax):
+                    if (ptStats[st][6] < lonmin) or (ptStats[st][6] > lonmax):
+                        continue
+                else:
+                    if (ptStats[st][6] < lonmin) and (ptStats[st][6] > lonmax):
+                        continue
 
                 (loc_ch, restricted) = self.__buildStreamsList(st, streams, sensortype,
                                                  preferredsps, start_date,
@@ -1237,16 +1223,16 @@ class InventoryCache(object):
                                           ptNets[parent_net][0],
                                           ptStats[st][4], ptStats[st][5],
                                           ptStats[st][6],
-                                          ptNets[parent_net][7],
+                                          ptStats[st][11],
                                           ptNets[parent_net][8],
                                           ptNets[parent_net][9],
                                           ptNets[parent_net][10], loc_ch, restricted))
 
-                        # Stop the loop through events and go to next station
+                        # Stop the loop through events and go for the next station
                         break
 
         else:
-            msg = 'Not enough parameters have been given.'
+            msg = 'Error: not enough parameters have been given.'
             raise wsgicomm.WIClientError, msg
 
         stats.sort()
