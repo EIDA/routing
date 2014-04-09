@@ -1,20 +1,18 @@
 #!/usr/bin/env python
 #
-# Routing information management for an EIDA FDSN-WS (Dataselect)
+# FDSN-WS Dataselect prototype
 #
-# Begun by Javier Quinteros, GEOFON team, June 2014
+# (c) 2014 Javier Quinteros, GEOFON team
 # <javier@gfz-potsdam.de>
 #
 # ----------------------------------------------------------------------
 
-
 """Routing information management for an EIDA FDSN-WS (Dataselect)
 
-(c) 2014 GEOFON, GFZ Potsdam
+(c) 2014 Javier Quinteros, GEOFON, GFZ Potsdam
 
 Encapsulate and manage routing information of networks,
 stations, locations and streams read from an XML file.
-
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
