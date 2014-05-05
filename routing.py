@@ -138,12 +138,20 @@ class RoutingCache(object):
 
         if host.endswith('gfz-potsdam.de'):
             institution = 'GFZ'
+        elif host.endswith('141.84.11.2'):
+            institution = 'LMU'
+        elif host.endswith('bgr.de'):
+            institution = 'BGR'
         elif host.endswith('knmi.nl'):
             institution = 'ODC'
         elif host.endswith('ethz.ch'):
             institution = 'ETH'
         elif host.endswith('resif.fr'):
             institution = 'RESIF'
+        elif host.endswith('ipgp.fr'):
+            institution = 'IPGP'
+        elif host.endswith('ingv.it'):
+            institution = 'INGV'
 
         return (realRoute, institution)
 
