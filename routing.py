@@ -28,7 +28,12 @@ version. For more information, see http://www.gnu.org/
 ##################################################################
 
 
+import datetime
 import xml.etree.cElementTree as ET
+
+
+class RoutingException(Exception):
+    pass
 
 
 class RoutingCache(object):
@@ -49,8 +54,19 @@ class RoutingCache(object):
         # Create/load the cache the first time that we start
         self.update()
 
-    def getRoute(self, n, s, l, c):
-        """Implement the following table lookup
+    def getRoute(self, n, s, l, c, startD=datetime.datetime.now(),
+                 endD=datetime.datetime.now(), service='dataselect'):
+        if service == 'arclink':
+            return self.getRouteArc(n, s, l, c, startD, endD)
+        elif service == 'dataselect':
+            return self.getRouteDS(n, s, l, c, startD, endD)
+
+        # Through an exception if there is an error
+        raise RoutingException('Unknown service: %s' % service)
+
+    def getRouteDS(self, n, s, l, c, startD=datetime.datetime.now(),
+                   endD=datetime.datetime.now()):
+        """Implement the following table lookup for the Dataselect service
 
         01 NET STA CHA LOC # First try to match all.
         02 NET STA CHA --- # Then try to match all excluding location,
@@ -71,7 +87,6 @@ class RoutingCache(object):
 """
 
         realRoute = None
-        institution = None
 
         # Case 1
         if (n, s, l, c) in self.routingTable:
@@ -133,27 +148,137 @@ class RoutingCache(object):
         elif (None, None, None, None) in self.routingTable:
             realRoute = self.routingTable[None, None, None, None]
 
+        # Check if the timewindow is encompassed in the returned dates
+        if ((endD < realRoute[1]) or (startD > realRoute[2])):
+            # If it is not, return None
+            return None
+
         # Try to identify the hosting institution
-        host = realRoute.split(':')[0]
+        host = realRoute[0].split(':')[0]
 
         if host.endswith('gfz-potsdam.de'):
-            institution = 'GFZ'
-        elif host.endswith('141.84.11.2'):
-            institution = 'LMU'
-        elif host.endswith('bgr.de'):
-            institution = 'BGR'
+            result = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
         elif host.endswith('knmi.nl'):
-            institution = 'ODC'
+            result = 'http://www.orfeus-eu.org/fdsnws/dataselect/1/query'
         elif host.endswith('ethz.ch'):
-            institution = 'ETH'
+            result = 'http://eida.ethz.ch/fdsnws/dataselect/1/query'
         elif host.endswith('resif.fr'):
-            institution = 'RESIF'
-        elif host.endswith('ipgp.fr'):
-            institution = 'IPGP'
-        elif host.endswith('ingv.it'):
-            institution = 'INGV'
+            result = 'http://ws.resif.fr/fdsnws/dataselect/1/query'
+        else:
+            raise RoutingException('No Dataselect WS registered for %s' % host)
 
-        return (realRoute, institution)
+        return result
+
+    def getRouteArc(self, n, s, l, c, startD=datetime.datetime.now(),
+                    endD=datetime.datetime.now()):
+        """Implement the following table lookup for the Arclink service
+
+        01 NET STA CHA LOC # First try to match all.
+        02 NET STA CHA --- # Then try to match all excluding location,
+        03 NET STA --- LOC # ... and so on
+        04 NET --- CHA LOC
+        05 --- STA CHA LOC
+        06 NET STA --- ---
+        07 NET --- CHA ---
+        08 NET --- --- LOC
+        09 --- STA CHA ---
+        09 --- STA --- LOC
+        10 --- --- CHA LOC
+        11 NET --- --- ---
+        12 --- STA --- ---
+        13 --- --- CHA ---
+        14 --- --- --- LOC
+        15 --- --- --- ---
+"""
+
+        realRoute = None
+
+        # Case 1
+        if (n, s, l, c) in self.routingTable:
+            realRoute = self.routingTable[n, s, l, c]
+
+        # Case 2
+        elif (n, s, None, c) in self.routingTable:
+            realRoute = self.routingTable[n, s, None, c]
+
+        # Case 3
+        elif (n, s, l, None) in self.routingTable:
+            realRoute = self.routingTable[n, s, l, None]
+
+        # Case 4
+        elif (n, None, l, c) in self.routingTable:
+            realRoute = self.routingTable[n, None, l, c]
+
+        # Case 5
+        elif (None, s, l, c) in self.routingTable:
+            realRoute = self.routingTable[None, s, l, c]
+
+        # Case 6
+        elif (n, s, None, None) in self.routingTable:
+            realRoute = self.routingTable[n, s, None, None]
+
+        # Case 7
+        elif (n, None, None, c) in self.routingTable:
+            realRoute = self.routingTable[n, None, None, c]
+
+        # Case 8
+        elif (n, None, l, None) in self.routingTable:
+            realRoute = self.routingTable[n, None, l, None]
+
+        # Case 9
+        elif (None, s, None, c) in self.routingTable:
+            realRoute = self.routingTable[None, s, None, c]
+
+        # Case 10
+        elif (None, None, l, c) in self.routingTable:
+            realRoute = self.routingTable[None, None, l, c]
+
+        # Case 11
+        elif (n, None, None, None) in self.routingTable:
+            realRoute = self.routingTable[n, None, None, None]
+
+        # Case 12
+        elif (None, s, None, None) in self.routingTable:
+            realRoute = self.routingTable[None, s, None, None]
+
+        # Case 13
+        elif (None, None, None, c) in self.routingTable:
+            realRoute = self.routingTable[None, None, None, c]
+
+        # Case 14
+        elif (None, None, l, None) in self.routingTable:
+            realRoute = self.routingTable[None, None, l, None]
+
+        # Case 15
+        elif (None, None, None, None) in self.routingTable:
+            realRoute = self.routingTable[None, None, None, None]
+
+        # Check if the timewindow is encompassed in the returned dates
+        if ((endD < realRoute[1]) or (startD > realRoute[2])):
+            # If it is not, return None
+            return None
+
+        # Try to identify the hosting institution
+        # host = realRoute[0].split(':')[0]
+
+        # if host.endswith('gfz-potsdam.de'):
+        #     institution = 'GFZ'
+        # elif host.endswith('141.84.11.2'):
+        #     institution = 'LMU'
+        # elif host.endswith('bgr.de'):
+        #     institution = 'BGR'
+        # elif host.endswith('knmi.nl'):
+        #     institution = 'ODC'
+        # elif host.endswith('ethz.ch'):
+        #     institution = 'ETH'
+        # elif host.endswith('resif.fr'):
+        #     institution = 'RESIF'
+        # elif host.endswith('ipgp.fr'):
+        #     institution = 'IPGP'
+        # elif host.endswith('ingv.it'):
+        #     institution = 'INGV'
+
+        return realRoute[0]
 
     def update(self):
         """Read the routing file in XML format and store it in memory.
@@ -244,9 +369,25 @@ class RoutingCache(object):
                         except:
                             continue
 
+                        # Extract the start datetime
+                        try:
+                            startD = arcl.get('start')
+                            if len(startD) == 0:
+                                startD = None
+                        except:
+                            startD = None
+
+                        # Extract the end datetime
+                        try:
+                            endD = arcl.get('end')
+                            if len(endD) == 0:
+                                endD = None
+                        except:
+                            endD = None
+
                         # Append the network to the list of networks
                         ptRT[networkCode, stationCode, locationCode,
-                             streamCode] = address
+                             streamCode] = (address, startD, endD)
 
                         arcl.clear()
 
