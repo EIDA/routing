@@ -172,7 +172,8 @@ class RoutingCache(object):
             realRoute = self.routingTable[None, None, None, None]
 
         # Check if the timewindow is encompassed in the returned dates
-        if ((endD < realRoute[1]) or (startD > realRoute[2])):
+        if ((endD < realRoute[1]) or (startD > realRoute[2] if realRoute[2]
+                                      is not None else False)):
             # If it is not, return None
             return None
 
@@ -268,12 +269,27 @@ class RoutingCache(object):
                             continue
 
                         # Extract the start datetime
+                        # try:
+                        #     startD = arcl.get('start')
+                        #     if len(startD) == 0:
+                        #         startD = None
+                        # except:
+                        #     startD = None
+
                         try:
                             startD = arcl.get('start')
-                            if len(startD) == 0:
+                            if len(startD):
+                                startParts = startD.replace('-', ' ').replace('T', ' ')
+                                startParts = startParts.replace(':', ' ').replace('.', ' ')
+                                startParts = startParts.replace('Z', '').split()
+                                startD = datetime.datetime(*map(int, startParts))
+                            else:
                                 startD = None
                         except:
                             startD = None
+                            print 'Error while converting START attribute.'
+
+
 
                         # Extract the end datetime
                         try:
@@ -282,6 +298,19 @@ class RoutingCache(object):
                                 endD = None
                         except:
                             endD = None
+
+                        try:
+                            endD = arcl.get('end')
+                            if len(endD):
+                                endParts = endD.replace('-', ' ').replace('T', ' ')
+                                endParts = endParts.replace(':', ' ').replace('.', ' ')
+                                endParts = endParts.replace('Z', '').split()
+                                endD = datetime.datetime(*map(int, endParts))
+                            else:
+                                endD = None
+                        except:
+                            endD = None
+                            print 'Error while converting END attribute.'
 
                         # Append the network to the list of networks
                         ptRT[networkCode, stationCode, locationCode,
