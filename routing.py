@@ -83,8 +83,9 @@ class RoutingCache(object):
         elif host.endswith('resif.fr'):
             result = 'http://ws.resif.fr/fdsnws/dataselect/1/query'
         else:
-            raise RoutingException('No Dataselect WS registered for %s' % host)
-
+            result = 'http://service.iris.edu/fdsnws/dataselect/1/query'
+            # raise RoutingException('No Dataselect WS registered for %s' % host)
+            # print result, n, s
         return result
 
     def getRouteArc(self, n, s, l, c, startD=datetime.datetime.now(),
