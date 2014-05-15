@@ -71,6 +71,9 @@ class RoutingCache(object):
 
         realRoute = self.getRouteArc(n, s, l, c, startD, endD)
 
+        if realRoute is None:
+            return 'http://service.iris.edu/fdsnws/dataselect/1/query'
+
         # Try to identify the hosting institution
         host = realRoute.split(':')[0]
 
@@ -82,6 +85,10 @@ class RoutingCache(object):
             result = 'http://eida.ethz.ch/fdsnws/dataselect/1/query'
         elif host.endswith('resif.fr'):
             result = 'http://ws.resif.fr/fdsnws/dataselect/1/query'
+        elif host.endswith('bgr.de'):
+            result = 'http://st35:8080/fdsnws/dataselect/1/query'
+        elif host.startswith('141.84.'):
+            result = 'http://st35:8080/fdsnws/dataselect/1/query'
         else:
             result = 'http://service.iris.edu/fdsnws/dataselect/1/query'
             # raise RoutingException('No Dataselect WS registered for %s' % host)
@@ -111,6 +118,7 @@ class RoutingCache(object):
 """
 
         realRoute = None
+        print n, s, l, c
 
         # Case 1
         if (n, s, l, c) in self.routingTable:
@@ -172,13 +180,17 @@ class RoutingCache(object):
         elif (None, None, None, None) in self.routingTable:
             realRoute = self.routingTable[None, None, None, None]
 
-        # Check if the timewindow is encompassed in the returned dates
-        if ((endD < realRoute[1]) or (startD > realRoute[2] if realRoute[2]
-                                      is not None else False)):
-            # If it is not, return None
-            return None
+        # Check that I found a route
+        if realRoute is not None:
+            # Check if the timewindow is encompassed in the returned dates
+            if ((endD < realRoute[1]) or (startD > realRoute[2] if realRoute[2]
+                                          is not None else False)):
+                # If it is not, return None
+                realRoute = None
+            else:
+                realRoute = realRoute[0]
 
-        return realRoute[0]
+        return realRoute
 
     def update(self):
         """Read the routing file in XML format and store it in memory.
