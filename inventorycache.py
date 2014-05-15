@@ -476,7 +476,8 @@ class InventoryCache(object):
                 netw[3] = idxs
 
         end_time = datetime.datetime.now()
-        logs.info('Done with XML:  %s' % (end_time))  # Python 2.7: (end_time - start_time).total_seconds())
+        # Python 2.7: (end_time - start_time).total_seconds())
+        logs.info('Done with XML:  %s' % (end_time))
 
         self.__indexStreams()
 
@@ -510,6 +511,10 @@ class InventoryCache(object):
                end=datetime.datetime.now()):
         """Expand to a list of networks, stations, locations and channels
         The result is a list of (N, S, L, C) without wildcards."""
+
+        # If there are no wildcards, return exactly the stream received.
+        if ('*' not in n + s + l + c) and ('?' not in n + s + l + c):
+            return [(n, s, l, c)]
 
         result = []
         for net in self.networks:
