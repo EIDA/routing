@@ -556,6 +556,8 @@ class InventoryCache(object):
                                                        ptLoc[4],
                                                        ptCha[1]))
 
+        if not len(result):
+            result.append((n, s, l, c))
         return result
 
     # Method to select networks from the parameters passed
