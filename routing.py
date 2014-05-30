@@ -28,8 +28,10 @@ version. For more information, see http://www.gnu.org/
 ##################################################################
 
 
+import cgi
 import datetime
 import xml.etree.cElementTree as ET
+from wsgicomm import *
 
 
 class RoutingException(Exception):
@@ -302,8 +304,6 @@ class RoutingCache(object):
                             startD = None
                             print 'Error while converting START attribute.'
 
-
-
                         # Extract the end datetime
                         try:
                             endD = arcl.get('end')
@@ -334,6 +334,181 @@ class RoutingCache(object):
                     route.clear()
 
                 root.clear()
+
+
+def makeQueryGET(parameters):
+    # List all the accepted parameters
+    allowedParams = ['net', 'network',
+                     'sta', 'station',
+                     'loc', 'location',
+                     'cha', 'channel',
+                     'start', 'starttime',
+                     'end', 'endtime',
+                     'service']
+
+    for param in parameters:
+        if param not in allowedParams:
+            return 'Unknown parameter: %s' % param
+
+    try:
+        if 'network' in parameters:
+            net = parameters['network'].value
+        elif 'net' in parameters:
+            net = parameters['net'].value
+        else:
+            net = '*'
+    except:
+        net = '*'
+
+    try:
+        if 'station' in parameters:
+            sta = parameters['station'].value
+        elif 'sta' in parameters:
+            sta = parameters['sta'].value
+        else:
+            sta = '*'
+    except:
+        sta = '*'
+
+    try:
+        if 'location' in parameters:
+            loc = parameters['location'].value
+        elif 'loc' in parameters:
+            loc = parameters['loc'].value
+        else:
+            loc = '*'
+    except:
+        loc = '*'
+
+    try:
+        if 'channel' in parameters:
+            cha = parameters['channel'].value
+        elif 'cha' in parameters:
+            cha = parameters['cha'].value
+        else:
+            cha = '*'
+    except:
+        cha = '*'
+
+    try:
+        if 'starttime' in parameters:
+            start = datetime.datetime.strptime(
+                parameters['starttime'].value,
+                '%Y-%m-%dT%H:%M:%S')
+        elif 'start' in parameters:
+            start = datetime.datetime.strptime(
+                parameters['start'].value,
+                '%Y-%m-%dT%H:%M:%S')
+        else:
+            start = datetime.datetime.now()
+    except:
+        return 'Error while converting starttime parameter.'
+
+    try:
+        if 'endtime' in parameters:
+            endt = datetime.datetime.strptime(
+                parameters['endtime'].value,
+                '%Y-%m-%dT%H:%M:%S')
+        elif 'end' in parameters:
+            endt = datetime.datetime.strptime(
+                parameters['end'].value,
+                '%Y-%m-%dT%H:%M:%S')
+        else:
+            endt = datetime.datetime.now()
+    except:
+        return 'Error while converting endtime parameter.'
+
+    try:
+        if 'service' in parameters:
+            ser = parameters['service'].value
+        else:
+            ser = 'dataselect'
+    except:
+        ser = 'dataselect'
+
+    route = routes.getRoute(net, sta, loc, cha, start, endt, ser)
+
+    return route
+
+# Add routing cache here, to be accessible to all modules
+routesFile = '/var/www/fdsnws/routing/routing.xml'
+routes = RoutingCache(routesFile)
+
+
+def application(environ, start_response):
+    """Main WSGI handler that processes client requests and calls
+    the proper functions.
+
+    Begun by Javier Quinteros <javier@gfz-potsdam.de>,
+    GEOFON team, February 2014
+
+    """
+
+    fname = environ['PATH_INFO']
+
+    print 'fname: %s' % (fname)
+
+    # Among others, this will filter wrong function names,
+    # but also the favicon.ico request, for instance.
+    if fname is None:
+        return send_html_response(status, 'Error! ' + status, start_response)
+
+    try:
+        if environ['REQUEST_METHOD'] == 'GET':
+            form = cgi.FieldStorage(fp=environ['wsgi.input'], environ=environ)
+        elif environ['REQUEST_METHOD'] == 'POST':
+            form = ''
+            try:
+                length = int(environ.get('CONTENT_LENGTH', '0'))
+            except ValueError:
+                length = 0
+            # If there is a body to read
+            if length != 0:
+                form = environ['wsgi.input'].read(length)
+            else:
+                form = environ['wsgi.input'].read()
+
+        else:
+            raise Exception
+
+    except ValueError, e:
+        if str(e) == "Maximum content length exceeded":
+            # Add some user-friendliness (this message triggers an alert
+            # box on the client)
+            return send_plain_response("400 Bad Request",
+                                       "maximum request size exceeded",
+                                       start_response)
+
+        return send_plain_response("400 Bad Request", str(e), start_response)
+
+    # Check whether the function called is implemented
+    implementedFunctions = ['query', 'application.wadl']
+
+    fname = environ['PATH_INFO'].split('/')[-1]
+    if fname not in implementedFunctions:
+        return send_plain_response("400 Bad Request",
+                                   'Function "%s" not implemented.' % fname,
+                                   start_response)
+
+    if fname == 'application.wadl':
+        iterObj = ''
+        with open('/var/www/fdsnws/routing/application.wadl', 'r') \
+                as appFile:
+            iterObj = appFile.read()
+            status = '200 OK'
+            return send_xml_response(status, iterObj, start_response)
+
+    elif fname == 'query':
+        makeQuery = globals()['makeQuery%s' % environ['REQUEST_METHOD']]
+        iterObj = makeQuery(form)
+
+    if isinstance(iterObj, basestring):
+        status = '200 OK'
+        return send_plain_response(status, iterObj, start_response)
+
+    status = '200 OK'
+    body = "\n".join(iterObj)
+    return send_plain_response(status, body, start_response)
 
 
 def main():
