@@ -87,6 +87,8 @@ class RoutingCache(object):
             result = 'http://eida.ethz.ch/fdsnws/dataselect/1/query'
         elif host.endswith('resif.fr'):
             result = 'http://ws.resif.fr/fdsnws/dataselect/1/query'
+        elif host.endswith('ingv.it'):
+            result = 'http://webservices.rm.ingv.it/fdsnws/dataselect/1/query'
         elif host.endswith('bgr.de'):
             result = 'http://st35:8080/fdsnws/dataselect/1/query'
         elif host.startswith('141.84.'):
