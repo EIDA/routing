@@ -46,7 +46,7 @@ class RoutingCache(object):
 
     """
 
-    def __init__(self, routingFile):
+    def __init__(self, routingFile, masterFile=None):
         # Arclink routing file in XML format
         self.routingFile = routingFile
 
@@ -55,6 +55,17 @@ class RoutingCache(object):
 
         # Create/load the cache the first time that we start
         self.update()
+
+        if masterFile is None:
+            return
+
+        # Master routing file in XML format
+        self.masterFile = masterFile
+
+        # Dictionary with list of highest priority routes
+        self.masterTable = dict()
+
+        self.updateMT()
 
     def getRoute(self, n, s, l, c, startD=datetime.datetime(1980, 1, 1),
                  endD=datetime.datetime.now(), service='dataselect'):
@@ -71,8 +82,11 @@ class RoutingCache(object):
         """Use the table lookup from Arclink to route the Dataselect service
 """
 
-        realRoute = self.getRouteArc(n, s, l, c, startD, endD)
+        masterRoute = self.getRouteMaster(n)
+        if masterRoute is not None:
+            return 'http://' + masterRoute
 
+        realRoute = self.getRouteArc(n, s, l, c, startD, endD)
         if realRoute is None:
             return 'http://service.iris.edu/fdsnws/dataselect/1/query'
 
@@ -95,9 +109,33 @@ class RoutingCache(object):
             result = 'http://st35:8080/fdsnws/dataselect/1/query'
         else:
             result = 'http://service.iris.edu/fdsnws/dataselect/1/query'
-            # raise RoutingException('No Dataselect WS registered for %s' % host)
-            # print result, n, s
+
         return result
+
+    def getRouteMaster(self, n, startD=datetime.datetime.now(),
+                       endD=datetime.datetime.now()):
+        """Implement the following table lookup for the Master Table
+
+        11 NET --- --- ---
+"""
+
+        realRoute = None
+
+        # Case 11
+        if (n, None, None, None) in self.masterTable:
+            realRoute = self.masterTable[n, None, None, None]
+
+        # Check that I found a route
+        if realRoute is not None:
+            # Check if the timewindow is encompassed in the returned dates
+            if ((endD < realRoute[1]) or (startD > realRoute[2] if realRoute[2]
+                                          is not None else False)):
+                # If it is not, return None
+                realRoute = None
+            else:
+                realRoute = realRoute[0]
+
+        return realRoute
 
     def getRouteArc(self, n, s, l, c, startD=datetime.datetime.now(),
                     endD=datetime.datetime.now()):
@@ -196,6 +234,144 @@ class RoutingCache(object):
 
         return realRoute
 
+    def updateMT(self):
+        """Read the routes with highest priority for DS and store it in memory.
+
+        All the routing information is read into a dictionary. Only the
+        necessary attributes are stored. This relies on the idea
+        that some other agent should update the routing file at
+        a regular period of time.
+
+        """
+
+        # Just to shorten notation
+        ptMT = self.masterTable
+
+        # Parse the routing file
+        # Traverse through the networks
+        # get an iterable
+        try:
+            context = ET.iterparse(self.masterFile, events=("start", "end"))
+        except IOError:
+            msg = 'Error: masterTable.xml could not be opened.'
+            print msg
+            return
+
+        # turn it into an iterator
+        context = iter(context)
+
+        # get the root element
+        event, root = context.next()
+
+        # Check that it is really an inventory
+        if root.tag[-len('routing'):] != 'routing':
+            msg = 'The file parsed seems not to be a routing file (XML).'
+            print msg
+            return
+
+        # Extract the namespace from the root node
+        namesp = root.tag[:-len('routing')]
+
+        for event, route in context:
+            # The tag of this node should be "route".
+            # Now it is not being checked because
+            # we need all the data, but if we need to filter, this
+            # is the place.
+            #
+            if event == "end":
+                if route.tag == namesp + 'route':
+
+                    # Extract the location code
+                    try:
+                        locationCode = route.get('locationCode')
+                        if len(locationCode) == 0:
+                            locationCode = None
+                    except:
+                        locationCode = None
+
+                    # Extract the network code
+                    try:
+                        networkCode = route.get('networkCode')
+                        if len(networkCode) == 0:
+                            networkCode = None
+                    except:
+                        networkCode = None
+
+                    # Extract the station code
+                    try:
+                        stationCode = route.get('stationCode')
+                        if len(stationCode) == 0:
+                            stationCode = None
+                    except:
+                        stationCode = None
+
+                    # Extract the stream code
+                    try:
+                        streamCode = route.get('streamCode')
+                        if len(streamCode) == 0:
+                            streamCode = None
+                    except:
+                        streamCode = None
+
+                    # Traverse through the sources
+                    for arcl in route.findall(namesp + 'dataselect'):
+                        # Extract the address
+                        try:
+                            address = arcl.get('address')
+                            if len(address) == 0:
+                                continue
+                        except:
+                            continue
+
+                        try:
+                            startD = arcl.get('start')
+                            if len(startD):
+                                startParts = startD.replace('-', ' ')
+                                startParts = startParts.replace('T', ' ')
+                                startParts = startParts.replace(':', ' ')
+                                startParts = startParts.replace('.', ' ')
+                                startParts = startParts.replace('Z', '')
+                                startParts = startParts.split()
+                                startD = datetime.datetime(*map(int, startParts))
+                            else:
+                                startD = None
+                        except:
+                            startD = None
+                            print 'Error while converting START attribute.'
+
+                        # Extract the end datetime
+                        try:
+                            endD = arcl.get('end')
+                            if len(endD) == 0:
+                                endD = None
+                        except:
+                            endD = None
+
+                        try:
+                            endD = arcl.get('end')
+                            if len(endD):
+                                endParts = endD.replace('-', ' ')
+                                endParts = endParts.replace('T', ' ')
+                                endParts = endParts.replace(':', ' ')
+                                endParts = endParts.replace('.', ' ')
+                                endParts = endParts.replace('Z', '').split()
+                                endD = datetime.datetime(*map(int, endParts))
+                            else:
+                                endD = None
+                        except:
+                            endD = None
+                            print 'Error while converting END attribute.'
+
+                        # Append the network to the list of networks
+                        ptMT[networkCode, stationCode, locationCode,
+                             streamCode] = (address, startD, endD)
+
+                        arcl.clear()
+
+                    route.clear()
+
+                root.clear()
+
     def update(self):
         """Read the routing file in XML format and store it in memory.
 
@@ -284,14 +460,6 @@ class RoutingCache(object):
                                 continue
                         except:
                             continue
-
-                        # Extract the start datetime
-                        # try:
-                        #     startD = arcl.get('start')
-                        #     if len(startD) == 0:
-                        #         startD = None
-                        # except:
-                        #     startD = None
 
                         try:
                             startD = arcl.get('start')
@@ -434,7 +602,8 @@ def makeQueryGET(parameters):
 
 # Add routing cache here, to be accessible to all modules
 routesFile = '/var/www/fdsnws/routing/routing.xml'
-routes = RoutingCache(routesFile)
+masterFile = '/var/www/fdsnws/routing/masterTable.xml'
+routes = RoutingCache(routesFile, masterFile)
 
 
 def application(environ, start_response):
@@ -514,7 +683,7 @@ def application(environ, start_response):
 
 
 def main():
-    routes = RoutingCache("./routing.xml")
+    routes = RoutingCache("./routing.xml", "./masterTable.xml")
     print len(routes.routingTable)
 
 
