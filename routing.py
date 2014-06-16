@@ -30,6 +30,7 @@ version. For more information, see http://www.gnu.org/
 
 import cgi
 import datetime
+import json
 import xml.etree.cElementTree as ET
 from wsgicomm import *
 
@@ -82,33 +83,45 @@ class RoutingCache(object):
         """Use the table lookup from Arclink to route the Dataselect service
 """
 
+        gfz = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
+        odc = 'http://www.orfeus-eu.org/fdsnws/dataselect/1/query'
+        eth = 'http://eida.ethz.ch/fdsnws/dataselect/1/query'
+        resif = 'http://ws.resif.fr/fdsnws/dataselect/1/query'
+        ingv = 'http://webservices.rm.ingv.it/fdsnws/dataselect/1/query'
+        bgr = 'http://st35:8080/fdsnws/dataselect/1/query'
+        lmu = 'http://st35:8080/fdsnws/dataselect/1/query'
+        iris = 'http://service.iris.edu/fdsnws/dataselect/1/query'
+
         masterRoute = self.getRouteMaster(n)
         if masterRoute is not None:
             return 'http://' + masterRoute
 
         realRoute = self.getRouteArc(n, s, l, c, startD, endD)
-        if realRoute is None:
-            return 'http://service.iris.edu/fdsnws/dataselect/1/query'
+        if not len(realRoute):
+            return [iris]
 
-        # Try to identify the hosting institution
-        host = realRoute.split(':')[0]
+        result = []
 
-        if host.endswith('gfz-potsdam.de'):
-            result = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
-        elif host.endswith('knmi.nl'):
-            result = 'http://www.orfeus-eu.org/fdsnws/dataselect/1/query'
-        elif host.endswith('ethz.ch'):
-            result = 'http://eida.ethz.ch/fdsnws/dataselect/1/query'
-        elif host.endswith('resif.fr'):
-            result = 'http://ws.resif.fr/fdsnws/dataselect/1/query'
-        elif host.endswith('ingv.it'):
-            result = 'http://webservices.rm.ingv.it/fdsnws/dataselect/1/query'
-        elif host.endswith('bgr.de'):
-            result = 'http://st35:8080/fdsnws/dataselect/1/query'
-        elif host.startswith('141.84.'):
-            result = 'http://st35:8080/fdsnws/dataselect/1/query'
-        else:
-            result = 'http://service.iris.edu/fdsnws/dataselect/1/query'
+        for route in realRoute:
+            # Try to identify the hosting institution
+            host = route.split(':')[0]
+
+            if host.endswith('gfz-potsdam.de') and gfz not in result:
+                result.append(gfz)
+            elif host.endswith('knmi.nl') and odc not in result:
+                result.append(odc)
+            elif host.endswith('ethz.ch') and eth not in result:
+                result.append(eth)
+            elif host.endswith('resif.fr') and resif not in result:
+                result.append(resif)
+            elif host.endswith('ingv.it') and ingv not in result:
+                result.append(ingv)
+            elif host.endswith('bgr.de') and bgr not in result:
+                result.append(bgr)
+            elif host.startswith('141.84.') and lmu not in result:
+                result.append(lmu)
+            elif iris not in result:
+                result.append(iris)
 
         return result
 
@@ -125,6 +138,7 @@ class RoutingCache(object):
         if (n, None, None, None) in self.masterTable:
             realRoute = self.masterTable[n, None, None, None]
 
+        # print "Search %s in masterTable. Found %s" % (n, realRoute)
         # Check that I found a route
         if realRoute is not None:
             # Check if the timewindow is encompassed in the returned dates
@@ -160,7 +174,6 @@ class RoutingCache(object):
 """
 
         realRoute = None
-        print n, s, l, c
 
         # Case 1
         if (n, s, l, c) in self.routingTable:
@@ -222,17 +235,24 @@ class RoutingCache(object):
         elif (None, None, None, None) in self.routingTable:
             realRoute = self.routingTable[None, None, None, None]
 
-        # Check that I found a route
-        if realRoute is not None:
-            # Check if the timewindow is encompassed in the returned dates
-            if ((endD < realRoute[1]) or (startD > realRoute[2] if realRoute[2]
-                                          is not None else False)):
-                # If it is not, return None
-                realRoute = None
-            else:
-                realRoute = realRoute[0]
+        result = []
+        if realRoute is None:
+            return result
 
-        return realRoute
+        for route in realRoute:
+            # Check that I found a route
+            if route is not None:
+                # Check if the timewindow is encompassed in the returned dates
+                if ((endD < route[1]) or (startD > route[2] if route[2]
+                                          is not None else False)):
+                    # If it is not, return None
+                    #realRoute = None
+                    continue
+                else:
+                    result.append(route[0])
+
+        #return realRoute
+        return result
 
     def updateMT(self):
         """Read the routes with highest priority for DS and store it in memory.
@@ -332,7 +352,8 @@ class RoutingCache(object):
                                 startParts = startParts.replace('.', ' ')
                                 startParts = startParts.replace('Z', '')
                                 startParts = startParts.split()
-                                startD = datetime.datetime(*map(int, startParts))
+                                startD = datetime.datetime(*map(int,
+                                                                startParts))
                             else:
                                 startD = None
                         except:
@@ -389,6 +410,7 @@ class RoutingCache(object):
         # Traverse through the networks
         # get an iterable
         try:
+            print self.routingFile
             context = ET.iterparse(self.routingFile, events=("start", "end"))
         except IOError:
             msg = 'Error: routing.xml could not be opened.'
@@ -464,10 +486,14 @@ class RoutingCache(object):
                         try:
                             startD = arcl.get('start')
                             if len(startD):
-                                startParts = startD.replace('-', ' ').replace('T', ' ')
-                                startParts = startParts.replace(':', ' ').replace('.', ' ')
-                                startParts = startParts.replace('Z', '').split()
-                                startD = datetime.datetime(*map(int, startParts))
+                                startParts = startD.replace('-', ' ')
+                                startParts = startParts.replace('T', ' ')
+                                startParts = startParts.replace(':', ' ')
+                                startParts = startParts.replace('.', ' ')
+                                startParts = startParts.replace('Z', '')
+                                startParts = startParts.split()
+                                startD = datetime.datetime(*map(int,
+                                                                startParts))
                             else:
                                 startD = None
                         except:
@@ -477,16 +503,11 @@ class RoutingCache(object):
                         # Extract the end datetime
                         try:
                             endD = arcl.get('end')
-                            if len(endD) == 0:
-                                endD = None
-                        except:
-                            endD = None
-
-                        try:
-                            endD = arcl.get('end')
                             if len(endD):
-                                endParts = endD.replace('-', ' ').replace('T', ' ')
-                                endParts = endParts.replace(':', ' ').replace('.', ' ')
+                                endParts = endD.replace('-', ' ')
+                                endParts = endParts.replace('T', ' ')
+                                endParts = endParts.replace(':', ' ')
+                                endParts = endParts.replace('.', ' ')
                                 endParts = endParts.replace('Z', '').split()
                                 endD = datetime.datetime(*map(int, endParts))
                             else:
@@ -495,15 +516,35 @@ class RoutingCache(object):
                             endD = None
                             print 'Error while converting END attribute.'
 
-                        # Append the network to the list of networks
-                        ptRT[networkCode, stationCode, locationCode,
-                             streamCode] = (address, startD, endD)
+                        # Extract the priority
+                        try:
+                            priority = arcl.get('priority')
+                            if len(address) == 0:
+                                priority = 99
+                            else:
+                                priority = int(priority)
+                        except:
+                            priority = 99
 
+                        # Append the network to the list of networks
+                        if (networkCode, stationCode, locationCode,
+                                streamCode) not in ptRT:
+                            ptRT[networkCode, stationCode, locationCode,
+                                 streamCode] = [(address, startD, endD,
+                                                 priority)]
+                        else:
+                            ptRT[networkCode, stationCode, locationCode,
+                                 streamCode].append((address, startD, endD,
+                                                     priority))
                         arcl.clear()
 
                     route.clear()
 
                 root.clear()
+
+        # Order the routes by priority
+        for keyDict in ptRT:
+            ptRT[keyDict] = sorted(ptRT[keyDict], key=lambda route: route[3])
 
 
 def makeQueryGET(parameters):
@@ -675,6 +716,11 @@ def application(environ, start_response):
 
     if isinstance(iterObj, basestring):
         status = '200 OK'
+        return send_plain_response(status, iterObj, start_response)
+
+    if isinstance(iterObj, list):
+        status = '200 OK'
+        iterObj = json.dumps(iterObj)
         return send_plain_response(status, iterObj, start_response)
 
     status = '200 OK'
