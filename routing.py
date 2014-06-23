@@ -30,6 +30,7 @@ version. For more information, see http://www.gnu.org/
 
 import cgi
 import datetime
+import fnmatch
 import json
 import xml.etree.cElementTree as ET
 from wsgicomm import *
@@ -54,6 +55,9 @@ class RoutingCache(object):
         # Dictionary with all the routes
         self.routingTable = dict()
 
+        # Dictionary with the seedlink routes
+        self.slTable = dict()
+
         # Create/load the cache the first time that we start
         self.update()
 
@@ -68,12 +72,15 @@ class RoutingCache(object):
 
         self.updateMT()
 
-    def getRoute(self, n, s, l, c, startD=datetime.datetime(1980, 1, 1),
+    def getRoute(self, n='*', s='*', l='*', c='*',
+                 startD=datetime.datetime.now(),
                  endD=datetime.datetime.now(), service='dataselect'):
         if service == 'arclink':
             return self.getRouteArc(n, s, l, c, startD, endD)
         elif service == 'dataselect':
             return self.getRouteDS(n, s, l, c, startD, endD)
+        elif service == 'seedlink':
+            return self.getRouteSL(n, s, l, c)
 
         # Through an exception if there is an error
         raise RoutingException('Unknown service: %s' % service)
@@ -92,15 +99,63 @@ class RoutingCache(object):
         lmu = 'http://st35:8080/fdsnws/dataselect/1/query'
         iris = 'http://service.iris.edu/fdsnws/dataselect/1/query'
 
+        result = []
+
         masterRoute = self.getRouteMaster(n)
         if masterRoute is not None:
             return 'http://' + masterRoute
 
+        print n, s, l, c
+
+        # Check if there are wildcards!
+        if ((None in (n, s, l, c)) or ('*' in n + s + l + c) or
+                ('?' in n + s + l + c)):
+            # Filter first by the attributes without wildcards
+            subs = self.routingTable.keys()
+            if ((s is not None) and ('*' not in s) and ('?' not in s)):
+                subs = [k for k in subs if k[1] == s]
+
+            if ((n is not None) and ('*' not in n) and ('?' not in n)):
+                subs = [k for k in subs if k[0] == n]
+
+            if ((c is not None) and ('*' not in c) and ('?' not in c)):
+                subs = [k for k in subs if k[3] == c]
+
+            if ((l is not None) and ('*' not in l) and ('?' not in l)):
+                subs = [k for k in subs if k[2] == l]
+
+            # Filter then by the attributes WITH wildcards
+            if ((s is None) or ('*' in s) or ('?' in s)):
+                subs = [k for k in subs if (k[1] is None or k[1] == '*' or
+                                            fnmatch.fnmatch(k[1], s))]
+
+            if ((n is None) or ('*' in n) or ('?' in n)):
+                subs = [k for k in subs if (k[0] is None or k[0] == '*' or
+                                            fnmatch.fnmatch(k[0], n))]
+
+            if ((c is None) or ('*' in c) or ('?' in c)):
+                subs = [k for k in subs if (k[3] is None or k[3] == '*' or
+                                            fnmatch.fnmatch(k[3], c))]
+
+            if ((l is None) or ('*' in l) or ('?' in l)):
+                subs = [k for k in subs if (k[2] is None or k[2] == '*' or
+                                            fnmatch.fnmatch(k[2], l))]
+
+            resSet = set()
+            for k in subs:
+                # ONLY the first component of the tuple!!!
+                # print k, self.routingTable[k]
+                for rou in self.routingTable[k]:
+                    # Check that the timewindow is OK
+                    if (((rou[2] is None) or (startD < rou[2])) and
+                            (endD > rou[1])):
+                        resSet.add(rou[0])
+
+            return list(resSet)
+
         realRoute = self.getRouteArc(n, s, l, c, startD, endD)
         if not len(realRoute):
             return [iris]
-
-        result = []
 
         for route in realRoute:
             # Try to identify the hosting institution
@@ -150,6 +205,101 @@ class RoutingCache(object):
                 realRoute = realRoute[0]
 
         return realRoute
+
+    def getRouteSL(self, n, s, l, c):
+        """Implement the following table lookup for the Seedlink service
+
+        01 NET STA CHA LOC # First try to match all.
+        02 NET STA CHA --- # Then try to match all excluding location,
+        03 NET STA --- LOC # ... and so on
+        04 NET --- CHA LOC
+        05 --- STA CHA LOC
+        06 NET STA --- ---
+        07 NET --- CHA ---
+        08 NET --- --- LOC
+        09 --- STA CHA ---
+        09 --- STA --- LOC
+        10 --- --- CHA LOC
+        11 NET --- --- ---
+        12 --- STA --- ---
+        13 --- --- CHA ---
+        14 --- --- --- LOC
+        15 --- --- --- ---
+"""
+
+        realRoute = None
+
+        # Case 1
+        if (n, s, l, c) in self.slTable:
+            realRoute = self.slTable[n, s, l, c]
+
+        # Case 2
+        elif (n, s, None, c) in self.slTable:
+            realRoute = self.slTable[n, s, None, c]
+
+        # Case 3
+        elif (n, s, l, None) in self.slTable:
+            realRoute = self.slTable[n, s, l, None]
+
+        # Case 4
+        elif (n, None, l, c) in self.slTable:
+            realRoute = self.slTable[n, None, l, c]
+
+        # Case 5
+        elif (None, s, l, c) in self.slTable:
+            realRoute = self.slTable[None, s, l, c]
+
+        # Case 6
+        elif (n, s, None, None) in self.slTable:
+            realRoute = self.slTable[n, s, None, None]
+
+        # Case 7
+        elif (n, None, None, c) in self.slTable:
+            realRoute = self.slTable[n, None, None, c]
+
+        # Case 8
+        elif (n, None, l, None) in self.slTable:
+            realRoute = self.slTable[n, None, l, None]
+
+        # Case 9
+        elif (None, s, None, c) in self.slTable:
+            realRoute = self.slTable[None, s, None, c]
+
+        # Case 10
+        elif (None, None, l, c) in self.slTable:
+            realRoute = self.slTable[None, None, l, c]
+
+        # Case 11
+        elif (n, None, None, None) in self.slTable:
+            realRoute = self.slTable[n, None, None, None]
+
+        # Case 12
+        elif (None, s, None, None) in self.slTable:
+            realRoute = self.slTable[None, s, None, None]
+
+        # Case 13
+        elif (None, None, None, c) in self.slTable:
+            realRoute = self.slTable[None, None, None, c]
+
+        # Case 14
+        elif (None, None, l, None) in self.slTable:
+            realRoute = self.slTable[None, None, l, None]
+
+        # Case 15
+        elif (None, None, None, None) in self.slTable:
+            realRoute = self.slTable[None, None, None, None]
+
+        result = []
+        if realRoute is None:
+            return result
+
+        for route in realRoute:
+            # Check that I found a route
+            if route is not None:
+                result.append(route[0])
+
+        #return realRoute
+        return result
 
     def getRouteArc(self, n, s, l, c, startD=datetime.datetime.now(),
                     endD=datetime.datetime.now()):
@@ -405,6 +555,7 @@ class RoutingCache(object):
 
         # Just to shorten notation
         ptRT = self.routingTable
+        ptSL = self.slTable
 
         # Parse the routing file
         # Traverse through the networks
@@ -472,6 +623,36 @@ class RoutingCache(object):
                             streamCode = None
                     except:
                         streamCode = None
+
+                    # Traverse through the sources
+                    for sl in route.findall(namesp + 'seedlink'):
+                        # Extract the address
+                        try:
+                            address = sl.get('address')
+                            if len(address) == 0:
+                                continue
+                        except:
+                            continue
+
+                        # Extract the priority
+                        try:
+                            priority = arcl.get('priority')
+                            if len(address) == 0:
+                                priority = 99
+                            else:
+                                priority = int(priority)
+                        except:
+                            priority = 99
+
+                        # Append the network to the list of networks
+                        if (networkCode, stationCode, locationCode,
+                                streamCode) not in ptSL:
+                            ptSL[networkCode, stationCode, locationCode,
+                                 streamCode] = [(address, priority)]
+                        else:
+                            ptSL[networkCode, stationCode, locationCode,
+                                 streamCode].append((address, priority))
+                        sl.clear()
 
                     # Traverse through the sources
                     for arcl in route.findall(namesp + 'arclink'):
@@ -545,6 +726,10 @@ class RoutingCache(object):
         # Order the routes by priority
         for keyDict in ptRT:
             ptRT[keyDict] = sorted(ptRT[keyDict], key=lambda route: route[3])
+
+        # Order the routes by priority
+        for keyDict in ptSL:
+            ptSL[keyDict] = sorted(ptSL[keyDict], key=lambda route: route[1])
 
 
 def makeQueryGET(parameters):
