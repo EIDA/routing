@@ -508,9 +508,10 @@ class InventoryCache(object):
 
     def expand(self, n='*', s='*', l='*', c='*',
                start=datetime.datetime(1980, 1, 1, 0, 0, 0),
-               end=datetime.datetime.now()):
+               end=datetime.datetime.now(), restricted=False):
         """Expand to a list of networks, stations, locations and channels
-        The result is a list of (N, S, L, C) without wildcards."""
+        The result is a list of (N, S, L, C) without wildcards.
+        If restricted is True, restricted streams will be included."""
 
         # If there are no wildcards, return exactly the stream received.
         if ('*' not in n + s + l + c) and ('?' not in n + s + l + c):
@@ -520,16 +521,16 @@ class InventoryCache(object):
         for net in self.networks:
             # Check that the first and last station (children) are defined
             # Also that the network is not restricted
-            if (net[1] is None) or (net[2] is None) or (net[7] == 1):
+            if ((net[1] is None) or (net[2] is None) or
+                (net[7] == 1 and not restricted)):
                 continue
             if fnmatch.fnmatch(net[0], n):
                 first_child_sta = net[1]
                 last_child_sta = net[2]
                 for staidx in xrange(first_child_sta, last_child_sta):
                     ptSta = self.stations[staidx]
-                    # print ptSta[0]
                     # Check whether station is restricted or not
-                    if ptSta[11] == 1:
+                    if (ptSta[11] == 1 and not restricted):
                         continue
                     if fnmatch.fnmatch(ptSta[4], s):
                         first_child_loc = ptSta[1]
@@ -542,8 +543,9 @@ class InventoryCache(object):
                                 for chaidx in xrange(first_child_cha,
                                                      last_child_cha):
                                     ptCha = self.streams[chaidx]
+                                    # print ptCha
                                     # Check whether stream is restricted or not
-                                    if ptCha[8] == 1:
+                                    if (ptCha[8] == 1 and not restricted):
                                         continue
                                     if fnmatch.fnmatch(ptCha[1], c):
                                         if ((ptCha[7] is not None) and
