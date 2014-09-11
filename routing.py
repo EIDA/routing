@@ -28,6 +28,7 @@ version. For more information, see http://www.gnu.org/
 ##################################################################
 
 
+import os
 import cgi
 import datetime
 import fnmatch
@@ -108,8 +109,11 @@ class RoutingCache(object):
         return None
 
     def getRoute(self, n='*', s='*', l='*', c='*',
-                 startD=datetime.datetime.now(),
-                 endD=datetime.datetime.now(), service='dataselect'):
+                 startD=datetime.datetime(1980, 1, 1),
+                 endD=datetime.datetime(datetime.date.today().year,
+                                        datetime.date.today().month,
+                                        datetime.date.today().day),
+                 service='dataselect'):
         if service == 'arclink':
             return self.getRouteArc(n, s, l, c, startD, endD)
         elif service == 'dataselect':
@@ -120,8 +124,10 @@ class RoutingCache(object):
         # Through an exception if there is an error
         raise RoutingException('Unknown service: %s' % service)
 
-    def getRouteDS(self, n, s, l, c, startD=datetime.datetime.now(),
-                   endD=datetime.datetime.now()):
+    def getRouteDS(self, n, s, l, c, startD=datetime.datetime(1980, 1, 1),
+                   endD=datetime.datetime(datetime.date.today().year,
+                                          datetime.date.today().month,
+                                          datetime.date.today().day)):
         """Use the table lookup from Arclink to route the Dataselect service
 """
 
@@ -213,8 +219,10 @@ class RoutingCache(object):
         retCode = 0
         return (retCode, result)
 
-    def getRouteMaster(self, n, startD=datetime.datetime.now(),
-                       endD=datetime.datetime.now()):
+    def getRouteMaster(self, n, startD=datetime.datetime(1980, 1, 1),
+                       endD=datetime.datetime(datetime.date.today().year,
+                                              datetime.date.today().month,
+                                              datetime.date.today().day)):
         """Implement the following table lookup for the Master Table
 
         11 NET --- --- ---
@@ -334,8 +342,10 @@ class RoutingCache(object):
         #return realRoute
         return result
 
-    def getRouteArc(self, n, s, l, c, startD=datetime.datetime.now(),
-                    endD=datetime.datetime.now()):
+    def getRouteArc(self, n, s, l, c, startD=datetime.datetime(1980, 1, 1),
+                    endD=datetime.datetime(datetime.date.today().year,
+                                           datetime.date.today().month,
+                                           datetime.date.today().day)):
         """Implement the following table lookup for the Arclink service
 
         01 NET STA CHA LOC # First try to match all.
@@ -829,7 +839,7 @@ def makeQueryGET(parameters):
                 parameters['start'].value,
                 '%Y-%m-%dT%H:%M:%S')
         else:
-            start = datetime.datetime.now()
+            start = datetime.datetime(1980, 1, 1)
     except:
         return 'Error while converting starttime parameter.'
 
@@ -843,7 +853,8 @@ def makeQueryGET(parameters):
                 parameters['end'].value,
                 '%Y-%m-%dT%H:%M:%S')
         else:
-            endt = datetime.datetime.now()
+            d = datetime.date.today() + datetime.timedelta(days=1)
+            endt = datetime.datetime(d.year, d.month, d.day)
     except:
         return 'Error while converting endtime parameter.'
 
@@ -881,9 +892,10 @@ def makeQueryGET(parameters):
     return result
 
 # Add routing cache here, to be accessible to all modules
-routesFile = '/var/www/fdsnws/routing/routing.xml'
-invFile = '/var/www/fdsnws/dataselect/Arclink-inventory.xml'
-masterFile = '/var/www/fdsnws/routing/masterTable.xml'
+here = os.path.dirname(__file__)
+routesFile = os.path.join(here, 'routing.xml')
+invFile = os.path.join(here, 'Arclink-inventory.xml')
+masterFile = os.path.join(here, 'masterTable.xml')
 routes = RoutingCache(routesFile, invFile, masterFile)
 
 
@@ -897,8 +909,6 @@ def application(environ, start_response):
     """
 
     fname = environ['PATH_INFO']
-
-    print 'fname: %s' % (fname)
 
     # Among others, this will filter wrong function names,
     # but also the favicon.ico request, for instance.
