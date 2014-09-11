@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 #
-# FDSN-WS Dataselect prototype
+# Routing WS prototype
 #
 # (c) 2014 Javier Quinteros, GEOFON team
 # <javier@gfz-potsdam.de>
 #
 # ----------------------------------------------------------------------
 
-"""Routing information management for an EIDA FDSN-WS (Dataselect)
+"""Routing Webservice for EIDA
 
 (c) 2014 Javier Quinteros, GEOFON, GFZ Potsdam
 
