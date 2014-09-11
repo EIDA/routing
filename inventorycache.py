@@ -558,8 +558,11 @@ class InventoryCache(object):
                                                        ptLoc[4],
                                                        ptCha[1]))
 
-        if not len(result):
-            result.append((n, s, l, c))
+        # FIXME I think we can delete this as it could give wrong results.
+        # F.i. 4C * * * will return exactly the same, but we do not expect
+        # wildcards!
+        # if not len(result):
+        #    result.append((n, s, l, c))
         return result
 
     # Method to select networks from the parameters passed

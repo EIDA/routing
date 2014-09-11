@@ -33,6 +33,7 @@ import datetime
 import fnmatch
 import json
 import xml.etree.cElementTree as ET
+from inventorycache import InventoryCache
 from wsgicomm import *
 
 
@@ -48,7 +49,7 @@ class RoutingCache(object):
 
     """
 
-    def __init__(self, routingFile, masterFile=None):
+    def __init__(self, routingFile, invFile, masterFile=None):
         # Arclink routing file in XML format
         self.routingFile = routingFile
 
@@ -72,6 +73,40 @@ class RoutingCache(object):
 
         self.updateMT()
 
+        # Add inventory cache here, to be accessible to all modules
+        self.ic = InventoryCache(invFile)
+
+    def __arc2DS(self, route):
+        """Map from an Arclink address to a Dataselect one."""
+
+        gfz = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
+        odc = 'http://www.orfeus-eu.org/fdsnws/dataselect/1/query'
+        eth = 'http://eida.ethz.ch/fdsnws/dataselect/1/query'
+        resif = 'http://ws.resif.fr/fdsnws/dataselect/1/query'
+        ingv = 'http://webservices.rm.ingv.it/fdsnws/dataselect/1/query'
+        bgr = 'http://st35:8080/fdsnws/dataselect/1/query'
+        lmu = 'http://st35:8080/fdsnws/dataselect/1/query'
+        # iris = 'http://service.iris.edu/fdsnws/dataselect/1/query'
+
+        # Try to identify the hosting institution
+        host = route.split(':')[0]
+
+        if host.endswith('gfz-potsdam.de'):
+            return gfz
+        elif host.endswith('knmi.nl'):
+            return odc
+        elif host.endswith('ethz.ch'):
+            return eth
+        elif host.endswith('resif.fr'):
+            return resif
+        elif host.endswith('ingv.it'):
+            return ingv
+        elif host.endswith('bgr.de'):
+            return bgr
+        elif host.startswith('141.84.'):
+            return lmu
+        return None
+
     def getRoute(self, n='*', s='*', l='*', c='*',
                  startD=datetime.datetime.now(),
                  endD=datetime.datetime.now(), service='dataselect'):
@@ -90,39 +125,35 @@ class RoutingCache(object):
         """Use the table lookup from Arclink to route the Dataselect service
 """
 
-        gfz = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
-        odc = 'http://www.orfeus-eu.org/fdsnws/dataselect/1/query'
-        eth = 'http://eida.ethz.ch/fdsnws/dataselect/1/query'
-        resif = 'http://ws.resif.fr/fdsnws/dataselect/1/query'
-        ingv = 'http://webservices.rm.ingv.it/fdsnws/dataselect/1/query'
-        bgr = 'http://st35:8080/fdsnws/dataselect/1/query'
-        lmu = 'http://st35:8080/fdsnws/dataselect/1/query'
-        iris = 'http://service.iris.edu/fdsnws/dataselect/1/query'
-
         result = []
 
         masterRoute = self.getRouteMaster(n)
         if masterRoute is not None:
-            return 'http://' + masterRoute
-
-        print n, s, l, c
+            return (0, ['http://' + masterRoute])
 
         # Check if there are wildcards!
         if ((None in (n, s, l, c)) or ('*' in n + s + l + c) or
                 ('?' in n + s + l + c)):
             # Filter first by the attributes without wildcards
+
+            # Check for the timewindow
             subs = self.routingTable.keys()
+
             if ((s is not None) and ('*' not in s) and ('?' not in s)):
-                subs = [k for k in subs if k[1] == s]
+                subs = [k for k in subs if (k[1] is None or k[1] == '*' or
+                                            k[1] == s)]
 
             if ((n is not None) and ('*' not in n) and ('?' not in n)):
-                subs = [k for k in subs if k[0] == n]
+                subs = [k for k in subs if (k[0] is None or k[0] == '*' or
+                                            k[0] == n)]
 
             if ((c is not None) and ('*' not in c) and ('?' not in c)):
-                subs = [k for k in subs if k[3] == c]
+                subs = [k for k in subs if (k[3] is None or k[3] == '*' or
+                                            k[3] == c)]
 
             if ((l is not None) and ('*' not in l) and ('?' not in l)):
-                subs = [k for k in subs if k[2] == l]
+                subs = [k for k in subs if (k[2] is None or k[2] == '*' or
+                                            k[2] == l)]
 
             # Filter then by the attributes WITH wildcards
             if ((s is None) or ('*' in s) or ('?' in s)):
@@ -149,36 +180,38 @@ class RoutingCache(object):
                     # Check that the timewindow is OK
                     if (((rou[2] is None) or (startD < rou[2])) and
                             (endD > rou[1])):
-                        resSet.add(rou[0])
+                        resSet.add(self.__arc2DS(rou[0]))
 
-            return list(resSet)
+            # Check the coherency of the routes to set the return code
+            retCode = 1
+            if len(resSet) == 1:
+                retCode = 0
+            else:
+                # FIXME This approach is wrong if they differ on other position
+                for att in range(4):
+                    checkSet = {r[att] for r in subs}
+                    if len(checkSet) > 1 and None in checkSet:
+                        print att, checkSet
+                        retCode = 2
+                        break
 
+            return (retCode, list(resSet))
+
+        # If there are NO wildcards
         realRoute = self.getRouteArc(n, s, l, c, startD, endD)
-        if not len(realRoute):
-            return [iris]
+        #if not len(realRoute):
+        #    return [iris]
 
         for route in realRoute:
-            # Try to identify the hosting institution
-            host = route.split(':')[0]
+            # Translate an Arclink address to a Dataselect one
+            host = self.__arc2DS(route)
+            if (host is not None) and (host not in result):
+                result.append(host)
 
-            if host.endswith('gfz-potsdam.de') and gfz not in result:
-                result.append(gfz)
-            elif host.endswith('knmi.nl') and odc not in result:
-                result.append(odc)
-            elif host.endswith('ethz.ch') and eth not in result:
-                result.append(eth)
-            elif host.endswith('resif.fr') and resif not in result:
-                result.append(resif)
-            elif host.endswith('ingv.it') and ingv not in result:
-                result.append(ingv)
-            elif host.endswith('bgr.de') and bgr not in result:
-                result.append(bgr)
-            elif host.startswith('141.84.') and lmu not in result:
-                result.append(lmu)
-            elif iris not in result:
-                result.append(iris)
-
-        return result
+        # The route return by Arclink is unique. The others are alternative
+        # routes.
+        retCode = 0
+        return (retCode, result)
 
     def getRouteMaster(self, n, startD=datetime.datetime.now(),
                        endD=datetime.datetime.now()):
@@ -824,12 +857,34 @@ def makeQueryGET(parameters):
 
     route = routes.getRoute(net, sta, loc, cha, start, endt, ser)
 
-    return route
+    if route[0] < 2:
+        if not len(route[1]):
+            return []
+
+        result = [(r, net, sta, loc, cha, start, endt) for r in route[1]]
+    else:
+        # It is unavoidable to do an expansion
+        result = []
+        # FIXME This is definetely sub-optimal
+        # I should expand EVERY ROUTE and check if they collide with the others
+        # in order to minimize the number of lines returned
+        print 'Expanding!', net, sta, loc, cha
+        for nslc in routes.ic.expand(net, sta, loc, cha, start, endt, True):
+            tN, tS, tL, tC = nslc
+            auxRoute = routes.getRoute(tN, tS, tL, tC, start, endt)
+            if auxRoute[0] == 2:
+                raise Exception('Single stream with more than one route!')
+
+            result.extend([(r, tN, tS, tL, tC, start, endt)
+                           for r in auxRoute[1]])
+
+    return result
 
 # Add routing cache here, to be accessible to all modules
 routesFile = '/var/www/fdsnws/routing/routing.xml'
+invFile = '/var/www/fdsnws/dataselect/Arclink-inventory.xml'
 masterFile = '/var/www/fdsnws/routing/masterTable.xml'
-routes = RoutingCache(routesFile, masterFile)
+routes = RoutingCache(routesFile, invFile, masterFile)
 
 
 def application(environ, start_response):
@@ -903,9 +958,9 @@ def application(environ, start_response):
         status = '200 OK'
         return send_plain_response(status, iterObj, start_response)
 
-    if isinstance(iterObj, list):
+    if isinstance(iterObj, list) or isinstance(iterObj, tuple):
         status = '200 OK'
-        iterObj = json.dumps(iterObj)
+        iterObj = json.dumps(iterObj, default=datetime.datetime.isoformat)
         return send_plain_response(status, iterObj, start_response)
 
     status = '200 OK'
