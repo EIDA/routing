@@ -114,17 +114,25 @@ class RoutingCache(object):
                                         datetime.date.today().month,
                                         datetime.date.today().day),
                  service='dataselect'):
+        """getRoute receives a stream and a timewindow and returns a list.
+        The list has the following format:
+            [[URL_1, net_1, sta_1, loc_1, cha_1, tfrom_1, tto_1],
+            ...
+             [URL_n, net_n, sta_n, loc_n, cha_n, tfrom_n, tto_n]]
+        """
+
         if service == 'arclink':
-            return (0, self.getRouteArc(n, s, l, c, startD, endD))
+            return self.getRouteArc(n, s, l, c, startD, endD)
         elif service == 'dataselect':
             return self.getRouteDS(n, s, l, c, startD, endD)
         elif service == 'seedlink':
-            return (0, self.getRouteSL(n, s, l, c))
+            return self.getRouteSL(n, s, l, c)
 
         # Through an exception if there is an error
         raise RoutingException('Unknown service: %s' % service)
 
-    def getRouteDS(self, n, s, l, c, startD=datetime.datetime(1980, 1, 1),
+    def getRouteDS(self, n='*', s='*', l='*', c='*',
+                   startD=datetime.datetime(1980, 1, 1),
                    endD=datetime.datetime(datetime.date.today().year,
                                           datetime.date.today().month,
                                           datetime.date.today().day)):
@@ -135,11 +143,10 @@ class RoutingCache(object):
 
         masterRoute = self.getRouteMaster(n)
         if masterRoute is not None:
-            return (0, ['http://' + masterRoute])
+            return ['http://' + masterRoute, n, s, l, c, startD, endD]
 
         # Check if there are wildcards!
-        if ((None in (n, s, l, c)) or ('*' in n + s + l + c) or
-                ('?' in n + s + l + c)):
+        if (('*' in n + s + l + c) or ('?' in n + s + l + c)):
             # Filter first by the attributes without wildcards
 
             # Check for the timewindow
@@ -189,32 +196,59 @@ class RoutingCache(object):
                         resSet.add(self.__arc2DS(rou[0]))
 
             # Check the coherency of the routes to set the return code
-            retCode = 1
-            if len(resSet) == 1:
-                retCode = 0
+            if len(resSet) == 0:
+                raise Exception()
+            elif len(resSet) == 1:
+                return [resSet.pop(), n, s, l, c, startD, endD]
             else:
-                # # Alternative NEW approach based on number of wildcards
-                # order = [sum([1 for t in r if t is None]) for r in subs]
+                # Alternative NEW approach based on number of wildcards
+                order = [sum([1 for t in r if '*' in t]) for r in subs]
 
-                # orderedSubs = print [x for (y, x) in sorted(zip(order, subs))]
+                orderedSubs = [x for (y, x) in sorted(zip(order, subs))]
 
-                # finalset = list()
+                finalset = list()
 
-                # for route in orderedSubs:
-                #     # FIXME Here I should define a function that decides
-                #     # whether a route can be added if there is no overlap with
-                #     # the existing routes
-                #     finalset.add(route)
+                for r1 in orderedSubs:
+                    for r2 in finalset:
+                        if self.__overlap(r1, r2):
+                            print 'Overlap between %s and %s' % (r1, r2)
+                            break
+                    else:
+                        print 'Adding', r1
+                        finalset.append(r1)
+                        continue
 
-                # FIXME This approach is wrong if they differ on other position
-                for att in range(4):
-                    checkSet = {r[att] for r in subs}
-                    if len(checkSet) > 1 and None in checkSet:
-                        print att, checkSet
-                        retCode = 2
-                        break
+                    # The break from 5 lines above jumps until this line in
+                    # order to do an expansion and try to add the expanded
+                    # streams
+                    r1n, r1s, r1l, r1c = r1
+                    for rExp in self.ic.expand(r1n, r1s, r1l, r1c,
+                                               startD, endD, True):
+                        for r3 in finalset:
+                            if self.__overlap(rExp, r3):
+                                print 'Stream %s discarded! Overlap with %s' \
+                                    % (rExp, r3)
+                                break
+                        else:
+                            print 'Adding expanded', rExp
+                            finalset.append(rExp)
 
-            return (retCode, list(resSet))
+                # In finalset I have all the streams (including expanded and
+                # the ones with wildcards), that I need to request.
+                # Now I need the URLs
+                result = list()
+                for st in finalset:
+                    url2Add = [self.__arc2DS(self.getRouteArc(st[0], st[1],
+                                                              st[2], st[3],
+                                                              startD,
+                                                              endD)[0]),
+                               st[0], st[1], st[2], st[3], startD, endD]
+                    print 'Final result', url2Add
+                    result.append(url2Add)
+
+                return result
+
+            raise Exception('This point should have nevere been reached! ;-)')
 
         # If there are NO wildcards
         realRoute = self.getRouteArc(n, s, l, c, startD, endD)
@@ -231,6 +265,21 @@ class RoutingCache(object):
         # routes.
         retCode = 0
         return (retCode, result)
+
+    def __overlap(self, st1, st2):
+        """Checks if there is an overlap between the two set of streams
+
+        Both parameters are expected to have four components:
+            network, station, location, channel.
+        However, as wildcards are also accepted, these could be actually
+        sets of streams. F.i. [GE, None, None, None]"""
+
+        for i in range(len(st1)):
+            if ((st1[i] is not None) and (st2[i] is not None) and
+                    not fnmatch.fnmatch(st1[i], st2[i]) and
+                    not fnmatch.fnmatch(st2[i], st1[i])):
+                return False
+        return True
 
     def getRouteMaster(self, n, startD=datetime.datetime(1980, 1, 1),
                        endD=datetime.datetime(datetime.date.today().year,
@@ -386,64 +435,65 @@ class RoutingCache(object):
             realRoute = self.routingTable[n, s, l, c]
 
         # Case 2
-        elif (n, s, None, c) in self.routingTable:
-            realRoute = self.routingTable[n, s, None, c]
+        elif (n, s, '*', c) in self.routingTable:
+            realRoute = self.routingTable[n, s, '*', c]
 
         # Case 3
-        elif (n, s, l, None) in self.routingTable:
-            realRoute = self.routingTable[n, s, l, None]
+        elif (n, s, l, '*') in self.routingTable:
+            realRoute = self.routingTable[n, s, l, '*']
 
         # Case 4
-        elif (n, None, l, c) in self.routingTable:
-            realRoute = self.routingTable[n, None, l, c]
+        elif (n, '*', l, c) in self.routingTable:
+            realRoute = self.routingTable[n, '*', l, c]
 
         # Case 5
-        elif (None, s, l, c) in self.routingTable:
-            realRoute = self.routingTable[None, s, l, c]
+        elif ('*', s, l, c) in self.routingTable:
+            realRoute = self.routingTable['*', s, l, c]
 
         # Case 6
-        elif (n, s, None, None) in self.routingTable:
-            realRoute = self.routingTable[n, s, None, None]
+        elif (n, s, '*', '*') in self.routingTable:
+            realRoute = self.routingTable[n, s, '*', '*']
 
         # Case 7
-        elif (n, None, None, c) in self.routingTable:
-            realRoute = self.routingTable[n, None, None, c]
+        elif (n, '*', '*', c) in self.routingTable:
+            realRoute = self.routingTable[n, '*', '*', c]
 
         # Case 8
-        elif (n, None, l, None) in self.routingTable:
-            realRoute = self.routingTable[n, None, l, None]
+        elif (n, '*', l, '*') in self.routingTable:
+            realRoute = self.routingTable[n, '*', l, '*']
 
         # Case 9
-        elif (None, s, None, c) in self.routingTable:
-            realRoute = self.routingTable[None, s, None, c]
+        elif ('*', s, '*', c) in self.routingTable:
+            realRoute = self.routingTable['*', s, '*', c]
 
         # Case 10
-        elif (None, None, l, c) in self.routingTable:
-            realRoute = self.routingTable[None, None, l, c]
+        elif ('*', '*', l, c) in self.routingTable:
+            realRoute = self.routingTable['*', '*', l, c]
 
         # Case 11
-        elif (n, None, None, None) in self.routingTable:
-            realRoute = self.routingTable[n, None, None, None]
+        elif (n, '*', '*', '*') in self.routingTable:
+            realRoute = self.routingTable[n, '*', '*', '*']
 
         # Case 12
-        elif (None, s, None, None) in self.routingTable:
-            realRoute = self.routingTable[None, s, None, None]
+        elif ('*', s, '*', '*') in self.routingTable:
+            realRoute = self.routingTable['*', s, '*', '*']
 
         # Case 13
-        elif (None, None, None, c) in self.routingTable:
-            realRoute = self.routingTable[None, None, None, c]
+        elif ('*', '*', '*', c) in self.routingTable:
+            realRoute = self.routingTable['*', '*', '*', c]
 
         # Case 14
-        elif (None, None, l, None) in self.routingTable:
-            realRoute = self.routingTable[None, None, l, None]
+        elif ('*', '*', l, '*') in self.routingTable:
+            realRoute = self.routingTable['*', '*', l, '*']
 
         # Case 15
-        elif (None, None, None, None) in self.routingTable:
-            realRoute = self.routingTable[None, None, None, None]
+        elif ('*', '*', '*', '*') in self.routingTable:
+            realRoute = self.routingTable['*', '*', '*', '*']
 
         result = []
         if realRoute is None:
-            return result
+            raise Exception('No route in Arclink for stream %s.%s.%s.%s' %
+                            (n, s, l, c))
 
         for route in realRoute:
             # Check that I found a route
@@ -652,33 +702,33 @@ class RoutingCache(object):
                     try:
                         locationCode = route.get('locationCode')
                         if len(locationCode) == 0:
-                            locationCode = None
+                            locationCode = '*'
                     except:
-                        locationCode = None
+                        locationCode = '*'
 
                     # Extract the network code
                     try:
                         networkCode = route.get('networkCode')
                         if len(networkCode) == 0:
-                            networkCode = None
+                            networkCode = '*'
                     except:
-                        networkCode = None
+                        networkCode = '*'
 
                     # Extract the station code
                     try:
                         stationCode = route.get('stationCode')
                         if len(stationCode) == 0:
-                            stationCode = None
+                            stationCode = '*'
                     except:
-                        stationCode = None
+                        stationCode = '*'
 
                     # Extract the stream code
                     try:
                         streamCode = route.get('streamCode')
                         if len(streamCode) == 0:
-                            streamCode = None
+                            streamCode = '*'
                     except:
-                        streamCode = None
+                        streamCode = '*'
 
                     # Traverse through the sources
                     for sl in route.findall(namesp + 'seedlink'):
@@ -881,28 +931,7 @@ def makeQueryGET(parameters):
 
     route = routes.getRoute(net, sta, loc, cha, start, endt, ser)
 
-    if route[0] < 2:
-        if not len(route[1]):
-            return []
-
-        result = [(r, net, sta, loc, cha, start, endt) for r in route[1]]
-    else:
-        # It is unavoidable to do an expansion
-        result = []
-        # FIXME This is definetely sub-optimal
-        # I should expand EVERY ROUTE and check if they collide with the others
-        # in order to minimize the number of lines returned
-        print 'Expanding!', net, sta, loc, cha
-        for nslc in routes.ic.expand(net, sta, loc, cha, start, endt, True):
-            tN, tS, tL, tC = nslc
-            auxRoute = routes.getRoute(tN, tS, tL, tC, start, endt)
-            if auxRoute[0] == 2:
-                raise Exception('Single stream with more than one route!')
-
-            result.extend([(r, tN, tS, tL, tC, start, endt)
-                           for r in auxRoute[1]])
-
-    return result
+    return route
 
 # Add routing cache here, to be accessible to all modules
 here = os.path.dirname(__file__)
