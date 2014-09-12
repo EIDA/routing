@@ -115,11 +115,11 @@ class RoutingCache(object):
                                         datetime.date.today().day),
                  service='dataselect'):
         if service == 'arclink':
-            return self.getRouteArc(n, s, l, c, startD, endD)
+            return (0, self.getRouteArc(n, s, l, c, startD, endD))
         elif service == 'dataselect':
             return self.getRouteDS(n, s, l, c, startD, endD)
         elif service == 'seedlink':
-            return self.getRouteSL(n, s, l, c)
+            return (0, self.getRouteSL(n, s, l, c))
 
         # Through an exception if there is an error
         raise RoutingException('Unknown service: %s' % service)
@@ -193,6 +193,19 @@ class RoutingCache(object):
             if len(resSet) == 1:
                 retCode = 0
             else:
+                # # Alternative NEW approach based on number of wildcards
+                # order = [sum([1 for t in r if t is None]) for r in subs]
+
+                # orderedSubs = print [x for (y, x) in sorted(zip(order, subs))]
+
+                # finalset = list()
+
+                # for route in orderedSubs:
+                #     # FIXME Here I should define a function that decides
+                #     # whether a route can be added if there is no overlap with
+                #     # the existing routes
+                #     finalset.add(route)
+
                 # FIXME This approach is wrong if they differ on other position
                 for att in range(4):
                     checkSet = {r[att] for r in subs}
