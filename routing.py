@@ -336,60 +336,60 @@ class RoutingCache(object):
             realRoute = self.slTable[n, s, l, c]
 
         # Case 2
-        elif (n, s, None, c) in self.slTable:
-            realRoute = self.slTable[n, s, None, c]
+        elif (n, s, '*', c) in self.slTable:
+            realRoute = self.slTable[n, s, '*', c]
 
         # Case 3
-        elif (n, s, l, None) in self.slTable:
-            realRoute = self.slTable[n, s, l, None]
+        elif (n, s, l, '*') in self.slTable:
+            realRoute = self.slTable[n, s, l, '*']
 
         # Case 4
-        elif (n, None, l, c) in self.slTable:
-            realRoute = self.slTable[n, None, l, c]
+        elif (n, '*', l, c) in self.slTable:
+            realRoute = self.slTable[n, '*', l, c]
 
         # Case 5
-        elif (None, s, l, c) in self.slTable:
-            realRoute = self.slTable[None, s, l, c]
+        elif ('*', s, l, c) in self.slTable:
+            realRoute = self.slTable['*', s, l, c]
 
         # Case 6
-        elif (n, s, None, None) in self.slTable:
-            realRoute = self.slTable[n, s, None, None]
+        elif (n, s, '*', '*') in self.slTable:
+            realRoute = self.slTable[n, s, '*', '*']
 
         # Case 7
-        elif (n, None, None, c) in self.slTable:
-            realRoute = self.slTable[n, None, None, c]
+        elif (n, '*', '*', c) in self.slTable:
+            realRoute = self.slTable[n, '*', '*', c]
 
         # Case 8
-        elif (n, None, l, None) in self.slTable:
-            realRoute = self.slTable[n, None, l, None]
+        elif (n, '*', l, '*') in self.slTable:
+            realRoute = self.slTable[n, '*', l, '*']
 
         # Case 9
-        elif (None, s, None, c) in self.slTable:
-            realRoute = self.slTable[None, s, None, c]
+        elif ('*', s, '*', c) in self.slTable:
+            realRoute = self.slTable['*', s, '*', c]
 
         # Case 10
-        elif (None, None, l, c) in self.slTable:
-            realRoute = self.slTable[None, None, l, c]
+        elif ('*', '*', l, c) in self.slTable:
+            realRoute = self.slTable['*', '*', l, c]
 
         # Case 11
-        elif (n, None, None, None) in self.slTable:
-            realRoute = self.slTable[n, None, None, None]
+        elif (n, '*', '*', '*') in self.slTable:
+            realRoute = self.slTable[n, '*', '*', '*']
 
         # Case 12
-        elif (None, s, None, None) in self.slTable:
-            realRoute = self.slTable[None, s, None, None]
+        elif ('*', s, '*', '*') in self.slTable:
+            realRoute = self.slTable['*', s, '*', '*']
 
         # Case 13
-        elif (None, None, None, c) in self.slTable:
-            realRoute = self.slTable[None, None, None, c]
+        elif ('*', '*', '*', c) in self.slTable:
+            realRoute = self.slTable['*', '*', '*', c]
 
         # Case 14
-        elif (None, None, l, None) in self.slTable:
-            realRoute = self.slTable[None, None, l, None]
+        elif ('*', '*', l, '*') in self.slTable:
+            realRoute = self.slTable['*', '*', l, '*']
 
         # Case 15
-        elif (None, None, None, None) in self.slTable:
-            realRoute = self.slTable[None, None, None, None]
+        elif ('*', '*', '*', '*') in self.slTable:
+            realRoute = self.slTable['*', '*', '*', '*']
 
         result = []
         if realRoute is None:
@@ -398,7 +398,7 @@ class RoutingCache(object):
         for route in realRoute:
             # Check that I found a route
             if route is not None:
-                result.append(route[0])
+                result.append([route[0], n, s, l, c, None, None])
 
         #return realRoute
         return result
