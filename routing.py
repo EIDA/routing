@@ -504,7 +504,7 @@ class RoutingCache(object):
                     #realRoute = None
                     continue
                 else:
-                    result.append(route[0])
+                    result.append([route[0], n, s, l, c, startD, endD])
 
         #return realRoute
         return result
