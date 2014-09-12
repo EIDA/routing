@@ -85,7 +85,7 @@ class RoutingCache(object):
         eth = 'http://eida.ethz.ch/fdsnws/dataselect/1/query'
         resif = 'http://ws.resif.fr/fdsnws/dataselect/1/query'
         ingv = 'http://webservices.rm.ingv.it/fdsnws/dataselect/1/query'
-        bgr = 'http://st35:8080/fdsnws/dataselect/1/query'
+        bgr = 'http://eida.bgr.de/fdsnws/dataselect/1/query'
         lmu = 'http://st35:8080/fdsnws/dataselect/1/query'
         # iris = 'http://service.iris.edu/fdsnws/dataselect/1/query'
 
@@ -214,7 +214,7 @@ class RoutingCache(object):
                             print 'Overlap between %s and %s' % (r1, r2)
                             break
                     else:
-                        print 'Adding', r1
+                        # print 'Adding', r1
                         finalset.append(r1)
                         continue
 
@@ -230,7 +230,7 @@ class RoutingCache(object):
                                     % (rExp, r3)
                                 break
                         else:
-                            print 'Adding expanded', rExp
+                            # print 'Adding expanded', rExp
                             finalset.append(rExp)
 
                 # In finalset I have all the streams (including expanded and
@@ -243,7 +243,6 @@ class RoutingCache(object):
                                                               startD,
                                                               endD)[0]),
                                st[0], st[1], st[2], st[3], startD, endD]
-                    print 'Final result', url2Add
                     result.append(url2Add)
 
                 return result
