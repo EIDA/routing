@@ -199,7 +199,7 @@ class RoutingCache(object):
             if len(resSet) == 0:
                 raise Exception()
             elif len(resSet) == 1:
-                return [resSet.pop(), n, s, l, c, startD, endD]
+                return [[resSet.pop(), n, s, l, c, startD, endD]]
             else:
                 # Alternative NEW approach based on number of wildcards
                 order = [sum([1 for t in r if '*' in t]) for r in subs]
@@ -853,9 +853,9 @@ def makeQueryGET(parameters):
 
     try:
         if 'network' in parameters:
-            net = parameters['network'].value
+            net = parameters['network'].value.upper()
         elif 'net' in parameters:
-            net = parameters['net'].value
+            net = parameters['net'].value.upper()
         else:
             net = '*'
     except:
@@ -863,9 +863,9 @@ def makeQueryGET(parameters):
 
     try:
         if 'station' in parameters:
-            sta = parameters['station'].value
+            sta = parameters['station'].value.upper()
         elif 'sta' in parameters:
-            sta = parameters['sta'].value
+            sta = parameters['sta'].value.upper()
         else:
             sta = '*'
     except:
@@ -873,9 +873,9 @@ def makeQueryGET(parameters):
 
     try:
         if 'location' in parameters:
-            loc = parameters['location'].value
+            loc = parameters['location'].value.upper()
         elif 'loc' in parameters:
-            loc = parameters['loc'].value
+            loc = parameters['loc'].value.upper()
         else:
             loc = '*'
     except:
@@ -883,9 +883,9 @@ def makeQueryGET(parameters):
 
     try:
         if 'channel' in parameters:
-            cha = parameters['channel'].value
+            cha = parameters['channel'].value.upper()
         elif 'cha' in parameters:
-            cha = parameters['cha'].value
+            cha = parameters['cha'].value.upper()
         else:
             cha = '*'
     except:
@@ -894,11 +894,11 @@ def makeQueryGET(parameters):
     try:
         if 'starttime' in parameters:
             start = datetime.datetime.strptime(
-                parameters['starttime'].value,
+                parameters['starttime'].value.upper(),
                 '%Y-%m-%dT%H:%M:%S')
         elif 'start' in parameters:
             start = datetime.datetime.strptime(
-                parameters['start'].value,
+                parameters['start'].value.upper(),
                 '%Y-%m-%dT%H:%M:%S')
         else:
             start = datetime.datetime(1980, 1, 1)
@@ -908,11 +908,11 @@ def makeQueryGET(parameters):
     try:
         if 'endtime' in parameters:
             endt = datetime.datetime.strptime(
-                parameters['endtime'].value,
+                parameters['endtime'].value.upper(),
                 '%Y-%m-%dT%H:%M:%S')
         elif 'end' in parameters:
             endt = datetime.datetime.strptime(
-                parameters['end'].value,
+                parameters['end'].value.upper(),
                 '%Y-%m-%dT%H:%M:%S')
         else:
             d = datetime.date.today() + datetime.timedelta(days=1)
@@ -922,7 +922,7 @@ def makeQueryGET(parameters):
 
     try:
         if 'service' in parameters:
-            ser = parameters['service'].value
+            ser = parameters['service'].value.lower()
         else:
             ser = 'dataselect'
     except:
