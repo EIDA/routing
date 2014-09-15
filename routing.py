@@ -35,7 +35,12 @@ import fnmatch
 import json
 import xml.etree.cElementTree as ET
 from inventorycache import InventoryCache
-from wsgicomm import *
+from wsgicomm import WIContentError
+from wsgicomm import WIClientError
+from wsgicomm import WIError
+from wsgicomm import send_plain_response
+# from wsgicomm import send_html_response
+from wsgicomm import send_xml_response
 
 
 class RoutingException(Exception):
@@ -189,11 +194,16 @@ class RoutingCache(object):
             for k in subs:
                 # ONLY the first component of the tuple!!!
                 # print k, self.routingTable[k]
+                bestPrio = None
                 for rou in self.routingTable[k]:
                     # Check that the timewindow is OK
                     if (((rou[2] is None) or (startD < rou[2])) and
                             (endD > rou[1])):
-                        resSet.add(self.__arc2DS(rou[0]))
+                        # FIXME What to do with the alternative routes!?
+                        if ((bestPrio is None) or (rou[3] < bestPrio)):
+                            bestPrio = rou[3]
+                            host = self.__arc2DS(rou[0])
+                resSet.add(host)
 
             # Check the coherency of the routes to set the return code
             if len(resSet) == 0:
@@ -494,6 +504,7 @@ class RoutingCache(object):
             raise Exception('No route in Arclink for stream %s.%s.%s.%s' %
                             (n, s, l, c))
 
+        bestPrio = None
         for route in realRoute:
             # Check that I found a route
             if route is not None:
@@ -504,7 +515,12 @@ class RoutingCache(object):
                     #realRoute = None
                     continue
                 else:
-                    result.append([route[0], n, s, l, c, startD, endD])
+                    if ((bestPrio is None) or (route[3] < bestPrio)):
+                        result = [route[0], n, s, l, c, startD, endD]
+                        bestPrio = route[3]
+                    # FIXME What to do with the alternative routes!?
+                    # else if alternatives:
+                    #     result.append([route[0], n, s, l, c, startD, endD])
 
         #return realRoute
         return result
@@ -741,7 +757,7 @@ class RoutingCache(object):
 
                         # Extract the priority
                         try:
-                            priority = arcl.get('priority')
+                            priority = sl.get('priority')
                             if len(address) == 0:
                                 priority = 99
                             else:
@@ -930,6 +946,8 @@ def makeQueryGET(parameters):
 
     route = routes.getRoute(net, sta, loc, cha, start, endt, ser)
 
+    if len(route) == 0:
+        raise WIContentError('No routes have been found!')
     return route
 
 # Add routing cache here, to be accessible to all modules
@@ -954,7 +972,8 @@ def application(environ, start_response):
     # Among others, this will filter wrong function names,
     # but also the favicon.ico request, for instance.
     if fname is None:
-        return send_html_response(status, 'Error! ' + status, start_response)
+        raise WIClientError('Method name not recognized!')
+        # return send_html_response(status, 'Error! ' + status, start_response)
 
     try:
         if environ['REQUEST_METHOD'] == 'GET':
@@ -1003,7 +1022,10 @@ def application(environ, start_response):
 
     elif fname == 'query':
         makeQuery = globals()['makeQuery%s' % environ['REQUEST_METHOD']]
-        iterObj = makeQuery(form)
+        try:
+            iterObj = makeQuery(form)
+        except WIError as w:
+            return send_plain_response(w.status, w.body, start_response)
 
     if isinstance(iterObj, basestring):
         status = '200 OK'
