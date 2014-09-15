@@ -1,13 +1,23 @@
 <application xmlns="http://wadl.dev.java.net/2009/02"
 		xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-	<resources base="http://localhost:8080/fdsnws/1/dataselect">
+	<resources base="http://localhost/fdsnws/routing">
 		<resource path="query">
 			<method href="#queryGET"/>
 			<method href="#queryPOST"/>
 		</resource>
-		<resource path="queryauth">
-			<method href="#queryGET"/>
-			<method href="#queryPOST"/>
+		<resource path="localconfig">
+			<method name="GET">
+				<response>
+					<representation mediaType="text/xml"/>
+				</response>
+			</method>
+		</resource>
+		<resource path="globalconfig">
+			<method name="GET">
+				<response>
+					<representation mediaType="text/xml"/>
+				</response>
+			</method>
 		</resource>
 		<resource path="version">
 			<method name="GET">
@@ -26,26 +36,19 @@
 	</resources>
 	<method name="GET" id="queryGET">
 		<request>
-			<param name="starttime" style="query" type="xsd:dateTime"/>
-			<param name="endtime" style="query" type="xsd:dateTime"/>
-			<param name="network" style="query" type="xsd:string"/>
-			<param name="station" style="query" type="xsd:string"/>
-			<param name="location" style="query" type="xsd:string"/>
-			<param name="channel" style="query" type="xsd:string"/>
-			<param name="quality" style="query" default="B">
-				<option value="B"/>
-				<option value="M"/>
-			</param>
-			<param name="format" style="query" type="xsd:string" default="miniseed">
-				<option value="miniseed"/>
-			</param>
-			<param name="nodata" style="query" type="xsd:int" default="204">
-				<option value="204"/>
-				<option value="404"/>
+			<param name="service" style="query" type="xsd:string" default="dataselect"/>
+			<param name="starttime" style="query" type="xsd:dateTime" default="1908-01-01T00:00:00"/>
+			<param name="endtime" style="query" type="xsd:dateTime" default="tomorrow"/>
+			<param name="network" style="query" type="xsd:string" default="*"/>
+			<param name="station" style="query" type="xsd:string" default="*"/>
+			<param name="location" style="query" type="xsd:string" default="*"/>
+			<param name="channel" style="query" type="xsd:string" default="*"/>
+			<param name="format" style="query" type="xsd:string" default="json">
+				<option value="json"/>
 			</param>
 		</request>
 		<response status="200">
-			<representation mediaType="application/vnd.fdsn.mseed"/>
+			<representation mediaType="text/plain"/>
 		</response>
 		<response status="204 400 401 403 404 413 414 500 503">
 			<representation mediaType="text/plain"/>
@@ -53,7 +56,7 @@
 	</method>
 	<method name="POST" id="queryPOST">
 		<response status="200">
-			<representation mediaType="application/vnd.fdsn.mseed"/>
+			<representation mediaType="text/plain"/>
 		</response>
 		<response status="204 400 401 403 404 413 414 500 503">
 			<representation mediaType="text/plain"/>
