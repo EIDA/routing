@@ -65,6 +65,9 @@ class RoutingCache(object):
         # Dictionary with the seedlink routes
         self.slTable = dict()
 
+        # Dictionary with the FDSN-WS station routes
+        self.stTable = dict()
+
         # Create/load the cache the first time that we start
         self.update()
 
@@ -132,6 +135,8 @@ class RoutingCache(object):
             return self.getRouteDS(n, s, l, c, startD, endD)
         elif service == 'seedlink':
             return self.getRouteSL(n, s, l, c)
+        elif service == 'station':
+            return self.getRouteST(n, s, l, c, startD, endD)
 
         # Through an exception if there is an error
         raise RoutingException('Unknown service: %s' % service)
@@ -260,20 +265,9 @@ class RoutingCache(object):
             raise Exception('This point should have nevere been reached! ;-)')
 
         # If there are NO wildcards
-        realRoute = self.getRouteArc(n, s, l, c, startD, endD)
-        #if not len(realRoute):
-        #    return [iris]
-
-        for route in realRoute:
-            # Translate an Arclink address to a Dataselect one
-            host = self.__arc2DS(route)
-            if (host is not None) and (host not in result):
-                result.append(host)
-
-        # The route return by Arclink is unique. The others are alternative
-        # routes.
-        retCode = 0
-        return (retCode, result)
+        realRoute = self.__arc2DS(self.getRouteArc(n, s, l, c,
+                                                   startD, endD)[0])
+        return [[realRoute, n, s, l, c, startD, endD]]
 
     def __overlap(self, st1, st2):
         """Checks if there is an overlap between the two set of streams
@@ -677,6 +671,7 @@ class RoutingCache(object):
         # Just to shorten notation
         ptRT = self.routingTable
         ptSL = self.slTable
+        ptST = self.stTable
 
         # Parse the routing file
         # Traverse through the networks
@@ -840,6 +835,71 @@ class RoutingCache(object):
                                                      priority))
                         arcl.clear()
 
+                    # Traverse through the sources
+                    for statServ in route.findall(namesp + 'station'):
+                        # Extract the address
+                        try:
+                            address = statServ.get('address')
+                            if len(address) == 0:
+                                continue
+                        except:
+                            continue
+
+                        try:
+                            startD = statServ.get('start')
+                            if len(startD):
+                                startParts = startD.replace('-', ' ')
+                                startParts = startParts.replace('T', ' ')
+                                startParts = startParts.replace(':', ' ')
+                                startParts = startParts.replace('.', ' ')
+                                startParts = startParts.replace('Z', '')
+                                startParts = startParts.split()
+                                startD = datetime.datetime(*map(int,
+                                                                startParts))
+                            else:
+                                startD = None
+                        except:
+                            startD = None
+                            print 'Error while converting START attribute.'
+
+                        # Extract the end datetime
+                        try:
+                            endD = statServ.get('end')
+                            if len(endD):
+                                endParts = endD.replace('-', ' ')
+                                endParts = endParts.replace('T', ' ')
+                                endParts = endParts.replace(':', ' ')
+                                endParts = endParts.replace('.', ' ')
+                                endParts = endParts.replace('Z', '').split()
+                                endD = datetime.datetime(*map(int, endParts))
+                            else:
+                                endD = None
+                        except:
+                            endD = None
+                            print 'Error while converting END attribute.'
+
+                        # Extract the priority
+                        try:
+                            priority = statServ.get('priority')
+                            if len(address) == 0:
+                                priority = 99
+                            else:
+                                priority = int(priority)
+                        except:
+                            priority = 99
+
+                        # Append the network to the list of networks
+                        if (networkCode, stationCode, locationCode,
+                                streamCode) not in ptST:
+                            ptST[networkCode, stationCode, locationCode,
+                                 streamCode] = [(address, startD, endD,
+                                                 priority)]
+                        else:
+                            ptST[networkCode, stationCode, locationCode,
+                                 streamCode].append((address, startD, endD,
+                                                     priority))
+                        statServ.clear()
+
                     route.clear()
 
                 root.clear()
@@ -851,6 +911,10 @@ class RoutingCache(object):
         # Order the routes by priority
         for keyDict in ptSL:
             ptSL[keyDict] = sorted(ptSL[keyDict], key=lambda route: route[1])
+
+        # Order the routes by priority
+        for keyDict in ptST:
+            ptST[keyDict] = sorted(ptST[keyDict], key=lambda route: route[3])
 
 
 def makeQueryGET(parameters):
