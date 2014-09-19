@@ -43,6 +43,41 @@ from wsgicomm import send_plain_response
 from wsgicomm import send_xml_response
 
 
+def _ConvertDictToXmlRecurse(parent, dictitem):
+    assert not isinstance(dictitem, list)
+
+    if isinstance(dictitem, dict):
+        for (tag, child) in dictitem.iteritems():
+            if str(tag) == '_text':
+                parent.text = str(child)
+            elif isinstance(child, list):
+                # iterate through the array and convert
+                for listchild in child:
+                    elem = ET.Element(tag)
+                    parent.append(elem)
+                    _ConvertDictToXmlRecurse(elem, listchild)
+            else:
+                elem = ET.Element(tag)
+                parent.append(elem)
+                _ConvertDictToXmlRecurse(elem, child)
+    else:
+        parent.text = str(dictitem)
+
+
+def ConvertDictToXml(listdict):
+    """
+    Converts a list with dictionaries to an XML ElementTree Element
+    """
+
+    r = ET.Element('service')
+    for di in listdict:
+        d = {'datacenter': di}
+        roottag = d.keys()[0]
+        root = ET.SubElement(r, roottag)
+        _ConvertDictToXmlRecurse(root, d[roottag])
+    return r
+
+
 class RoutingException(Exception):
     pass
 
@@ -280,6 +315,7 @@ class RoutingCache(object):
         # If there are NO wildcards
         realRoute = self.__arc2DS(self.getRouteArc(n, s, l, c,
                                                    startD, endD)[0])
+        # FIXME Wrong format!
         return [[realRoute, n, s, l, c, startD, endD]]
 
     def __overlap(self, st1, st2):
@@ -938,7 +974,8 @@ def makeQueryGET(parameters):
                      'cha', 'channel',
                      'start', 'starttime',
                      'end', 'endtime',
-                     'service']
+                     'service',
+                     'format']
 
     for param in parameters:
         if param not in allowedParams:
@@ -1111,6 +1148,10 @@ def application(environ, start_response):
     if (isinstance(iterObj, dict) or isinstance(iterObj, list) or
             isinstance(iterObj, tuple)):
         status = '200 OK'
+        if 'format' in form and form['format'].value == 'xml':
+            iterObj2 = ET.tostring(ConvertDictToXml(iterObj))
+            return send_xml_response(status, iterObj2, start_response)
+
         iterObj = json.dumps(iterObj, default=datetime.datetime.isoformat)
         return send_plain_response(status, iterObj, start_response)
 
