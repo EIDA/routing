@@ -212,9 +212,12 @@ class RoutingCache(object):
 
             # Check the coherency of the routes to set the return code
             if len(resSet) == 0:
+                # FIXME Maybe raise WIContentError?
                 raise Exception()
             elif len(resSet) == 1:
-                return [[resSet.pop(), n, s, l, c, startD, endD]]
+                return [{'name': 'dataselect', 'url': resSet.pop(),
+                         'params': [{'net': n, 'sta': s, 'loc': l, 'cha': c,
+                                     'start': startD, 'end': endD}]}]
             else:
                 # Alternative NEW approach based on number of wildcards
                 order = [sum([1 for t in r if '*' in t]) for r in subs]
@@ -253,12 +256,22 @@ class RoutingCache(object):
                 # Now I need the URLs
                 result = list()
                 for st in finalset:
-                    url2Add = [self.__arc2DS(self.getRouteArc(st[0], st[1],
-                                                              st[2], st[3],
-                                                              startD,
-                                                              endD)[0]),
-                               st[0], st[1], st[2], st[3], startD, endD]
-                    result.append(url2Add)
+                    url2Add = self.__arc2DS(self.getRouteArc(st[0], st[1],
+                                                             st[2], st[3],
+                                                             startD,
+                                                             endD)[0])
+                    for r in result:
+                        if r['url'] == url2Add:
+                            r['params'].append({'net': st[0], 'sta': st[1],
+                                               'loc': st[2], 'cha': st[3],
+                                               'start': startD, 'end': endD})
+                            break
+                    else:
+                        result.append({'name': 'dataselect', 'url': url2Add,
+                                       'params': [{'net': st[0], 'sta': st[1],
+                                                   'loc': st[2], 'cha': st[3],
+                                                   'start': startD,
+                                                   'end': endD}]})
 
                 return result
 
@@ -1095,7 +1108,8 @@ def application(environ, start_response):
         status = '200 OK'
         return send_plain_response(status, iterObj, start_response)
 
-    if isinstance(iterObj, list) or isinstance(iterObj, tuple):
+    if (isinstance(iterObj, dict) or isinstance(iterObj, list) or
+            isinstance(iterObj, tuple)):
         status = '200 OK'
         iterObj = json.dumps(iterObj, default=datetime.datetime.isoformat)
         return send_plain_response(status, iterObj, start_response)
