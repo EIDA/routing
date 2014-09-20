@@ -271,7 +271,7 @@ class RoutingCache(object):
                         finalset.append(r1)
                         continue
 
-                    # The break from 5 lines above jumps until this line in
+                    # The break from 10 lines above jumps until this line in
                     # order to do an expansion and try to add the expanded
                     # streams
                     r1n, r1s, r1l, r1c = r1
@@ -284,7 +284,11 @@ class RoutingCache(object):
                                 break
                         else:
                             # print 'Adding expanded', rExp
-                            finalset.append(rExp)
+                            if (fnmatch.fnmatch(rExp[0], n) and
+                                    fnmatch.fnmatch(rExp[1], s) and
+                                    fnmatch.fnmatch(rExp[2], l) and
+                                    fnmatch.fnmatch(rExp[3], c)):
+                                finalset.append(rExp)
 
                 # In finalset I have all the streams (including expanded and
                 # the ones with wildcards), that I need to request.
@@ -315,8 +319,12 @@ class RoutingCache(object):
         # If there are NO wildcards
         realRoute = self.__arc2DS(self.getRouteArc(n, s, l, c,
                                                    startD, endD)[0])
-        # FIXME Wrong format!
-        return [[realRoute, n, s, l, c, startD, endD]]
+
+        return result.append({'name': 'dataselect', 'url': realRoute,
+                              'params': [{'net': n, 'sta': s,
+                                          'loc': l, 'cha': c,
+                                          'start': startD,
+                                          'end': endD}]})
 
     def __overlap(self, st1, st2):
         """Checks if there is an overlap between the two set of streams
