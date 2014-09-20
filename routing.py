@@ -1155,12 +1155,12 @@ def application(environ, start_response):
     if (isinstance(iterObj, dict) or isinstance(iterObj, list) or
             isinstance(iterObj, tuple)):
         status = '200 OK'
-        if 'format' in form and form['format'].value == 'xml':
+        if 'format' in form and form['format'].value.lower() == 'json':
+            iterObj = json.dumps(iterObj, default=datetime.datetime.isoformat)
+            return send_plain_response(status, iterObj, start_response)
+        else:
             iterObj2 = ET.tostring(ConvertDictToXml(iterObj))
             return send_xml_response(status, iterObj2, start_response)
-
-        iterObj = json.dumps(iterObj, default=datetime.datetime.isoformat)
-        return send_plain_response(status, iterObj, start_response)
 
     status = '200 OK'
     body = "\n".join(iterObj)
