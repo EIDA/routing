@@ -247,8 +247,7 @@ class RoutingCache(object):
 
             # Check the coherency of the routes to set the return code
             if len(resSet) == 0:
-                # FIXME Maybe raise WIContentError?
-                raise Exception()
+                raise WIContentError('No routes have been found!')
             elif len(resSet) == 1:
                 return [{'name': 'dataselect', 'url': resSet.pop(),
                          'params': [{'net': n, 'sta': s, 'loc': l, 'cha': c,
