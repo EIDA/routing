@@ -507,8 +507,7 @@ class InventoryCache(object):
                             ' skipped.') % lockfile)
 
     def expand(self, n='*', s='*', l='*', c='*',
-               start=datetime.datetime(1980, 1, 1, 0, 0, 0),
-               end=datetime.datetime.now(), restricted=False):
+               start=None, end=None, restricted=False):
         """Expand to a list of networks, stations, locations and channels
         The result is a list of (N, S, L, C) without wildcards.
         If restricted is True, restricted streams will be included."""
@@ -522,7 +521,7 @@ class InventoryCache(object):
             # Check that the first and last station (children) are defined
             # Also that the network is not restricted
             if ((net[1] is None) or (net[2] is None) or
-                (net[7] == 1 and not restricted)):
+                    (net[7] == 1 and not restricted)):
                 continue
             if fnmatch.fnmatch(net[0], n):
                 first_child_sta = net[1]
@@ -549,9 +548,10 @@ class InventoryCache(object):
                                         continue
                                     if fnmatch.fnmatch(ptCha[1], c):
                                         if ((ptCha[7] is not None) and
-                                           (start > ptCha[7])):
+                                           ((start is not None) and
+                                                (start > ptCha[7]))):
                                             continue
-                                        if end < ptCha[6]:
+                                        if ((end is not None) and (end < ptCha[6])):
                                             continue
                                         result.append((net[0],
                                                        ptSta[4],

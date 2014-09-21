@@ -152,11 +152,7 @@ class RoutingCache(object):
         return None
 
     def getRoute(self, n='*', s='*', l='*', c='*',
-                 startD=datetime.datetime(1980, 1, 1),
-                 endD=datetime.datetime(datetime.date.today().year,
-                                        datetime.date.today().month,
-                                        datetime.date.today().day),
-                 service='dataselect'):
+                 startD=None, endD=None, service='dataselect'):
         """getRoute receives a stream and a timewindow and returns a list.
         The list has the following format:
             [[URL_1, net_1, sta_1, loc_1, cha_1, tfrom_1, tto_1],
@@ -177,10 +173,7 @@ class RoutingCache(object):
         raise RoutingException('Unknown service: %s' % service)
 
     def getRouteDS(self, n='*', s='*', l='*', c='*',
-                   startD=datetime.datetime(1980, 1, 1),
-                   endD=datetime.datetime(datetime.date.today().year,
-                                          datetime.date.today().month,
-                                          datetime.date.today().day)):
+                   startD=None, endD=None):
         """Use the table lookup from Arclink to route the Dataselect service
 """
 
@@ -197,36 +190,36 @@ class RoutingCache(object):
             # Check for the timewindow
             subs = self.routingTable.keys()
 
-            if ((s is not None) and ('*' not in s) and ('?' not in s)):
+            if (('*' not in s) and ('?' not in s)):
                 subs = [k for k in subs if (k[1] is None or k[1] == '*' or
                                             k[1] == s)]
 
-            if ((n is not None) and ('*' not in n) and ('?' not in n)):
+            if (('*' not in n) and ('?' not in n)):
                 subs = [k for k in subs if (k[0] is None or k[0] == '*' or
                                             k[0] == n)]
 
-            if ((c is not None) and ('*' not in c) and ('?' not in c)):
+            if (('*' not in c) and ('?' not in c)):
                 subs = [k for k in subs if (k[3] is None or k[3] == '*' or
                                             k[3] == c)]
 
-            if ((l is not None) and ('*' not in l) and ('?' not in l)):
+            if (('*' not in l) and ('?' not in l)):
                 subs = [k for k in subs if (k[2] is None or k[2] == '*' or
                                             k[2] == l)]
 
             # Filter then by the attributes WITH wildcards
-            if ((s is None) or ('*' in s) or ('?' in s)):
+            if (('*' in s) or ('?' in s)):
                 subs = [k for k in subs if (k[1] is None or k[1] == '*' or
                                             fnmatch.fnmatch(k[1], s))]
 
-            if ((n is None) or ('*' in n) or ('?' in n)):
+            if (('*' in n) or ('?' in n)):
                 subs = [k for k in subs if (k[0] is None or k[0] == '*' or
                                             fnmatch.fnmatch(k[0], n))]
 
-            if ((c is None) or ('*' in c) or ('?' in c)):
+            if (('*' in c) or ('?' in c)):
                 subs = [k for k in subs if (k[3] is None or k[3] == '*' or
                                             fnmatch.fnmatch(k[3], c))]
 
-            if ((l is None) or ('*' in l) or ('?' in l)):
+            if (('*' in l) or ('?' in l)):
                 subs = [k for k in subs if (k[2] is None or k[2] == '*' or
                                             fnmatch.fnmatch(k[2], l))]
 
@@ -237,8 +230,9 @@ class RoutingCache(object):
                 bestPrio = None
                 for rou in self.routingTable[k]:
                     # Check that the timewindow is OK
-                    if (((rou[2] is None) or (startD < rou[2])) and
-                            (endD > rou[1])):
+                    if (((rou[2] is None) or (startD is None) or
+                            (startD < rou[2])) and
+                            ((endD is None) or (endD > rou[1]))):
                         # FIXME What to do with the alternative routes!?
                         if ((bestPrio is None) or (rou[3] < bestPrio)):
                             bestPrio = rou[3]
@@ -251,7 +245,8 @@ class RoutingCache(object):
             elif len(resSet) == 1:
                 return [{'name': 'dataselect', 'url': resSet.pop(),
                          'params': [{'net': n, 'sta': s, 'loc': l, 'cha': c,
-                                     'start': startD, 'end': endD}]}]
+                                     'start': '' if startD is None else startD,
+                                     'end': '' if endD is None else endD}]}]
             else:
                 # Alternative NEW approach based on number of wildcards
                 order = [sum([1 for t in r if '*' in t]) for r in subs]
@@ -296,20 +291,25 @@ class RoutingCache(object):
                 for st in finalset:
                     url2Add = self.__arc2DS(self.getRouteArc(st[0], st[1],
                                                              st[2], st[3],
-                                                             startD,
-                                                             endD)[0])
+                                                             startD, endD)
+                                            [0])
                     for r in result:
                         if r['url'] == url2Add:
                             r['params'].append({'net': st[0], 'sta': st[1],
                                                'loc': st[2], 'cha': st[3],
-                                               'start': startD, 'end': endD})
+                                               'start': startD if startD is
+                                                not None else '',
+                                                'end': endD if endD is not
+                                                None else ''})
                             break
                     else:
                         result.append({'name': 'dataselect', 'url': url2Add,
                                        'params': [{'net': st[0], 'sta': st[1],
                                                    'loc': st[2], 'cha': st[3],
-                                                   'start': startD,
-                                                   'end': endD}]})
+                                                   'start': startD if startD is
+                                                   not None else '',
+                                                   'end': endD if endD is not
+                                                   None else ''}]})
 
                 return result
 
@@ -322,8 +322,10 @@ class RoutingCache(object):
         return result.append({'name': 'dataselect', 'url': realRoute,
                               'params': [{'net': n, 'sta': s,
                                           'loc': l, 'cha': c,
-                                          'start': startD,
-                                          'end': endD}]})
+                                          'start': startD if startD is not
+                                          None else '',
+                                          'end': endD if endD is not None
+                                          else ''}]})
 
     def __overlap(self, st1, st2):
         """Checks if there is an overlap between the two set of streams
@@ -559,8 +561,10 @@ class RoutingCache(object):
             # Check that I found a route
             if route is not None:
                 # Check if the timewindow is encompassed in the returned dates
-                if ((endD < route[1]) or (startD > route[2] if route[2]
-                                          is not None else False)):
+                if ((endD < route[1] if endD is not None else False)
+                        or (startD > route[2] if (None not in (startD,
+                                                               route[2]))
+                            else False)):
                     # If it is not, return None
                     #realRoute = None
                     continue
@@ -1038,7 +1042,7 @@ def makeQueryGET(parameters):
                 parameters['start'].value.upper(),
                 '%Y-%m-%dT%H:%M:%S')
         else:
-            start = datetime.datetime(1980, 1, 1)
+            start = None
     except:
         return 'Error while converting starttime parameter.'
 
@@ -1052,8 +1056,7 @@ def makeQueryGET(parameters):
                 parameters['end'].value.upper(),
                 '%Y-%m-%dT%H:%M:%S')
         else:
-            d = datetime.date.today() + datetime.timedelta(days=1)
-            endt = datetime.datetime(d.year, d.month, d.day)
+            endt = None
     except:
         return 'Error while converting endtime parameter.'
 
