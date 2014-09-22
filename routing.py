@@ -1138,7 +1138,9 @@ def application(environ, start_response):
 
     if fname == 'application.wadl':
         iterObj = ''
-        with open('/var/www/fdsnws/routing/application.wadl', 'r') \
+        here = os.path.dirname(__file__)
+        appWadl = os.path.join(here, 'application.wadl')
+        with open(appWadl, 'r') \
                 as appFile:
             iterObj = appFile.read()
             status = '200 OK'
