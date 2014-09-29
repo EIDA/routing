@@ -1163,6 +1163,27 @@ def application(environ, start_response):
         if 'format' in form and form['format'].value.lower() == 'json':
             iterObj = json.dumps(iterObj, default=datetime.datetime.isoformat)
             return send_plain_response(status, iterObj, start_response)
+        elif 'format' in form and form['format'].value.lower() == 'get':
+            result = []
+            for datacenter in iterObj:
+                for item in datacenter['params']:
+                    result.append(datacenter['url'] + '?' +
+                                  '&'.join([k + '=' + item[k] for k in item
+                                            if item[k] not in ('', '*')]))
+            result = '\n'.join(result)
+            return send_plain_response(status, result, start_response)
+        elif 'format' in form and form['format'].value.lower() == 'post':
+            result = []
+            for datacenter in iterObj:
+                result.append(datacenter['url'])
+                for item in datacenter['params']:
+                    item['loc'] = item['loc'] if len(item['loc']) else '--'
+                    result.append(item['net'] + ' ' + item['sta'] + ' ' +
+                                  item['loc'] + ' ' + item['cha'] + ' ' +
+                                  item['start'] + ' ' + item['end'])
+                result.append('')
+            result = '\n'.join(result)
+            return send_plain_response(status, result, start_response)
         else:
             iterObj2 = ET.tostring(ConvertDictToXml(iterObj))
             return send_xml_response(status, iterObj2, start_response)
