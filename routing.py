@@ -33,7 +33,9 @@ import cgi
 import datetime
 import fnmatch
 import json
+import telnetlib
 import xml.etree.cElementTree as ET
+from time import sleep
 from inventorycache import InventoryCache
 from wsgicomm import WIContentError
 from wsgicomm import WIClientError
@@ -104,7 +106,15 @@ class RoutingCache(object):
         self.stTable = dict()
 
         # Create/load the cache the first time that we start
-        self.update()
+        if routingFile == 'auto':
+            self.configArclink()
+            self.routingFile = './routing.xml'
+
+        try:
+            self.update()
+        except:
+            self.configArclink()
+            self.update()
 
         if masterFile is None:
             return
@@ -119,6 +129,71 @@ class RoutingCache(object):
 
         # Add inventory cache here, to be accessible to all modules
         self.ic = InventoryCache(invFile)
+
+    def configArclink(self, arcServ='eida.gfz-potsdam.de', arcPort=18002):
+        tn = telnetlib.Telnet(arcServ, arcPort)
+        tn.write('HELLO\n')
+        # FIXME The institution should be detected here. Shouldn't it?
+        print tn.read_until('GFZ')
+        tn.write('user routing@eida\n')
+        print tn.read_until('OK', 5)
+        tn.write('request routing\n')
+        print tn.read_until('OK', 5)
+        tn.write('1920,1,1,0,0,0 2030,1,1,0,0,0 * * * *\nEND\n')
+
+        reqID = 0
+        while not reqID:
+            text = tn.read_until('\n', 5).splitlines()
+            for line in text:
+                try:
+                    testReqID = int(line)
+                except:
+                    continue
+                if testReqID:
+                    reqID = testReqID
+
+        myStatus = 'UNSET'
+        while (myStatus in ('UNSET', 'PROCESSING')):
+            sleep(1)
+            tn.write('status %s\n' % reqID)
+            stText = tn.read_until('END', 5)
+
+            stStr = 'status='
+            myStatus = stText[stText.find(stStr) + len(stStr):].split()[0]
+            myStatus = myStatus.replace('"', '').replace("'", "")
+            print myStatus
+
+        if myStatus != 'OK':
+            print 'Error! Request status is not OK.'
+            return
+
+        tn.write('download %s\n' % reqID)
+        routTable = tn.read_until('END', 5)
+        start = routTable.find('<')
+        print 'Length:', routTable[:start]
+        try:
+            os.remove('./routing.xml.download')
+        except:
+            pass
+
+        here = os.path.dirname(__file__)
+
+        with open(os.path.join(here, 'routing.xml.download'), 'w') as fout:
+            fout.write(routTable[routTable.find('<'):-3])
+
+        try:
+            os.rename(os.path.join(here, './routing.xml'),
+                      os.path.join(here, './routing.xml.bck'))
+        except:
+            pass
+
+        try:
+            os.rename(os.path.join(here, './routing.xml.download'),
+                      os.path.join(here, './routing.xml'))
+        except:
+            pass
+
+        print 'Configuration read from Arclink!'
 
     def __arc2DS(self, route):
         """Map from an Arclink address to a Dataselect one."""
@@ -740,9 +815,8 @@ class RoutingCache(object):
             print self.routingFile
             context = ET.iterparse(self.routingFile, events=("start", "end"))
         except IOError:
-            msg = 'Error: routing.xml could not be opened.'
-            print msg
-            return
+            msg = 'Error: %s could not be opened.' % self.routingFile
+            raise Exception(msg)
 
         # turn it into an iterator
         context = iter(context)
@@ -753,8 +827,7 @@ class RoutingCache(object):
         # Check that it is really an inventory
         if root.tag[-len('routing'):] != 'routing':
             msg = 'The file parsed seems not to be an routing file (XML).'
-            print msg
-            return
+            raise Exception(msg)
 
         # Extract the namespace from the root node
         namesp = root.tag[:-len('routing')]
@@ -978,6 +1051,8 @@ class RoutingCache(object):
 
 
 def makeQueryGET(parameters):
+    global routes
+
     # List all the accepted parameters
     allowedParams = ['net', 'network',
                      'sta', 'station',
@@ -1068,6 +1143,14 @@ def makeQueryGET(parameters):
     except:
         ser = 'dataselect'
 
+    if routes is None:
+        # Add routing cache here, to be accessible to all modules
+        here = os.path.dirname(__file__)
+        routesFile = os.path.join(here, 'routing.xml')
+        invFile = os.path.join(here, 'Arclink-inventory.xml')
+        masterFile = os.path.join(here, 'masterTable.xml')
+        routes = RoutingCache(routesFile, invFile, masterFile)
+
     route = routes.getRoute(net, sta, loc, cha, start, endt, ser)
 
     if len(route) == 0:
@@ -1075,11 +1158,14 @@ def makeQueryGET(parameters):
     return route
 
 # Add routing cache here, to be accessible to all modules
-here = os.path.dirname(__file__)
-routesFile = os.path.join(here, 'routing.xml')
-invFile = os.path.join(here, 'Arclink-inventory.xml')
-masterFile = os.path.join(here, 'masterTable.xml')
-routes = RoutingCache(routesFile, invFile, masterFile)
+#here = os.path.dirname(__file__)
+#routesFile = os.path.join(here, 'routing.xml')
+#invFile = os.path.join(here, 'Arclink-inventory.xml')
+#masterFile = os.path.join(here, 'masterTable.xml')
+#routes = RoutingCache(routesFile, invFile, masterFile)
+
+# This variable will be treated as GLOBAL by all the other functions
+routes = None
 
 
 def application(environ, start_response):
@@ -1194,7 +1280,8 @@ def application(environ, start_response):
 
 
 def main():
-    routes = RoutingCache("./routing.xml", "./masterTable.xml")
+    routes = RoutingCache("./routing.xml", "./Arclink-inventory.xml",
+                          "./masterTable.xml")
     print len(routes.routingTable)
 
 
