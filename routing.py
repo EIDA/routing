@@ -130,6 +130,12 @@ class RoutingCache(object):
         # Add inventory cache here, to be accessible to all modules
         self.ic = InventoryCache(invFile)
 
+    def localConfig(self):
+        here = os.path.dirname(__file__)
+
+        with open(os.path.join(here, 'routing.xml')) as f:
+            return f.read()
+
     def configArclink(self, arcServ='eida.gfz-potsdam.de', arcPort=18002):
         tn = telnetlib.Telnet(arcServ, arcPort)
         tn.write('HELLO\n')
@@ -1143,14 +1149,6 @@ def makeQueryGET(parameters):
     except:
         ser = 'dataselect'
 
-    if routes is None:
-        # Add routing cache here, to be accessible to all modules
-        here = os.path.dirname(__file__)
-        routesFile = os.path.join(here, 'routing.xml')
-        invFile = os.path.join(here, 'Arclink-inventory.xml')
-        masterFile = os.path.join(here, 'masterTable.xml')
-        routes = RoutingCache(routesFile, invFile, masterFile)
-
     route = routes.getRoute(net, sta, loc, cha, start, endt, ser)
 
     if len(route) == 0:
@@ -1177,6 +1175,7 @@ def application(environ, start_response):
 
     """
 
+    global routes
     fname = environ['PATH_INFO']
 
     # Among others, this will filter wrong function names,
@@ -1214,7 +1213,16 @@ def application(environ, start_response):
         return send_plain_response("400 Bad Request", str(e), start_response)
 
     # Check whether the function called is implemented
-    implementedFunctions = ['query', 'application.wadl']
+    implementedFunctions = ['query', 'application.wadl', 'localconfig',
+                            'version']
+
+    if routes is None:
+        # Add routing cache here, to be accessible to all modules
+        here = os.path.dirname(__file__)
+        routesFile = os.path.join(here, 'routing.xml')
+        invFile = os.path.join(here, 'Arclink-inventory.xml')
+        masterFile = os.path.join(here, 'masterTable.xml')
+        routes = RoutingCache(routesFile, invFile, masterFile)
 
     fname = environ['PATH_INFO'].split('/')[-1]
     if fname not in implementedFunctions:
@@ -1238,6 +1246,10 @@ def application(environ, start_response):
             iterObj = makeQuery(form)
         except WIError as w:
             return send_plain_response(w.status, w.body, start_response)
+
+    elif fname == 'localconfig':
+        return send_xml_response('200 OK', routes.localConfig(),
+                                 start_response)
 
     if isinstance(iterObj, basestring):
         status = '200 OK'
