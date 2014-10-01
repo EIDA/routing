@@ -253,6 +253,18 @@ class RoutingCache(object):
         # Through an exception if there is an error
         raise RoutingException('Unknown service: %s' % service)
 
+    def getRouteST(self, n='*', s='*', l='*', c='*',
+                   startD=None, endD=None):
+        """Use the Dataselect implementation and map to Station-WS.
+"""
+
+        result = self.getRouteDS(n, s, l, c, startD, endD)
+        for item in result:
+            item['name'] = 'station'
+            item['url'] = item['url'].replace('dataselect', 'station')
+
+        return result
+
     def getRouteDS(self, n='*', s='*', l='*', c='*',
                    startD=None, endD=None):
         """Use the table lookup from Arclink to route the Dataselect service
