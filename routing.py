@@ -260,6 +260,7 @@ class RoutingCache(object):
 
         result = []
 
+        # FIXME Maybe this needs to be done in getRoute!
         masterRoute = self.getRouteMaster(n)
         if masterRoute is not None:
             return ['http://' + masterRoute, n, s, l, c, startD, endD]
@@ -536,14 +537,18 @@ class RoutingCache(object):
 
         result = []
         if realRoute is None:
-            return result
+            raise WIContentError('No routes have been found!')
+            #return result
 
         for route in realRoute:
             # Check that I found a route
             if route is not None:
-                result.append([route[0], n, s, l, c, None, None])
+                result.append({'name': 'seedlink', 'url': route[0],
+                               'params': [{'net': n, 'sta': s,
+                                           'loc': l, 'cha': c,
+                                           'start': '', 'end': ''}]})
 
-        #return realRoute
+                # result.append([route[0], n, s, l, c, None, None])
         return result
 
     def getRouteArc(self, n, s, l, c, startD=datetime.datetime(1980, 1, 1),
