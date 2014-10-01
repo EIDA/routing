@@ -273,9 +273,15 @@ class RoutingCache(object):
         result = []
 
         # FIXME Maybe this needs to be done in getRoute!
-        masterRoute = self.getRouteMaster(n)
-        if masterRoute is not None:
-            return ['http://' + masterRoute, n, s, l, c, startD, endD]
+        try:
+            masterRoute = self.getRouteMaster(n)
+            return [{'name': 'dataselect', 'url': masterRoute,
+                     'params': [{'net': n, 'sta': s, 'loc': l, 'cha': c,
+                                 'start': '' if startD is None else startD,
+                                 'end': '' if endD is None else endD}]}]
+            #return ['http://' + masterRoute, n, s, l, c, startD, endD]
+        except:
+            pass
 
         # Check if there are wildcards!
         if (('*' in n + s + l + c) or ('?' in n + s + l + c)):
@@ -436,10 +442,7 @@ class RoutingCache(object):
                 return False
         return True
 
-    def getRouteMaster(self, n, startD=datetime.datetime(1980, 1, 1),
-                       endD=datetime.datetime(datetime.date.today().year,
-                                              datetime.date.today().month,
-                                              datetime.date.today().day)):
+    def getRouteMaster(self, n, startD=None, endD=None, service='dataselect'):
         """Implement the following table lookup for the Master Table
 
         11 NET --- --- ---
@@ -455,12 +458,14 @@ class RoutingCache(object):
         # Check that I found a route
         if realRoute is not None:
             # Check if the timewindow is encompassed in the returned dates
-            if ((endD < realRoute[1]) or (startD > realRoute[2] if realRoute[2]
-                                          is not None else False)):
-                # If it is not, return None
-                realRoute = None
-            else:
+            if (((realRoute[2] is None) or (startD is None) or
+                    (startD < realRoute[2])) and
+                    ((endD is None) or (endD > realRoute[1]))):
+                # FIXME We are not filtering with the service parameter!
                 realRoute = realRoute[0]
+            else:
+                # If it is not, return None
+                raise WIContentError('No routes have been found!')
 
         return realRoute
 
@@ -651,8 +656,9 @@ class RoutingCache(object):
 
         result = []
         if realRoute is None:
-            raise Exception('No route in Arclink for stream %s.%s.%s.%s' %
-                            (n, s, l, c))
+            raise WIContentError('No routes have been found!')
+            #raise Exception('No route in Arclink for stream %s.%s.%s.%s' %
+            #                (n, s, l, c))
 
         bestPrio = None
         for route in realRoute:
