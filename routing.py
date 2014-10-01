@@ -241,6 +241,16 @@ class RoutingCache(object):
              [URL_n, net_n, sta_n, loc_n, cha_n, tfrom_n, tto_n]]
         """
 
+        # Give priority to the masterTable!
+        try:
+            masterRoute = self.getRouteMaster(n, service=service)
+            return [{'name': service, 'url': masterRoute,
+                     'params': [{'net': n, 'sta': s, 'loc': l, 'cha': c,
+                                 'start': '' if startD is None else startD,
+                                 'end': '' if endD is None else endD}]}]
+        except:
+            pass
+
         if service == 'arclink':
             return self.getRouteArc(n, s, l, c, startD, endD)
         elif service == 'dataselect':
@@ -456,16 +466,18 @@ class RoutingCache(object):
 
         # print "Search %s in masterTable. Found %s" % (n, realRoute)
         # Check that I found a route
-        if realRoute is not None:
+        for r in realRoute:
             # Check if the timewindow is encompassed in the returned dates
-            if (((realRoute[2] is None) or (startD is None) or
-                    (startD < realRoute[2])) and
-                    ((endD is None) or (endD > realRoute[1]))):
-                # FIXME We are not filtering with the service parameter!
-                realRoute = realRoute[0]
-            else:
-                # If it is not, return None
-                raise WIContentError('No routes have been found!')
+            if (((r[2] is None) or (startD is None) or
+                    (startD < r[2])) and
+                    ((endD is None) or (endD > r[1]))):
+                # Filtering with the service parameter!
+                if service == r[3]:
+                    realRoute = r[0]
+                    break
+        else:
+            # If I found nothing raise 204
+            raise WIContentError('No routes have been found!')
 
         return realRoute
 
@@ -763,7 +775,9 @@ class RoutingCache(object):
                         streamCode = None
 
                     # Traverse through the sources
-                    for arcl in route.findall(namesp + 'dataselect'):
+                    #for arcl in route.findall(namesp + 'dataselect'):
+                    for arcl in route:
+                        service = arcl.tag.replace(namesp, '')
                         # Extract the address
                         try:
                             address = arcl.get('address')
@@ -813,8 +827,15 @@ class RoutingCache(object):
                             print 'Error while converting END attribute.'
 
                         # Append the network to the list of networks
-                        ptMT[networkCode, stationCode, locationCode,
-                             streamCode] = (address, startD, endD)
+                        if (networkCode, stationCode, locationCode,
+                                streamCode) not in ptMT:
+                            ptMT[networkCode, stationCode, locationCode,
+                                 streamCode] = [(address, startD, endD,
+                                                 service)]
+                        else:
+                            ptMT[networkCode, stationCode, locationCode,
+                                 streamCode].append((address, startD, endD,
+                                                     service))
 
                         arcl.clear()
 
