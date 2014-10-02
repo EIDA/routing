@@ -210,7 +210,8 @@ class RoutingCache(object):
         resif = 'http://ws.resif.fr/fdsnws/dataselect/1/query'
         ingv = 'http://webservices.rm.ingv.it/fdsnws/dataselect/1/query'
         bgr = 'http://eida.bgr.de/fdsnws/dataselect/1/query'
-        lmu = 'http://st35:8080/fdsnws/dataselect/1/query'
+        lmu = 'http://erde.geophysik.uni-muenchen.de:8080/fdsnws/' +\
+            'dataselect/1/query'
         # iris = 'http://service.iris.edu/fdsnws/dataselect/1/query'
 
         # Try to identify the hosting institution
