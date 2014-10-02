@@ -36,6 +36,7 @@ import json
 import telnetlib
 import xml.etree.cElementTree as ET
 from time import sleep
+from collections import namedtuple
 from inventorycache import InventoryCache
 from wsgicomm import WIContentError
 from wsgicomm import WIClientError
@@ -78,6 +79,64 @@ def ConvertDictToXml(listdict):
         root = ET.SubElement(r, roottag)
         _ConvertDictToXmlRecurse(root, d[roottag])
     return r
+
+
+class RouteSL(namedtuple('RouteSL', ['address', 'priority'])):
+    __slots__ = ()
+
+RouteSL.__eq__ = lambda self, other: self.priority == other.priority
+RouteSL.__ne__ = lambda self, other: self.priority != other.priority
+RouteSL.__lt__ = lambda self, other: self.priority < other.priority
+RouteSL.__le__ = lambda self, other: self.priority <= other.priority
+RouteSL.__gt__ = lambda self, other: self.priority > other.priority
+RouteSL.__ge__ = lambda self, other: self.priority >= other.priority
+
+
+class Route(namedtuple('Route', ['address', 'start', 'end', 'priority'])):
+    __slots__ = ()
+
+    def __contains__(self, pointTime):
+        if pointTime is None:
+            return True
+
+        try:
+            if (((self.start <= pointTime) or (self.start is None)) and
+                    ((pointTime <= self.end) or (self.end is None))):
+                return True
+        except:
+            pass
+        return False
+
+Route.__eq__ = lambda self, other: self.priority == other.priority
+Route.__ne__ = lambda self, other: self.priority != other.priority
+Route.__lt__ = lambda self, other: self.priority < other.priority
+Route.__le__ = lambda self, other: self.priority <= other.priority
+Route.__gt__ = lambda self, other: self.priority > other.priority
+Route.__ge__ = lambda self, other: self.priority >= other.priority
+
+
+class RouteMT(namedtuple('RouteMT', ['address', 'start', 'end', 'priority',
+                                     'service'])):
+    __slots__ = ()
+
+    def __contains__(self, pointTime):
+        if pointTime is None:
+            return True
+
+        try:
+            if (((self.start <= pointTime) or (self.start is None)) and
+                    ((pointTime <= self.end) or (self.end is None))):
+                return True
+        except:
+            pass
+        return False
+
+RouteMT.__eq__ = lambda self, other: self.priority == other.priority
+RouteMT.__ne__ = lambda self, other: self.priority != other.priority
+RouteMT.__lt__ = lambda self, other: self.priority < other.priority
+RouteMT.__le__ = lambda self, other: self.priority <= other.priority
+RouteMT.__gt__ = lambda self, other: self.priority > other.priority
+RouteMT.__ge__ = lambda self, other: self.priority >= other.priority
 
 
 class RoutingException(Exception):
@@ -233,8 +292,8 @@ class RoutingCache(object):
             return lmu
         return None
 
-    def getRoute(self, n='*', s='*', l='*', c='*',
-                 startD=None, endD=None, service='dataselect'):
+    def getRoute(self, n='*', s='*', l='*', c='*', startD=None, endD=None,
+                 service='dataselect', alternative=False):
         """getRoute receives a stream and a timewindow and returns a list.
         The list has the following format:
             [[URL_1, net_1, sta_1, loc_1, cha_1, tfrom_1, tto_1],
@@ -244,11 +303,19 @@ class RoutingCache(object):
 
         # Give priority to the masterTable!
         try:
-            masterRoute = self.getRouteMaster(n, service=service)
-            return [{'name': service, 'url': masterRoute,
-                     'params': [{'net': n, 'sta': s, 'loc': l, 'cha': c,
-                                 'start': '' if startD is None else startD,
-                                 'end': '' if endD is None else endD}]}]
+            result = list()
+            masterRoute = self.getRouteMaster(n, service=service,
+                                              alternative=alternative)
+            for mr in masterRoute:
+                # FIXME I should collect all the lines from the same data
+                # center
+                result.append({'name': mr.service, 'url': mr.address,
+                               'params': [{'net': n, 'sta': s, 'loc': l,
+                                           'cha': c, 'start': '' if startD
+                                           is None else startD,
+                                           'end': '' if endD is None else
+                                           endD, 'priority': mr.priority}]})
+            return result
         except:
             pass
 
@@ -284,15 +351,14 @@ class RoutingCache(object):
         result = []
 
         # FIXME Maybe this needs to be done in getRoute!
-        try:
-            masterRoute = self.getRouteMaster(n)
-            return [{'name': 'dataselect', 'url': masterRoute,
-                     'params': [{'net': n, 'sta': s, 'loc': l, 'cha': c,
-                                 'start': '' if startD is None else startD,
-                                 'end': '' if endD is None else endD}]}]
-            #return ['http://' + masterRoute, n, s, l, c, startD, endD]
-        except:
-            pass
+        #try:
+        #    masterRoute = self.getRouteMaster(n)
+        #    return [{'name': 'dataselect', 'url': masterRoute,
+        #             'params': [{'net': n, 'sta': s, 'loc': l, 'cha': c,
+        #                         'start': '' if startD is None else startD,
+        #                         'end': '' if endD is None else endD}]}]
+        #except:
+        #    pass
 
         # Check if there are wildcards!
         if (('*' in n + s + l + c) or ('?' in n + s + l + c)):
@@ -453,34 +519,38 @@ class RoutingCache(object):
                 return False
         return True
 
-    def getRouteMaster(self, n, startD=None, endD=None, service='dataselect'):
+    def getRouteMaster(self, n, startD=None, endD=None, service='dataselect',
+                       alternative=False):
         """Implement the following table lookup for the Master Table
 
         11 NET --- --- ---
 """
 
-        realRoute = None
+        result = list()
+        realRoutes = None
 
         # Case 11
         if (n, None, None, None) in self.masterTable:
-            realRoute = self.masterTable[n, None, None, None]
+            realRoutes = self.masterTable[n, None, None, None]
 
-        # print "Search %s in masterTable. Found %s" % (n, realRoute)
         # Check that I found a route
-        for r in realRoute:
+        for r in realRoutes:
             # Check if the timewindow is encompassed in the returned dates
-            if (((r[2] is None) or (startD is None) or
-                    (startD < r[2])) and
-                    ((endD is None) or (endD > r[1]))):
+            if ((startD in r) or (endD in r)):
+            #if (((r[2] is None) or (startD is None) or
+            #        (startD < r[2])) and
+            #        ((endD is None) or (endD > r[1]))):
                 # Filtering with the service parameter!
-                if service == r[3]:
-                    realRoute = r[0]
-                    break
-        else:
-            # If I found nothing raise 204
+                if service == r.service:
+                    result.append(r)
+                    if not alternative:
+                        break
+
+        # If I found nothing raise 204
+        if not len(result):
             raise WIContentError('No routes have been found!')
 
-        return realRoute
+        return result
 
     def getRouteSL(self, n, s, l, c):
         """Implement the following table lookup for the Seedlink service
@@ -787,6 +857,12 @@ class RoutingCache(object):
                         except:
                             continue
 
+                        # Extract the priority
+                        try:
+                            prio = arcl.get('priority')
+                        except:
+                            prio = None
+
                         try:
                             startD = arcl.get('start')
                             if len(startD):
@@ -831,18 +907,23 @@ class RoutingCache(object):
                         if (networkCode, stationCode, locationCode,
                                 streamCode) not in ptMT:
                             ptMT[networkCode, stationCode, locationCode,
-                                 streamCode] = [(address, startD, endD,
-                                                 service)]
+                                 streamCode] = [RouteMT(address, startD, endD,
+                                                        prio, service)]
                         else:
                             ptMT[networkCode, stationCode, locationCode,
-                                 streamCode].append((address, startD, endD,
-                                                     service))
+                                 streamCode].append(RouteMT(address, startD,
+                                                            endD, prio,
+                                                            service))
 
                         arcl.clear()
 
                     route.clear()
 
                 root.clear()
+
+        # Order the routes by priority
+        for keyDict in ptMT:
+            ptMT[keyDict] = sorted(ptMT[keyDict])
 
     def update(self):
         """Read the routing file in XML format and store it in memory.
@@ -948,10 +1029,10 @@ class RoutingCache(object):
                         if (networkCode, stationCode, locationCode,
                                 streamCode) not in ptSL:
                             ptSL[networkCode, stationCode, locationCode,
-                                 streamCode] = [(address, priority)]
+                                 streamCode] = [RouteSL(address, priority)]
                         else:
                             ptSL[networkCode, stationCode, locationCode,
-                                 streamCode].append((address, priority))
+                                 streamCode].append(RouteSL(address, priority))
                         sl.clear()
 
                     # Traverse through the sources
@@ -1011,12 +1092,12 @@ class RoutingCache(object):
                         if (networkCode, stationCode, locationCode,
                                 streamCode) not in ptRT:
                             ptRT[networkCode, stationCode, locationCode,
-                                 streamCode] = [(address, startD, endD,
-                                                 priority)]
+                                 streamCode] = [Route(address, startD, endD,
+                                                      priority)]
                         else:
                             ptRT[networkCode, stationCode, locationCode,
-                                 streamCode].append((address, startD, endD,
-                                                     priority))
+                                 streamCode].append(Route(address, startD,
+                                                          endD, priority))
                         arcl.clear()
 
                     # Traverse through the sources
@@ -1076,12 +1157,12 @@ class RoutingCache(object):
                         if (networkCode, stationCode, locationCode,
                                 streamCode) not in ptST:
                             ptST[networkCode, stationCode, locationCode,
-                                 streamCode] = [(address, startD, endD,
-                                                 priority)]
+                                 streamCode] = [Route(address, startD, endD,
+                                                      priority)]
                         else:
                             ptST[networkCode, stationCode, locationCode,
-                                 streamCode].append((address, startD, endD,
-                                                     priority))
+                                 streamCode].append(Route(address, startD,
+                                                          endD, priority))
                         statServ.clear()
 
                     route.clear()
@@ -1090,15 +1171,18 @@ class RoutingCache(object):
 
         # Order the routes by priority
         for keyDict in ptRT:
-            ptRT[keyDict] = sorted(ptRT[keyDict], key=lambda route: route[3])
+            ptRT[keyDict] = sorted(ptRT[keyDict])
+            #ptRT[keyDict] = sorted(ptRT[keyDict], key=lambda route: route[3])
 
         # Order the routes by priority
         for keyDict in ptSL:
-            ptSL[keyDict] = sorted(ptSL[keyDict], key=lambda route: route[1])
+            ptSL[keyDict] = sorted(ptSL[keyDict])
+            #ptSL[keyDict] = sorted(ptSL[keyDict], key=lambda route: route[1])
 
         # Order the routes by priority
         for keyDict in ptST:
-            ptST[keyDict] = sorted(ptST[keyDict], key=lambda route: route[3])
+            ptST[keyDict] = sorted(ptST[keyDict])
+            #ptST[keyDict] = sorted(ptST[keyDict], key=lambda route: route[3])
 
 
 def makeQueryGET(parameters):
@@ -1111,8 +1195,8 @@ def makeQueryGET(parameters):
                      'cha', 'channel',
                      'start', 'starttime',
                      'end', 'endtime',
-                     'service',
-                     'format']
+                     'service', 'format',
+                     'alternative']
 
     for param in parameters:
         if param not in allowedParams:
@@ -1194,7 +1278,16 @@ def makeQueryGET(parameters):
     except:
         ser = 'dataselect'
 
-    route = routes.getRoute(net, sta, loc, cha, start, endt, ser)
+    try:
+        if 'alternative' in parameters:
+            alt = True if parameters['alternative'].value.lower() == 'true'\
+                else False
+        else:
+            alt = False
+    except:
+        alt = False
+
+    route = routes.getRoute(net, sta, loc, cha, start, endt, ser, alt)
 
     if len(route) == 0:
         raise WIContentError('No routes have been found!')
