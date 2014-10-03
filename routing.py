@@ -322,17 +322,17 @@ class RoutingCache(object):
         elif service == 'seedlink':
             return self.getRouteSL(n, s, l, c)
         elif service == 'station':
-            return self.getRouteST(n, s, l, c, startD, endD)
+            return self.getRouteST(n, s, l, c, startD, endD, alternative)
 
         # Through an exception if there is an error
         raise RoutingException('Unknown service: %s' % service)
 
     def getRouteST(self, n='*', s='*', l='*', c='*',
-                   startD=None, endD=None):
+                   startD=None, endD=None, alternative=False):
         """Use the Dataselect implementation and map to Station-WS.
 """
 
-        result = self.getRouteDS(n, s, l, c, startD, endD)
+        result = self.getRouteDS(n, s, l, c, startD, endD, alternative)
         for item in result:
             item['name'] = 'station'
             item['url'] = item['url'].replace('dataselect', 'station')
