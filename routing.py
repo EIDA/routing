@@ -315,17 +315,28 @@ class RoutingCache(object):
         except:
             pass
 
+        result = None
         if service == 'arclink':
-            return self.getRouteArc(n, s, l, c, startD, endD, alternative)
+            result = self.getRouteArc(n, s, l, c, startD, endD, alternative)
         elif service == 'dataselect':
-            return self.getRouteDS(n, s, l, c, startD, endD, alternative)
+            result = self.getRouteDS(n, s, l, c, startD, endD, alternative)
         elif service == 'seedlink':
-            return self.getRouteSL(n, s, l, c, alternative)
+            result = self.getRouteSL(n, s, l, c, alternative)
         elif service == 'station':
-            return self.getRouteST(n, s, l, c, startD, endD, alternative)
+            result = self.getRouteST(n, s, l, c, startD, endD, alternative)
 
-        # Through an exception if there is an error
-        raise RoutingException('Unknown service: %s' % service)
+        if result is None:
+            # Through an exception if there is an error
+            raise RoutingException('Unknown service: %s' % service)
+
+        for r in result:
+            for p in r['params']:
+                if type(p['start']) == type(datetime.datetime.now()):
+                    p['start'] = p['start'].isoformat('T')
+                if type(p['end']) == type(datetime.datetime.now()):
+                    p['end'] = p['end'].isoformat('T')
+
+        return result
 
     def getRouteST(self, n='*', s='*', l='*', c='*',
                    startD=None, endD=None, alternative=False):
@@ -1416,7 +1427,7 @@ def application(environ, start_response):
             for datacenter in iterObj:
                 for item in datacenter['params']:
                     result.append(datacenter['url'] + '?' +
-                                  '&'.join([k + '=' + item[k] for k in
+                                  '&'.join([k + '=' + str(item[k]) for k in
                                             item if item[k] not in ('', '*')]))
             result = '\n'.join(result)
             return send_plain_response(status, result, start_response)
