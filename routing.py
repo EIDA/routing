@@ -456,15 +456,13 @@ class RoutingCache(object):
                 # Now I need the URLs
                 result = list()
                 for st in finalset:
-                    # FIXME There is an assumption that getRouteArc will return
-                    # only one route, BUT if alternative is True this is not
-                    # right!
-                    result = self.getRouteArc(st[0], st[1], st[2], st[3],
+                    resArc = self.getRouteArc(st[0], st[1], st[2], st[3],
                                               startD, endD, alternative)
-                    for rou in result:
+                    for rou in resArc:
                         rou['url'] = self.__arc2DS(rou['url'])
                         rou['service'] = 'dataselect'
 
+                    result.extend(resArc)
                 return result
 
             raise Exception('This point should have never been reached! ;-)')
