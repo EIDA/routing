@@ -303,19 +303,15 @@ class RoutingCache(object):
 
         # Give priority to the masterTable!
         try:
-            result = list()
-            masterRoute = self.getRouteMaster(n, service=service,
+            masterRoute = self.getRouteMaster(n, startD=startD, endD=endD,
+                                              service=service,
                                               alternative=alternative)
             for mr in masterRoute:
-                # FIXME I should collect all the lines from the same data
-                # center
-                result.append({'name': mr.service, 'url': mr.address,
-                               'params': [{'net': n, 'sta': s, 'loc': l,
-                                           'cha': c, 'start': '' if startD
-                                           is None else startD,
-                                           'end': '' if endD is None else
-                                           endD, 'priority': mr.priority}]})
-            return result
+                for reqL in mr['params']:
+                    reqL['sta'] = s
+                    reqL['loc'] = l
+                    reqL['cha'] = c
+            return masterRoute
         except:
             pass
 
@@ -550,7 +546,29 @@ class RoutingCache(object):
         if not len(result):
             raise WIContentError('No routes have been found!')
 
-        return result
+        result = sorted(result, key=lambda res: res.address)
+
+        result2 = list()
+        before = None
+        for r in result:
+            if before != r.address:
+                result2.append({'name': service, 'url': r.address,
+                                'params': [{'net': n, 'sta': None,
+                                            'loc': None, 'cha': None,
+                                            'start': startD if startD is not
+                                            None else '',
+                                            'end': endD if endD is not None
+                                            else '', 'priority': r.priority}]})
+                before = r.address
+            else:
+                result2[-1].params.append({'net': n, 'sta': None,
+                                           'loc': None, 'cha': None,
+                                           'start': startD if startD is not
+                                           None else '',
+                                           'end': endD if endD is not None
+                                           else '', 'priority': r.priority})
+
+        return result2
 
     def getRouteSL(self, n, s, l, c):
         """Implement the following table lookup for the Seedlink service
