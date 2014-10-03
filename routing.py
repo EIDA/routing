@@ -318,7 +318,7 @@ class RoutingCache(object):
         if service == 'arclink':
             return self.getRouteArc(n, s, l, c, startD, endD, alternative)
         elif service == 'dataselect':
-            return self.getRouteDS(n, s, l, c, startD, endD)
+            return self.getRouteDS(n, s, l, c, startD, endD, alternative)
         elif service == 'seedlink':
             return self.getRouteSL(n, s, l, c)
         elif service == 'station':
@@ -340,7 +340,7 @@ class RoutingCache(object):
         return result
 
     def getRouteDS(self, n='*', s='*', l='*', c='*',
-                   startD=None, endD=None):
+                   startD=None, endD=None, alternative=False):
         """Use the table lookup from Arclink to route the Dataselect service
 """
 
@@ -398,7 +398,10 @@ class RoutingCache(object):
                             ((endD is None) or (endD > rou[1]))):
                         # FIXME I think that I don't need bestPrio because the
                         # routes are already sorted by priority
-                        if ((bestPrio is None) or (rou[3] < bestPrio)):
+                        if alternative:
+                            host = self.__arc2DS(rou[0])
+                            resSet.add(host)
+                        elif ((bestPrio is None) or (rou[3] < bestPrio)):
                             bestPrio = rou[3]
                             host = self.__arc2DS(rou[0])
                 resSet.add(host)
@@ -456,43 +459,24 @@ class RoutingCache(object):
                     # FIXME There is an assumption that getRouteArc will return
                     # only one route, BUT if alternative is True this is not
                     # right!
-                    url2Add = self.__arc2DS(self.getRouteArc(st[0], st[1],
-                                                             st[2], st[3],
-                                                             startD, endD)
-                                            [0])
-                    for r in result:
-                        if r['url'] == url2Add:
-                            r['params'].append({'net': st[0], 'sta': st[1],
-                                               'loc': st[2], 'cha': st[3],
-                                               'start': startD if startD is
-                                                not None else '',
-                                                'end': endD if endD is not
-                                                None else ''})
-                            break
-                    else:
-                        result.append({'name': 'dataselect', 'url': url2Add,
-                                       'params': [{'net': st[0], 'sta': st[1],
-                                                   'loc': st[2], 'cha': st[3],
-                                                   'start': startD if startD is
-                                                   not None else '',
-                                                   'end': endD if endD is not
-                                                   None else ''}]})
+                    result = self.getRouteArc(st[0], st[1], st[2], st[3],
+                                              startD, endD, alternative)
+                    for rou in result:
+                        rou['url'] = self.__arc2DS(rou['url'])
+                        rou['service'] = 'dataselect'
 
                 return result
 
             raise Exception('This point should have never been reached! ;-)')
 
         # If there are NO wildcards
-        realRoute = self.__arc2DS(self.getRouteArc(n, s, l, c,
-                                                   startD, endD)[0])
+        result = self.getRouteArc(n, s, l, c, startD, endD, alternative)
 
-        return result.append({'name': 'dataselect', 'url': realRoute,
-                              'params': [{'net': n, 'sta': s,
-                                          'loc': l, 'cha': c,
-                                          'start': startD if startD is not
-                                          None else '',
-                                          'end': endD if endD is not None
-                                          else ''}]})
+        for rou in result:
+            rou['url'] = self.__arc2DS(rou['url'])
+            rou['service'] = 'dataselect'
+
+        return result
 
     def __overlap(self, st1, st2):
         """Checks if there is an overlap between the two set of streams
