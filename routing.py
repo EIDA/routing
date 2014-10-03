@@ -460,7 +460,7 @@ class RoutingCache(object):
                                               startD, endD, alternative)
                     for rou in resArc:
                         rou['url'] = self.__arc2DS(rou['url'])
-                        rou['service'] = 'dataselect'
+                        rou['name'] = 'dataselect'
 
                     result.extend(resArc)
                 return result
@@ -472,7 +472,7 @@ class RoutingCache(object):
 
         for rou in result:
             rou['url'] = self.__arc2DS(rou['url'])
-            rou['service'] = 'dataselect'
+            rou['name'] = 'dataselect'
 
         return result
 
