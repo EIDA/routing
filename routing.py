@@ -320,7 +320,7 @@ class RoutingCache(object):
         elif service == 'dataselect':
             return self.getRouteDS(n, s, l, c, startD, endD, alternative)
         elif service == 'seedlink':
-            return self.getRouteSL(n, s, l, c)
+            return self.getRouteSL(n, s, l, c, alternative)
         elif service == 'station':
             return self.getRouteST(n, s, l, c, startD, endD, alternative)
 
@@ -548,7 +548,7 @@ class RoutingCache(object):
 
         return result2
 
-    def getRouteSL(self, n, s, l, c):
+    def getRouteSL(self, n, s, l, c, alternative):
         """Implement the following table lookup for the Seedlink service
 
         01 NET STA CHA LOC # First try to match all.
@@ -643,6 +643,8 @@ class RoutingCache(object):
                                'params': [{'net': n, 'sta': s,
                                            'loc': l, 'cha': c,
                                            'start': '', 'end': ''}]})
+                if not alternative:
+                    break
 
                 # result.append([route[0], n, s, l, c, None, None])
         return result
