@@ -316,7 +316,7 @@ class RoutingCache(object):
             pass
 
         if service == 'arclink':
-            return self.getRouteArc(n, s, l, c, startD, endD)
+            return self.getRouteArc(n, s, l, c, startD, endD, alternative)
         elif service == 'dataselect':
             return self.getRouteDS(n, s, l, c, startD, endD)
         elif service == 'seedlink':
@@ -345,16 +345,6 @@ class RoutingCache(object):
 """
 
         result = []
-
-        # FIXME Maybe this needs to be done in getRoute!
-        #try:
-        #    masterRoute = self.getRouteMaster(n)
-        #    return [{'name': 'dataselect', 'url': masterRoute,
-        #             'params': [{'net': n, 'sta': s, 'loc': l, 'cha': c,
-        #                         'start': '' if startD is None else startD,
-        #                         'end': '' if endD is None else endD}]}]
-        #except:
-        #    pass
 
         # Check if there are wildcards!
         if (('*' in n + s + l + c) or ('?' in n + s + l + c)):
@@ -406,7 +396,8 @@ class RoutingCache(object):
                     if (((rou[2] is None) or (startD is None) or
                             (startD < rou[2])) and
                             ((endD is None) or (endD > rou[1]))):
-                        # FIXME What to do with the alternative routes!?
+                        # FIXME I think that I don't need bestPrio because the
+                        # routes are already sorted by priority
                         if ((bestPrio is None) or (rou[3] < bestPrio)):
                             bestPrio = rou[3]
                             host = self.__arc2DS(rou[0])
@@ -462,6 +453,9 @@ class RoutingCache(object):
                 # Now I need the URLs
                 result = list()
                 for st in finalset:
+                    # FIXME There is an assumption that getRouteArc will return
+                    # only one route, BUT if alternative is True this is not
+                    # right!
                     url2Add = self.__arc2DS(self.getRouteArc(st[0], st[1],
                                                              st[2], st[3],
                                                              startD, endD)
@@ -486,7 +480,7 @@ class RoutingCache(object):
 
                 return result
 
-            raise Exception('This point should have nevere been reached! ;-)')
+            raise Exception('This point should have never been reached! ;-)')
 
         # If there are NO wildcards
         realRoute = self.__arc2DS(self.getRouteArc(n, s, l, c,
@@ -672,7 +666,8 @@ class RoutingCache(object):
     def getRouteArc(self, n, s, l, c, startD=datetime.datetime(1980, 1, 1),
                     endD=datetime.datetime(datetime.date.today().year,
                                            datetime.date.today().month,
-                                           datetime.date.today().day)):
+                                           datetime.date.today().day),
+                    alternative=False):
         """Implement the following table lookup for the Arclink service
 
         01 NET STA CHA LOC # First try to match all.
@@ -774,14 +769,29 @@ class RoutingCache(object):
                     #realRoute = None
                     continue
                 else:
-                    if ((bestPrio is None) or (route[3] < bestPrio)):
-                        result = [route[0], n, s, l, c, startD, endD]
+                    if alternative:
+                        # FIXME Can we be sure that the alternative route will
+                        # be always in another data center? We are just
+                        # appending instead of MERGING data centers!
+                        result.append({'name': 'arclink', 'url': route[0],
+                                       'params': [{'net': n, 'sta': s,
+                                                   'loc': l, 'cha': c,
+                                                   'start': startD if startD is
+                                                   not None else '',
+                                                   'end': endD if endD is not
+                                                   None else '',
+                                                   'priority': route[3]}]})
+                    elif ((bestPrio is None) or (route[3] < bestPrio)):
+                        result = [{'name': 'arclink', 'url': route[0],
+                                   'params': [{'net': n, 'sta': s,
+                                               'loc': l, 'cha': c,
+                                               'start': startD if startD is
+                                               not None else '',
+                                               'end': endD if endD is not
+                                               None else '',
+                                               'priority': route[3]}]}]
                         bestPrio = route[3]
-                    # FIXME What to do with the alternative routes!?
-                    # else if alternatives:
-                    #     result.append([route[0], n, s, l, c, startD, endD])
 
-        #return realRoute
         return result
 
     def updateMT(self):
@@ -1422,8 +1432,8 @@ def application(environ, start_response):
             for datacenter in iterObj:
                 for item in datacenter['params']:
                     result.append(datacenter['url'] + '?' +
-                                  '&'.join([k + '=' + item[k] for k in item
-                                            if item[k] not in ('', '*')]))
+                                  '&'.join([k + '=' + item[k] for k in
+                                            item if item[k] not in ('', '*')]))
             result = '\n'.join(result)
             return send_plain_response(status, result, start_response)
         elif 'format' in form and form['format'].value.lower() == 'post':
