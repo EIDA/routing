@@ -89,13 +89,15 @@ class RequestMerge(list):
             pos = self.index(service, url)
             self[pos]['params'].append({'net': net, 'sta': sta, 'loc': loc,
                                         'cha': cha, 'start': start,
-                                        'end': end, 'priority': priority})
+                                        'end': end, 'priority': priority if
+                                        priority is not None else ''})
         except:
             listPar = super(RequestMerge, self)
             listPar.append({'name': service, 'url': url,
                             'params': [{'net': net, 'sta': sta, 'loc': loc,
                                         'cha': cha, 'start': start,
-                                        'end': end}]})
+                                        'end': end, 'priority': priority
+                                        if priority is not None else ''}]})
 
     def index(self, service, url):
         for ind, r in enumerate(self):
@@ -441,7 +443,7 @@ class RoutingCache(object):
                 raise WIContentError('No routes have been found!')
             elif len(resSet) == 1:
                 rm = RequestMerge()
-                rm.append('dataselect', resSet.pop(), None, n, s, l, c,
+                rm.append('dataselect', resSet.pop(), '', n, s, l, c,
                           '' if startD is None else startD,
                           '' if endD is None else endD)
                 return rm
@@ -557,7 +559,8 @@ class RoutingCache(object):
 
         result2 = RequestMerge()
         for r in result:
-            result2.append(service, r.address, r.priority, n, None, None,
+            result2.append(service, r.address, r.priority if r.priority
+                           is not None else '', n, None, None,
                            None, startD if startD is not None else '',
                            endD if endD is not None else '')
 
@@ -654,7 +657,7 @@ class RoutingCache(object):
         for route in realRoute:
             # Check that I found a route
             if route is not None:
-                result.append('seedlink', route['address'], None, n, s, l, c,
+                result.append('seedlink', route['address'], '', n, s, l, c,
                               '', '')
 
                 if not alternative:
@@ -761,29 +764,23 @@ class RoutingCache(object):
             # Check that I found a route
             if route is not None:
                 # Check if the timewindow is encompassed in the returned dates
-                if ((startD in route) or (endD in route)):
+                if ((startD not in route) and (endD not in route)):
                     # If it is not, return None
                     #realRoute = None
                     continue
                 else:
                     if alternative:
-                        # FIXME Can we be sure that the alternative route will
-                        # be always in another data center? We are just
-                        # appending instead of MERGING data centers!
-                        result.append({'name': 'arclink',
-                                       'url': route.address,
-                                       'params': [{'net': n, 'sta': s,
-                                                   'loc': l, 'cha': c,
-                                                   'start': startD if startD is
-                                                   not None else '',
-                                                   'end': endD if endD is not
-                                                   None else '', 'priority':
-                                                   route.priority}]})
+                        result.append('arclink', route.address,
+                                      route.priority if route.priority is not
+                                      None else '', n, s, l, c,
+                                      startD if startD is not None else '',
+                                      endD if endD is not None else '')
                     elif ((bestPrio is None) or
                           (route.priority < bestPrio)):
                         result = RequestMerge()
                         result.append('arclink', route.address,
-                                      route.priority, n, s, l, c,
+                                      route.priority if route.priority is not
+                                      None else '', n, s, l, c,
                                       startD if startD is not None else '',
                                       endD if endD is not None else '')
                         bestPrio = route.priority
@@ -1316,13 +1313,6 @@ def makeQueryGET(parameters):
         raise WIContentError('No routes have been found!')
     return route
 
-# Add routing cache here, to be accessible to all modules
-#here = os.path.dirname(__file__)
-#routesFile = os.path.join(here, 'routing.xml')
-#invFile = os.path.join(here, 'Arclink-inventory.xml')
-#masterFile = os.path.join(here, 'masterTable.xml')
-#routes = RoutingCache(routesFile, invFile, masterFile)
-
 # This variable will be treated as GLOBAL by all the other functions
 routes = None
 
@@ -1405,6 +1395,7 @@ def application(environ, start_response):
         makeQuery = globals()['makeQuery%s' % environ['REQUEST_METHOD']]
         try:
             iterObj = makeQuery(form)
+
         except WIError as w:
             return send_plain_response(w.status, w.body, start_response)
 
