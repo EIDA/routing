@@ -92,6 +92,42 @@ RouteSL.__gt__ = lambda self, other: self.priority > other.priority
 RouteSL.__ge__ = lambda self, other: self.priority >= other.priority
 
 
+class RequestMerge(list):
+    __slots__ = ()
+
+    #def __init__(self):
+    #    super(RequestMerge, self).__init__()
+    def append(self, service, url, priority, net, sta, loc, cha, start=None,
+               end=None):
+        listPar = super(RequestMerge, self)
+        for r in self:
+            if ((r['name'] == service) and (r['url'] == url)):
+                r['params'].append({'net': net, 'sta': sta, 'loc': loc,
+                                    'cha': cha, 'start': start,
+                                    'end': end, 'priority': priority})
+                break
+        else:
+            listPar.append({'name': service, 'url': url,
+                            'params': [{'net': net, 'sta': sta, 'loc': loc,
+                                        'cha': cha, 'start': start,
+                                        'end': end}]})
+
+    def index(self, service, url):
+        for ind, r in enumerate(self):
+            if ((r['name'] == service) and (r['url'] == url)):
+                return ind
+
+        raise Exception()
+
+    def extend(self, listReqM):
+        for r in listReqM:
+            try:
+                pos = self.index(r['name'], r['url'])
+                self[pos]['params'].extend(r['params'])
+            except:
+                super(RequestMerge, self).append(r)
+
+
 class Route(namedtuple('Route', ['address', 'start', 'end', 'priority'])):
     __slots__ = ()
 
@@ -421,10 +457,10 @@ class RoutingCache(object):
             if len(resSet) == 0:
                 raise WIContentError('No routes have been found!')
             elif len(resSet) == 1:
-                return [{'name': 'dataselect', 'url': resSet.pop(),
-                         'params': [{'net': n, 'sta': s, 'loc': l, 'cha': c,
-                                     'start': '' if startD is None else startD,
-                                     'end': '' if endD is None else endD}]}]
+                rm = RequestMerge()
+                rm.append('dataselect', resSet.pop(), None, n, s, l, c,
+                          '' if startD is None else startD,
+                          '' if endD is None else endD)
             else:
                 # Alternative NEW approach based on number of wildcards
                 order = [sum([1 for t in r if '*' in t]) for r in subs]
@@ -465,7 +501,7 @@ class RoutingCache(object):
                 # In finalset I have all the streams (including expanded and
                 # the ones with wildcards), that I need to request.
                 # Now I need the URLs
-                result = list()
+                result = RequestMerge()
                 for st in finalset:
                     resArc = self.getRouteArc(st[0], st[1], st[2], st[3],
                                               startD, endD, alternative)
@@ -533,27 +569,13 @@ class RoutingCache(object):
         if not len(result):
             raise WIContentError('No routes have been found!')
 
-        result = sorted(result, key=lambda res: res.address)
+        #result = sorted(result, key=lambda res: res.address)
 
-        result2 = list()
-        before = None
+        result2 = RequestMerge()
         for r in result:
-            if before != r.address:
-                result2.append({'name': service, 'url': r.address,
-                                'params': [{'net': n, 'sta': None,
-                                            'loc': None, 'cha': None,
-                                            'start': startD if startD is not
-                                            None else '',
-                                            'end': endD if endD is not None
-                                            else '', 'priority': r.priority}]})
-                before = r.address
-            else:
-                result2[-1].params.append({'net': n, 'sta': None,
-                                           'loc': None, 'cha': None,
-                                           'start': startD if startD is not
-                                           None else '',
-                                           'end': endD if endD is not None
-                                           else '', 'priority': r.priority})
+            result2.append(service, r.address, r.priority, n, None, None,
+                           None, startD if startD is not None else '',
+                           endD if endD is not None else '')
 
         return result2
 
@@ -640,7 +662,7 @@ class RoutingCache(object):
         elif ('*', '*', '*', '*') in self.slTable:
             realRoute = self.slTable['*', '*', '*', '*']
 
-        result = []
+        result = RequestMerge()
         if realRoute is None:
             raise WIContentError('No routes have been found!')
             #return result
@@ -648,16 +670,14 @@ class RoutingCache(object):
         for route in realRoute:
             # Check that I found a route
             if route is not None:
-                result.append({'name': 'seedlink', 'url': route[0],
-                               'params': [{'net': n, 'sta': s,
-                                           'loc': l, 'cha': c,
-                                           'start': '', 'end': ''}]})
+                result.append('seedlink', route[0], None, n, s, l, c, '', '')
+
                 if not alternative:
                     break
 
-                # result.append([route[0], n, s, l, c, None, None])
         return result
 
+    # FIXME start and end dates with wrong default values!
     def getRouteArc(self, n, s, l, c, startD=datetime.datetime(1980, 1, 1),
                     endD=datetime.datetime(datetime.date.today().year,
                                            datetime.date.today().month,
@@ -745,7 +765,7 @@ class RoutingCache(object):
         elif ('*', '*', '*', '*') in self.routingTable:
             realRoute = self.routingTable['*', '*', '*', '*']
 
-        result = []
+        result = RequestMerge()
         if realRoute is None:
             raise WIContentError('No routes have been found!')
             #raise Exception('No route in Arclink for stream %s.%s.%s.%s' %
@@ -777,14 +797,10 @@ class RoutingCache(object):
                                                    None else '',
                                                    'priority': route[3]}]})
                     elif ((bestPrio is None) or (route[3] < bestPrio)):
-                        result = [{'name': 'arclink', 'url': route[0],
-                                   'params': [{'net': n, 'sta': s,
-                                               'loc': l, 'cha': c,
-                                               'start': startD if startD is
-                                               not None else '',
-                                               'end': endD if endD is not
-                                               None else '',
-                                               'priority': route[3]}]}]
+                        result = RequestMerge()
+                        result.append('arclink', route[0], route[3], n, s, l,
+                                      c, startD if startD is not None else '',
+                                      endD if endD is not None else '')
                         bestPrio = route[3]
 
         return result
