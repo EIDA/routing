@@ -423,17 +423,17 @@ class RoutingCache(object):
                 bPrio = None
                 for rou in self.routingTable[k]:
                     # Check that the timewindow is OK
-                    if (((rou['end'] is None) or (startD is None) or
-                            (startD < rou['end'])) and
-                            ((endD is None) or (endD > rou['start']))):
+                    if (((rou.end is None) or (startD is None) or
+                            (startD < rou.end)) and
+                            ((endD is None) or (endD > rou.start))):
                         # FIXME I think that I don't need bestPrio because the
                         # routes are already sorted by priority
                         if alternative:
-                            host = self.__arc2DS(rou['address'])
+                            host = self.__arc2DS(rou.address)
                             resSet.add(host)
-                        elif ((bPrio is None) or (rou['priority'] < bPrio)):
-                            bPrio = rou['priority']
-                            host = self.__arc2DS(rou['address'])
+                        elif ((bPrio is None) or (rou.priority < bPrio)):
+                            bPrio = rou.priority
+                            host = self.__arc2DS(rou.address)
                 resSet.add(host)
 
             # Check the coherency of the routes to set the return code
@@ -444,6 +444,7 @@ class RoutingCache(object):
                 rm.append('dataselect', resSet.pop(), None, n, s, l, c,
                           '' if startD is None else startD,
                           '' if endD is None else endD)
+                return rm
             else:
                 # Alternative NEW approach based on number of wildcards
                 order = [sum([1 for t in r if '*' in t]) for r in subs]
@@ -528,7 +529,7 @@ class RoutingCache(object):
         11 NET --- --- ---
 """
 
-        result = RequestMerge()
+        result = list()
         realRoutes = None
 
         # Case 11
@@ -770,21 +771,22 @@ class RoutingCache(object):
                         # be always in another data center? We are just
                         # appending instead of MERGING data centers!
                         result.append({'name': 'arclink',
-                                       'url': route['address'],
+                                       'url': route.address,
                                        'params': [{'net': n, 'sta': s,
                                                    'loc': l, 'cha': c,
                                                    'start': startD if startD is
                                                    not None else '',
                                                    'end': endD if endD is not
                                                    None else '', 'priority':
-                                                   route['priority']}]})
+                                                   route.priority}]})
                     elif ((bestPrio is None) or
-                          (route['priority'] < bestPrio)):
+                          (route.priority < bestPrio)):
                         result = RequestMerge()
-                        result.append('arclink', route['address'], route['priority'], n, s, l,
-                                      c, startD if startD is not None else '',
+                        result.append('arclink', route.address,
+                                      route.priority, n, s, l, c,
+                                      startD if startD is not None else '',
                                       endD if endD is not None else '')
-                        bestPrio = route['priority']
+                        bestPrio = route.priority
 
         return result
 
