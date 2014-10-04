@@ -42,7 +42,6 @@ from wsgicomm import WIContentError
 from wsgicomm import WIClientError
 from wsgicomm import WIError
 from wsgicomm import send_plain_response
-# from wsgicomm import send_html_response
 from wsgicomm import send_xml_response
 
 
@@ -81,32 +80,18 @@ def ConvertDictToXml(listdict):
     return r
 
 
-class RouteSL(namedtuple('RouteSL', ['address', 'priority'])):
-    __slots__ = ()
-
-RouteSL.__eq__ = lambda self, other: self.priority == other.priority
-RouteSL.__ne__ = lambda self, other: self.priority != other.priority
-RouteSL.__lt__ = lambda self, other: self.priority < other.priority
-RouteSL.__le__ = lambda self, other: self.priority <= other.priority
-RouteSL.__gt__ = lambda self, other: self.priority > other.priority
-RouteSL.__ge__ = lambda self, other: self.priority >= other.priority
-
-
 class RequestMerge(list):
     __slots__ = ()
 
-    #def __init__(self):
-    #    super(RequestMerge, self).__init__()
     def append(self, service, url, priority, net, sta, loc, cha, start=None,
                end=None):
-        listPar = super(RequestMerge, self)
-        for r in self:
-            if ((r['name'] == service) and (r['url'] == url)):
-                r['params'].append({'net': net, 'sta': sta, 'loc': loc,
-                                    'cha': cha, 'start': start,
-                                    'end': end, 'priority': priority})
-                break
-        else:
+        try:
+            pos = self.index(service, url)
+            self[pos]['params'].append({'net': net, 'sta': sta, 'loc': loc,
+                                        'cha': cha, 'start': start,
+                                        'end': end, 'priority': priority})
+        except:
+            listPar = super(RequestMerge, self)
             listPar.append({'name': service, 'url': url,
                             'params': [{'net': net, 'sta': sta, 'loc': loc,
                                         'cha': cha, 'start': start,
@@ -117,7 +102,7 @@ class RequestMerge(list):
             if ((r['name'] == service) and (r['url'] == url)):
                 return ind
 
-        raise Exception()
+        raise ValueError()
 
     def extend(self, listReqM):
         for r in listReqM:
@@ -391,8 +376,6 @@ class RoutingCache(object):
         """Use the table lookup from Arclink to route the Dataselect service
 """
 
-        result = []
-
         # Check if there are wildcards!
         if (('*' in n + s + l + c) or ('?' in n + s + l + c)):
             # Filter first by the attributes without wildcards
@@ -437,20 +420,20 @@ class RoutingCache(object):
             for k in subs:
                 # ONLY the first component of the tuple!!!
                 # print k, self.routingTable[k]
-                bestPrio = None
+                bPrio = None
                 for rou in self.routingTable[k]:
                     # Check that the timewindow is OK
-                    if (((rou[2] is None) or (startD is None) or
-                            (startD < rou[2])) and
-                            ((endD is None) or (endD > rou[1]))):
+                    if (((rou['end'] is None) or (startD is None) or
+                            (startD < rou['end'])) and
+                            ((endD is None) or (endD > rou['start']))):
                         # FIXME I think that I don't need bestPrio because the
                         # routes are already sorted by priority
                         if alternative:
-                            host = self.__arc2DS(rou[0])
+                            host = self.__arc2DS(rou['address'])
                             resSet.add(host)
-                        elif ((bestPrio is None) or (rou[3] < bestPrio)):
-                            bestPrio = rou[3]
-                            host = self.__arc2DS(rou[0])
+                        elif ((bPrio is None) or (rou['priority'] < bPrio)):
+                            bPrio = rou['priority']
+                            host = self.__arc2DS(rou['address'])
                 resSet.add(host)
 
             # Check the coherency of the routes to set the return code
@@ -545,7 +528,7 @@ class RoutingCache(object):
         11 NET --- --- ---
 """
 
-        result = list()
+        result = RequestMerge()
         realRoutes = None
 
         # Case 11
@@ -670,7 +653,8 @@ class RoutingCache(object):
         for route in realRoute:
             # Check that I found a route
             if route is not None:
-                result.append('seedlink', route[0], None, n, s, l, c, '', '')
+                result.append('seedlink', route['address'], None, n, s, l, c,
+                              '', '')
 
                 if not alternative:
                     break
@@ -776,10 +760,7 @@ class RoutingCache(object):
             # Check that I found a route
             if route is not None:
                 # Check if the timewindow is encompassed in the returned dates
-                if ((endD < route[1] if endD is not None else False)
-                        or (startD > route[2] if (None not in (startD,
-                                                               route[2]))
-                            else False)):
+                if ((startD in route) or (endD in route)):
                     # If it is not, return None
                     #realRoute = None
                     continue
@@ -788,20 +769,22 @@ class RoutingCache(object):
                         # FIXME Can we be sure that the alternative route will
                         # be always in another data center? We are just
                         # appending instead of MERGING data centers!
-                        result.append({'name': 'arclink', 'url': route[0],
+                        result.append({'name': 'arclink',
+                                       'url': route['address'],
                                        'params': [{'net': n, 'sta': s,
                                                    'loc': l, 'cha': c,
                                                    'start': startD if startD is
                                                    not None else '',
                                                    'end': endD if endD is not
-                                                   None else '',
-                                                   'priority': route[3]}]})
-                    elif ((bestPrio is None) or (route[3] < bestPrio)):
+                                                   None else '', 'priority':
+                                                   route['priority']}]})
+                    elif ((bestPrio is None) or
+                          (route['priority'] < bestPrio)):
                         result = RequestMerge()
-                        result.append('arclink', route[0], route[3], n, s, l,
+                        result.append('arclink', route['address'], route['priority'], n, s, l,
                                       c, startD if startD is not None else '',
                                       endD if endD is not None else '')
-                        bestPrio = route[3]
+                        bestPrio = route['priority']
 
         return result
 
@@ -1068,10 +1051,12 @@ class RoutingCache(object):
                         if (networkCode, stationCode, locationCode,
                                 streamCode) not in ptSL:
                             ptSL[networkCode, stationCode, locationCode,
-                                 streamCode] = [RouteSL(address, priority)]
+                                 streamCode] = [Route(address, None, None,
+                                                      priority)]
                         else:
                             ptSL[networkCode, stationCode, locationCode,
-                                 streamCode].append(RouteSL(address, priority))
+                                 streamCode].append(Route(address, None, None,
+                                                          priority))
                         sl.clear()
 
                     # Traverse through the sources
@@ -1211,17 +1196,14 @@ class RoutingCache(object):
         # Order the routes by priority
         for keyDict in ptRT:
             ptRT[keyDict] = sorted(ptRT[keyDict])
-            #ptRT[keyDict] = sorted(ptRT[keyDict], key=lambda route: route[3])
 
         # Order the routes by priority
         for keyDict in ptSL:
             ptSL[keyDict] = sorted(ptSL[keyDict])
-            #ptSL[keyDict] = sorted(ptSL[keyDict], key=lambda route: route[1])
 
         # Order the routes by priority
         for keyDict in ptST:
             ptST[keyDict] = sorted(ptST[keyDict])
-            #ptST[keyDict] = sorted(ptST[keyDict], key=lambda route: route[3])
 
 
 def makeQueryGET(parameters):
