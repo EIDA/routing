@@ -1412,7 +1412,8 @@ def application(environ, start_response):
                 for item in datacenter['params']:
                     result.append(datacenter['url'] + '?' +
                                   '&'.join([k + '=' + str(item[k]) for k in
-                                            item if item[k] not in ('', '*')]))
+                                            item if item[k] not in ('', '*')
+                                            and k != 'priority']))
             result = '\n'.join(result)
             return send_plain_response(status, result, start_response)
         elif 'format' in form and form['format'].value.lower() == 'post':
