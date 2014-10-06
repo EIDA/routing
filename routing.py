@@ -1412,6 +1412,14 @@ def application(environ, start_response):
         return send_xml_response('200 OK', routes.localConfig(),
                                  start_response)
 
+    elif fname == 'version':
+        text = """1.0.0
+
+Routing Service
+2014 - Developed at GEOFON (GFZ-Potsdam) for EIDA
+        """
+        return send_plain_response('200 OK', text, start_response)
+
     if isinstance(iterObj, basestring):
         status = '200 OK'
         return send_plain_response(status, iterObj, start_response)
