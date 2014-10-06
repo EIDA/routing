@@ -118,6 +118,30 @@ class RequestMerge(list):
 class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
     __slots__ = ()
 
+    def __contains__(self, st):
+        if (fnmatch.fnmatch(st.n, self.n) and
+                fnmatch.fnmatch(st.s, self.s) and
+                fnmatch.fnmatch(st.l, self.l) and
+                fnmatch.fnmatch(st.c, self.c)):
+            return True
+
+        return False
+
+    def overlap(self, other):
+        """Checks if there is an overlap between this stream and other one
+
+        The other parameter is expected to be of Stream type
+        """
+
+        # FIXME Check if everything on both parameters (but in particular in
+        # the first one) is of type Stream
+        for i in range(len(other)):
+            if ((self[i] is not None) and (other[i] is not None) and
+                    not fnmatch.fnmatch(self[i], other[i]) and
+                    not fnmatch.fnmatch(other[i], self[i])):
+                return False
+        return True
+
 
 class Route(namedtuple('Route', ['address', 'start', 'end', 'priority'])):
     __slots__ = ()
@@ -387,8 +411,6 @@ class RoutingCache(object):
         # Check if there are wildcards!
         if (('*' in n + s + l + c) or ('?' in n + s + l + c)):
             # Filter first by the attributes without wildcards
-
-            # Check for the timewindow
             subs = self.routingTable.keys()
 
             if (('*' not in s) and ('?' not in s)):
@@ -463,7 +485,7 @@ class RoutingCache(object):
 
                 for r1 in orderedSubs:
                     for r2 in finalset:
-                        if self.__overlap(r1, r2):
+                        if r1.overlap(r2):
                             print 'Overlap between %s and %s' % (r1, r2)
                             break
                     else:
@@ -478,16 +500,17 @@ class RoutingCache(object):
                                                startD, endD, True):
                         rExp = Stream(*rExp)
                         for r3 in finalset:
-                            if self.__overlap(rExp, r3):
+                            if rExp.overlap(r3):
                                 print 'Stream %s discarded! Overlap with %s' \
                                     % (rExp, r3)
                                 break
                         else:
                             # print 'Adding expanded', rExp
-                            if (fnmatch.fnmatch(rExp.n, n) and
-                                    fnmatch.fnmatch(rExp.s, s) and
-                                    fnmatch.fnmatch(rExp.l, l) and
-                                    fnmatch.fnmatch(rExp.c, c)):
+                            if (rExp in Stream(n, s, l, c)):
+                            # if (fnmatch.fnmatch(rExp.n, n) and
+                            #         fnmatch.fnmatch(rExp.s, s) and
+                            #         fnmatch.fnmatch(rExp.l, l) and
+                            #         fnmatch.fnmatch(rExp.c, c)):
                                 finalset.add(rExp)
 
                 # In finalset I have all the streams (including expanded and
@@ -516,23 +539,6 @@ class RoutingCache(object):
             rou['name'] = 'dataselect'
 
         return result
-
-    def __overlap(self, st1, st2):
-        """Checks if there is an overlap between the two set of streams
-
-        Both parameters are expected to have four components:
-            network, station, location, channel.
-        However, as wildcards are also accepted, these could be actually
-        sets of streams. F.i. [GE, None, None, None]"""
-
-        # FIXME Check if everything on both parameters (but in particular in
-        # the first one) is of type Stream
-        for i in range(len(st1)):
-            if ((st1[i] is not None) and (st2[i] is not None) and
-                    not fnmatch.fnmatch(st1[i], st2[i]) and
-                    not fnmatch.fnmatch(st2[i], st1[i])):
-                return False
-        return True
 
     def getRouteMaster(self, n, startD=None, endD=None, service='dataselect',
                        alternative=False):
