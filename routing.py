@@ -115,6 +115,10 @@ class RequestMerge(list):
                 super(RequestMerge, self).append(r)
 
 
+class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
+    __slots__ = ()
+
+
 class Route(namedtuple('Route', ['address', 'start', 'end', 'priority'])):
     __slots__ = ()
 
@@ -201,6 +205,9 @@ class RoutingCache(object):
         if masterFile is None:
             return
 
+        # Add inventory cache here, to be able to expand request if necessary
+        self.ic = InventoryCache(invFile)
+
         # Master routing file in XML format
         self.masterFile = masterFile
 
@@ -208,9 +215,6 @@ class RoutingCache(object):
         self.masterTable = dict()
 
         self.updateMT()
-
-        # Add inventory cache here, to be accessible to all modules
-        self.ic = InventoryCache(invFile)
 
     def localConfig(self):
         here = os.path.dirname(__file__)
@@ -259,12 +263,12 @@ class RoutingCache(object):
         routTable = tn.read_until('END', 5)
         start = routTable.find('<')
         print 'Length:', routTable[:start]
-        try:
-            os.remove('./routing.xml.download')
-        except:
-            pass
 
         here = os.path.dirname(__file__)
+        try:
+            os.remove(os.path.join(here, 'routing.xml.download'))
+        except:
+            pass
 
         with open(os.path.join(here, 'routing.xml.download'), 'w') as fout:
             fout.write(routTable[routTable.find('<'):-3])
@@ -352,6 +356,8 @@ class RoutingCache(object):
             # Through an exception if there is an error
             raise RoutingException('Unknown service: %s' % service)
 
+        # FIXME This could be done in the function that calls getRoute
+        # That would be more clear.
         for r in result:
             for p in r['params']:
                 if type(p['start']) == type(datetime.datetime.now()):
@@ -386,37 +392,37 @@ class RoutingCache(object):
             subs = self.routingTable.keys()
 
             if (('*' not in s) and ('?' not in s)):
-                subs = [k for k in subs if (k[1] is None or k[1] == '*' or
-                                            k[1] == s)]
+                subs = [k for k in subs if (k.s is None or k.s == '*' or
+                                            k.s == s)]
 
             if (('*' not in n) and ('?' not in n)):
-                subs = [k for k in subs if (k[0] is None or k[0] == '*' or
-                                            k[0] == n)]
+                subs = [k for k in subs if (k.n is None or k.n == '*' or
+                                            k.n == n)]
 
             if (('*' not in c) and ('?' not in c)):
-                subs = [k for k in subs if (k[3] is None or k[3] == '*' or
-                                            k[3] == c)]
+                subs = [k for k in subs if (k.c is None or k.c == '*' or
+                                            k.c == c)]
 
             if (('*' not in l) and ('?' not in l)):
-                subs = [k for k in subs if (k[2] is None or k[2] == '*' or
-                                            k[2] == l)]
+                subs = [k for k in subs if (k.l is None or k.l == '*' or
+                                            k.l == l)]
 
             # Filter then by the attributes WITH wildcards
             if (('*' in s) or ('?' in s)):
-                subs = [k for k in subs if (k[1] is None or k[1] == '*' or
-                                            fnmatch.fnmatch(k[1], s))]
+                subs = [k for k in subs if (k.s is None or k.s == '*' or
+                                            fnmatch.fnmatch(k.s, s))]
 
             if (('*' in n) or ('?' in n)):
-                subs = [k for k in subs if (k[0] is None or k[0] == '*' or
-                                            fnmatch.fnmatch(k[0], n))]
+                subs = [k for k in subs if (k.n is None or k.n == '*' or
+                                            fnmatch.fnmatch(k.n, n))]
 
             if (('*' in c) or ('?' in c)):
-                subs = [k for k in subs if (k[3] is None or k[3] == '*' or
-                                            fnmatch.fnmatch(k[3], c))]
+                subs = [k for k in subs if (k.c is None or k.c == '*' or
+                                            fnmatch.fnmatch(k.c, c))]
 
             if (('*' in l) or ('?' in l)):
-                subs = [k for k in subs if (k[2] is None or k[2] == '*' or
-                                            fnmatch.fnmatch(k[2], l))]
+                subs = [k for k in subs if (k.l is None or k.l == '*' or
+                                            fnmatch.fnmatch(k.l, l))]
 
             resSet = set()
             for k in subs:
@@ -425,9 +431,7 @@ class RoutingCache(object):
                 bPrio = None
                 for rou in self.routingTable[k]:
                     # Check that the timewindow is OK
-                    if (((rou.end is None) or (startD is None) or
-                            (startD < rou.end)) and
-                            ((endD is None) or (endD > rou.start))):
+                    if ((startD in rou) or (endD in rou)):
                         # FIXME I think that I don't need bestPrio because the
                         # routes are already sorted by priority
                         if alternative:
@@ -443,6 +447,8 @@ class RoutingCache(object):
                 raise WIContentError('No routes have been found!')
             elif len(resSet) == 1:
                 rm = RequestMerge()
+                # FIXME The conversion of empty dates should be done in the
+                # method append
                 rm.append('dataselect', resSet.pop(), '', n, s, l, c,
                           '' if startD is None else startD,
                           '' if endD is None else endD)
@@ -453,7 +459,7 @@ class RoutingCache(object):
 
                 orderedSubs = [x for (y, x) in sorted(zip(order, subs))]
 
-                finalset = list()
+                finalset = set()
 
                 for r1 in orderedSubs:
                     for r2 in finalset:
@@ -461,16 +467,16 @@ class RoutingCache(object):
                             print 'Overlap between %s and %s' % (r1, r2)
                             break
                     else:
-                        # print 'Adding', r1
-                        finalset.append(r1)
+                        finalset.add(r1)
                         continue
 
                     # The break from 10 lines above jumps until this line in
                     # order to do an expansion and try to add the expanded
                     # streams
-                    r1n, r1s, r1l, r1c = r1
-                    for rExp in self.ic.expand(r1n, r1s, r1l, r1c,
+                    # r1n, r1s, r1l, r1c = r1
+                    for rExp in self.ic.expand(r1.n, r1.s, r1.l, r1.c,
                                                startD, endD, True):
+                        rExp = Stream(*rExp)
                         for r3 in finalset:
                             if self.__overlap(rExp, r3):
                                 print 'Stream %s discarded! Overlap with %s' \
@@ -478,18 +484,20 @@ class RoutingCache(object):
                                 break
                         else:
                             # print 'Adding expanded', rExp
-                            if (fnmatch.fnmatch(rExp[0], n) and
-                                    fnmatch.fnmatch(rExp[1], s) and
-                                    fnmatch.fnmatch(rExp[2], l) and
-                                    fnmatch.fnmatch(rExp[3], c)):
-                                finalset.append(rExp)
+                            if (fnmatch.fnmatch(rExp.n, n) and
+                                    fnmatch.fnmatch(rExp.s, s) and
+                                    fnmatch.fnmatch(rExp.l, l) and
+                                    fnmatch.fnmatch(rExp.c, c)):
+                                finalset.add(rExp)
 
                 # In finalset I have all the streams (including expanded and
                 # the ones with wildcards), that I need to request.
                 # Now I need the URLs
                 result = RequestMerge()
+                # FIXME This could be replaced by a pop instruction. I think it
+                # could be faster
                 for st in finalset:
-                    resArc = self.getRouteArc(st[0], st[1], st[2], st[3],
+                    resArc = self.getRouteArc(st.n, st.s, st.l, st.c,
                                               startD, endD, alternative)
                     for rou in resArc:
                         rou['url'] = self.__arc2DS(rou['url'])
@@ -517,6 +525,8 @@ class RoutingCache(object):
         However, as wildcards are also accepted, these could be actually
         sets of streams. F.i. [GE, None, None, None]"""
 
+        # FIXME Check if everything on both parameters (but in particular in
+        # the first one) is of type Stream
         for i in range(len(st1)):
             if ((st1[i] is not None) and (st2[i] is not None) and
                     not fnmatch.fnmatch(st1[i], st2[i]) and
@@ -657,8 +667,8 @@ class RoutingCache(object):
         for route in realRoute:
             # Check that I found a route
             if route is not None:
-                result.append('seedlink', route['address'], '', n, s, l, c,
-                              '', '')
+                result.append('seedlink', route.address, route.priority,
+                              n, s, l, c, '', '')
 
                 if not alternative:
                     break
@@ -759,6 +769,8 @@ class RoutingCache(object):
             #raise Exception('No route in Arclink for stream %s.%s.%s.%s' %
             #                (n, s, l, c))
 
+        # FIXME I think we don't need to loop as routes are already ordered by
+        # priority. Take the first one!
         bestPrio = None
         for route in realRoute:
             # Check that I found a route
@@ -927,14 +939,18 @@ class RoutingCache(object):
                         # Append the network to the list of networks
                         if (networkCode, stationCode, locationCode,
                                 streamCode) not in ptMT:
-                            ptMT[networkCode, stationCode, locationCode,
-                                 streamCode] = [RouteMT(address, startD, endD,
-                                                        prio, service)]
+                            ptMT[Stream(networkCode, stationCode, locationCode,
+                                        streamCode)] = [RouteMT(address,
+                                                                startD, endD,
+                                                                prio, service)]
                         else:
-                            ptMT[networkCode, stationCode, locationCode,
-                                 streamCode].append(RouteMT(address, startD,
-                                                            endD, prio,
-                                                            service))
+                            ptMT[Stream(networkCode, stationCode,
+                                        locationCode,
+                                        streamCode)].append(RouteMT(address,
+                                                                    startD,
+                                                                    endD,
+                                                                    prio,
+                                                                    service))
 
                         arcl.clear()
 
@@ -1049,13 +1065,14 @@ class RoutingCache(object):
                         # Append the network to the list of networks
                         if (networkCode, stationCode, locationCode,
                                 streamCode) not in ptSL:
-                            ptSL[networkCode, stationCode, locationCode,
-                                 streamCode] = [Route(address, None, None,
-                                                      priority)]
+                            ptSL[Stream(networkCode, stationCode, locationCode,
+                                        streamCode)] = [Route(address, None,
+                                                              None, priority)]
                         else:
-                            ptSL[networkCode, stationCode, locationCode,
-                                 streamCode].append(Route(address, None, None,
-                                                          priority))
+                            ptSL[Stream(networkCode, stationCode, locationCode,
+                                        streamCode)].append(Route(address,
+                                                                  None, None,
+                                                                  priority))
                         sl.clear()
 
                     # Traverse through the sources
@@ -1114,13 +1131,13 @@ class RoutingCache(object):
                         # Append the network to the list of networks
                         if (networkCode, stationCode, locationCode,
                                 streamCode) not in ptRT:
-                            ptRT[networkCode, stationCode, locationCode,
-                                 streamCode] = [Route(address, startD, endD,
-                                                      priority)]
+                            ptRT[Stream(networkCode, stationCode, locationCode,
+                                        streamCode)] = [Route(address, startD,
+                                                              endD, priority)]
                         else:
-                            ptRT[networkCode, stationCode, locationCode,
-                                 streamCode].append(Route(address, startD,
-                                                          endD, priority))
+                            ptRT[Stream(networkCode, stationCode, locationCode,
+                                 streamCode)].append(Route(address, startD,
+                                                           endD, priority))
                         arcl.clear()
 
                     # Traverse through the sources
@@ -1179,13 +1196,13 @@ class RoutingCache(object):
                         # Append the network to the list of networks
                         if (networkCode, stationCode, locationCode,
                                 streamCode) not in ptST:
-                            ptST[networkCode, stationCode, locationCode,
-                                 streamCode] = [Route(address, startD, endD,
-                                                      priority)]
+                            ptST[Stream(networkCode, stationCode, locationCode,
+                                        streamCode)] = [Route(address, startD,
+                                                              endD, priority)]
                         else:
-                            ptST[networkCode, stationCode, locationCode,
-                                 streamCode].append(Route(address, startD,
-                                                          endD, priority))
+                            ptST[Stream(networkCode, stationCode, locationCode,
+                                 streamCode)].append(Route(address, startD,
+                                                           endD, priority))
                         statServ.clear()
 
                     route.clear()
