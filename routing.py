@@ -128,6 +128,22 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
 
         return False
 
+    def strictMatch(self, other):
+        """Return a new Stream iwith a "reduction" of this one to force the
+        matching of the specification received as an input.
+
+        The other parameter is expected to be of Stream type
+        """
+
+        res = list()
+        for i in range(len(other)):
+            if (self[i] is None) or (fnmatch.fnmatch(other[i], self[i])):
+                res.append(other[i])
+            else:
+                res.append(self[i])
+
+        return Stream(*tuple(res))
+
     def overlap(self, other):
         """Checks if there is an overlap between this stream and other one
 
@@ -461,7 +477,7 @@ class RoutingCache(object):
                         print 'Overlap between %s and %s' % (r1, r2)
                         break
                 else:
-                    finalset.add(r1)
+                    finalset.add(r1.strictMatch(Stream(n, s, l, c)))
                     continue
 
                 # The break from 10 lines above jumps until this line in
