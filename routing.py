@@ -37,6 +37,7 @@ import telnetlib
 import xml.etree.cElementTree as ET
 from time import sleep
 from collections import namedtuple
+from operator import add
 from inventorycache import InventoryCache
 from wsgicomm import WIContentError
 from wsgicomm import WIClientError
@@ -133,8 +134,6 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
         The other parameter is expected to be of Stream type
         """
 
-        # FIXME Check if everything on both parameters (but in particular in
-        # the first one) is of type Stream
         for i in range(len(other)):
             if ((self[i] is not None) and (other[i] is not None) and
                     not fnmatch.fnmatch(self[i], other[i]) and
@@ -446,80 +445,48 @@ class RoutingCache(object):
                 subs = [k for k in subs if (k.l is None or k.l == '*' or
                                             fnmatch.fnmatch(k.l, l))]
 
-            resSet = set()
-            for k in subs:
-                # ONLY the first component of the tuple!!!
-                # print k, self.routingTable[k]
-                bPrio = None
-                for rou in self.routingTable[k]:
-                    # Check that the timewindow is OK
-                    if ((startD in rou) or (endD in rou)):
-                        # FIXME I think that I don't need bestPrio because the
-                        # routes are already sorted by priority
-                        if alternative:
-                            host = self.__arc2DS(rou.address)
-                            resSet.add(host)
-                        elif ((bPrio is None) or (rou.priority < bPrio)):
-                            bPrio = rou.priority
-                            host = self.__arc2DS(rou.address)
-                resSet.add(host)
+            # Alternative NEW approach based on number of wildcards
+            orderS = [sum([3 for t in r if '*' in t]) for r in subs]
+            orderQ = [sum([1 for t in r if '?' in t]) for r in subs]
 
-            # Check the coherency of the routes to set the return code
-            if len(resSet) == 0:
-                raise WIContentError('No routes have been found!')
-            elif len(resSet) == 1:
-                rm = RequestMerge()
-                # FIXME The conversion of empty dates should be done in the
-                # method append
-                rm.append('dataselect', resSet.pop(), '', n, s, l, c,
-                          '' if startD is None else startD,
-                          '' if endD is None else endD)
-                return rm
-            else:
-                # Alternative NEW approach based on number of wildcards
-                order = [sum([1 for t in r if '*' in t]) for r in subs]
+            order = map(add, orderS, orderQ)
 
-                orderedSubs = [x for (y, x) in sorted(zip(order, subs))]
+            orderedSubs = [x for (y, x) in sorted(zip(order, subs))]
 
-                finalset = set()
+            finalset = set()
 
-                for r1 in orderedSubs:
-                    for r2 in finalset:
-                        if r1.overlap(r2):
-                            print 'Overlap between %s and %s' % (r1, r2)
+            for r1 in orderedSubs:
+                for r2 in finalset:
+                    if r1.overlap(r2):
+                        print 'Overlap between %s and %s' % (r1, r2)
+                        break
+                else:
+                    finalset.add(r1)
+                    continue
+
+                # The break from 10 lines above jumps until this line in
+                # order to do an expansion and try to add the expanded
+                # streams
+                # r1n, r1s, r1l, r1c = r1
+                for rExp in self.ic.expand(r1.n, r1.s, r1.l, r1.c,
+                                           startD, endD, True):
+                    rExp = Stream(*rExp)
+                    for r3 in finalset:
+                        if rExp.overlap(r3):
+                            print 'Stream %s discarded! Overlap with %s' \
+                                % (rExp, r3)
                             break
                     else:
-                        finalset.add(r1)
-                        continue
+                        # print 'Adding expanded', rExp
+                        if (rExp in Stream(n, s, l, c)):
+                            finalset.add(rExp)
 
-                    # The break from 10 lines above jumps until this line in
-                    # order to do an expansion and try to add the expanded
-                    # streams
-                    # r1n, r1s, r1l, r1c = r1
-                    for rExp in self.ic.expand(r1.n, r1.s, r1.l, r1.c,
-                                               startD, endD, True):
-                        rExp = Stream(*rExp)
-                        for r3 in finalset:
-                            if rExp.overlap(r3):
-                                print 'Stream %s discarded! Overlap with %s' \
-                                    % (rExp, r3)
-                                break
-                        else:
-                            # print 'Adding expanded', rExp
-                            if (rExp in Stream(n, s, l, c)):
-                            # if (fnmatch.fnmatch(rExp.n, n) and
-                            #         fnmatch.fnmatch(rExp.s, s) and
-                            #         fnmatch.fnmatch(rExp.l, l) and
-                            #         fnmatch.fnmatch(rExp.c, c)):
-                                finalset.add(rExp)
+            result = RequestMerge()
 
-                # In finalset I have all the streams (including expanded and
-                # the ones with wildcards), that I need to request.
-                # Now I need the URLs
-                result = RequestMerge()
-                # FIXME This could be replaced by a pop instruction. I think it
-                # could be faster
-                for st in finalset:
+            # In finalset I have all the streams (including expanded and
+            # the ones with wildcards), that I need to request.
+            # Now I need the URLs
+            for st in finalset:
                     resArc = self.getRouteArc(st.n, st.s, st.l, st.c,
                                               startD, endD, alternative)
                     for rou in resArc:
@@ -527,9 +494,12 @@ class RoutingCache(object):
                         rou['name'] = 'dataselect'
 
                     result.extend(resArc)
-                return result
 
-            raise Exception('This point should have never been reached! ;-)')
+            # Check the coherency of the routes to set the return code
+            if len(result) == 0:
+                raise WIContentError('No routes have been found!')
+
+            return result
 
         # If there are NO wildcards
         result = self.getRouteArc(n, s, l, c, startD, endD, alternative)
