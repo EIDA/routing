@@ -7,18 +7,14 @@
 #
 # ----------------------------------------------------------------------
 
-"""Routing Webservice for EIDA
+"""Routing Webservice for EIDA. Encapsulate and manage routing information of networks, stations, locations and streams read from an XML file.
 
-(c) 2014 Javier Quinteros, GEOFON, GFZ Potsdam
+.. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
 
-Encapsulate and manage routing information of networks,
-stations, locations and streams read from an XML file.
-
-This program is free software; you can redistribute it and/or modify it
-under the terms of the GNU General Public License as published by the
-Free Software Foundation; either version 2, or (at your option) any later
-version. For more information, see http://www.gnu.org/
-
+.. note:: This program is free software; you can redistribute it and/or modify it
+          under the terms of the GNU General Public License as published by the
+          Free Software Foundation; either version 2, or (at your option) any later
+          version. For more information, see http://www.gnu.org/
 """
 
 ##################################################################
@@ -210,11 +206,8 @@ class RoutingException(Exception):
 
 
 class RoutingCache(object):
-    """Encapsulate and manage routing information of networks,
-    stations, locations and streams read from an Arclink XML file.
-
-    Begun by Javier Quinteros <javier@gfz-potsdam.de>, GEOFON team, June 2014
-
+    """
+    :synopsis: Encapsulate and manage routing information of networks, stations, locations and streams read from an XML file.
     """
 
     def __init__(self, routingFile, invFile, masterFile=None):
@@ -361,10 +354,8 @@ class RoutingCache(object):
     def getRoute(self, n='*', s='*', l='*', c='*', startD=None, endD=None,
                  service='dataselect', alternative=False):
         """getRoute receives a stream and a timewindow and returns a list.
-        The list has the following format:
-            [[URL_1, net_1, sta_1, loc_1, cha_1, tfrom_1, tto_1],
-            ...
-             [URL_n, net_n, sta_n, loc_n, cha_n, tfrom_n, tto_n]]
+        The result is returned in a RequestMerge object, which inherits from
+        a list.
         """
 
         # Give priority to the masterTable!
@@ -409,6 +400,8 @@ class RoutingCache(object):
     def getRouteST(self, n='*', s='*', l='*', c='*',
                    startD=None, endD=None, alternative=False):
         """Use the Dataselect implementation and map to Station-WS.
+        The result is returned in a RequestMerge object, which inherits from
+        a list.
 """
 
         result = self.getRouteDS(n, s, l, c, startD, endD, alternative)
@@ -420,7 +413,9 @@ class RoutingCache(object):
 
     def getRouteDS(self, n='*', s='*', l='*', c='*',
                    startD=None, endD=None, alternative=False):
-        """Use the table lookup from Arclink to route the Dataselect service
+        """Use the table lookup from Arclink to route the Dataselect service.
+        The result is returned in a RequestMerge object, which inherits from
+        a list.
 """
 
         # Check if there are wildcards!
@@ -531,6 +526,9 @@ class RoutingCache(object):
         """Implement the following table lookup for the Master Table
 
         11 NET --- --- ---
+
+        The result is returned in a RequestMerge object, which inherits from
+        a list.
 """
 
         result = list()
@@ -571,9 +569,9 @@ class RoutingCache(object):
     def getRouteSL(self, n, s, l, c, alternative):
         """Implement the following table lookup for the Seedlink service
 
-        01 NET STA CHA LOC # First try to match all.
-        02 NET STA CHA --- # Then try to match all excluding location,
-        03 NET STA --- LOC # ... and so on
+        01 NET STA CHA LOC
+        02 NET STA CHA ---
+        03 NET STA --- LOC
         04 NET --- CHA LOC
         05 --- STA CHA LOC
         06 NET STA --- ---
@@ -587,6 +585,9 @@ class RoutingCache(object):
         13 --- --- CHA ---
         14 --- --- --- LOC
         15 --- --- --- ---
+
+        The result is returned in a RequestMerge object, which inherits from
+        a list.
 """
 
         realRoute = None
@@ -675,9 +676,9 @@ class RoutingCache(object):
                     alternative=False):
         """Implement the following table lookup for the Arclink service
 
-        01 NET STA CHA LOC # First try to match all.
-        02 NET STA CHA --- # Then try to match all excluding location,
-        03 NET STA --- LOC # ... and so on
+        01 NET STA CHA LOC
+        02 NET STA CHA ---
+        03 NET STA --- LOC
         04 NET --- CHA LOC
         05 --- STA CHA LOC
         06 NET STA --- ---
@@ -691,6 +692,9 @@ class RoutingCache(object):
         13 --- --- CHA ---
         14 --- --- --- LOC
         15 --- --- --- ---
+
+        The result is returned in a RequestMerge object, which inherits from
+        a list.
 """
 
         realRoute = None
@@ -792,7 +796,7 @@ class RoutingCache(object):
         return result
 
     def updateMT(self):
-        """Read the routes with highest priority for DS and store it in memory.
+        """Read the routes with highest priority and store it in memory.
 
         All the routing information is read into a dictionary. Only the
         necessary attributes are stored. This relies on the idea

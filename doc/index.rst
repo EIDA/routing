@@ -6,17 +6,14 @@
 Welcome to Routing-WS's documentation!
 ======================================
 
-Contents:
-
 .. toctree::
    :maxdepth: 2
 
-********************
 Installation and use
-********************
+====================
 
 Requirements
-============
+------------
 
  * SeisComP(reg) 3 provides useful functions for configuration, geometry, travel time computation.
    If you use the :program:`update-metadata.sh` script, you will need :program:`arclink_fetch`, either included in the SeisComP distribution, or standalone [http://www.seiscomp3.org/wiki/doc/applications/arclink_fetch].
@@ -40,7 +37,7 @@ Requirements
 .. _download:
 
 Download
-========
+--------
 
 Download the tar file / source from the GEOFON web page at http://geofon.gfz-potsdam.de/software.
 [Eventually it may be included in the SeisComP distribution.]
@@ -60,7 +57,7 @@ This location will depend on the location of the root (in the file system)
 .. _oper_installation-on-apache:
 
 Installation on Apache
-======================
+----------------------
 
 To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
 
@@ -176,7 +173,8 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
       52 03 * * * /var/www/eidaws/routing/1/update-metadata.sh
 
 Installation problems
----------------------
+~~~~~~~~~~~~~~~~~~~~~
+
 Always check your web server log files (e.g. for Apache: `access_log` and
 `error_log`) for clues.
 
@@ -191,12 +189,12 @@ If they *do* show up, check that the information there looks correct.
 .. _configuration-options-extra:
 
 Configuration options
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 Blah, blah, blah...
 
 Maintenance
-===========
+~~~~~~~~~~~
 
 Metadata may need updating after changes in Arclink inventory - you
 can safely run the ``update-metadata.sh`` script at any time to do that.
@@ -204,7 +202,7 @@ The Routing Service creates a processed version of the Arclink XML, but this
 will be automatically updated each time a new inventory XML file is detected.
 
 Upgrade
-=======
+-------
 
 At this stage, it's best to back up and then remove the old installation
 first.::
@@ -219,35 +217,53 @@ At Steps 4-6, re-use your previous versions of ``routing.wsgi`` and ``routing.cf
     cp ../1.old/routing.cfg routing.cfg
 
 
-****************************
 Documentation for developers
-****************************
+============================
 
 Routing module
-==============
+--------------
+
 .. automodule:: routing
 
 RoutingCache class
 ------------------
 
-.. autoclass:: RoutingCache
+.. autoclass:: routing.RoutingCache
    :members:
    :undoc-members:
 
-Wsgicomm module
-===============
-.. automodule:: wsgicomm
+Route class
+-----------
+
+.. autoclass:: routing.Route
    :members:
    :undoc-members:
 
-Inventorycache module
-=====================
-.. automodule:: inventorycache
+Stream class
+------------
 
-InventoryCache class
+.. autoclass:: routing.Stream
+   :members:
+   :undoc-members:
+
+RouteMT class
+-------------
+
+.. autoclass:: routing.RouteMT
+   :members:
+   :undoc-members:
+
+RequestMerge class
 ------------------
 
-.. autoclass:: InventoryCache
+.. autoclass:: routing.RequestMerge
+   :members:
+   :undoc-members:
+
+InventoryCache class
+--------------------
+
+.. autoclass:: inventorycache.InventoryCache
    :members:
    :undoc-members:
 
