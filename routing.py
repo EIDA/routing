@@ -11,10 +11,10 @@
 
 .. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
 
-.. note:: This program is free software; you can redistribute it and/or modify it
-          under the terms of the GNU General Public License as published by the
-          Free Software Foundation; either version 2, or (at your option) any later
-          version. For more information, see http://www.gnu.org/
+.. note:: This program is free software; you can redistribute it and/or modify
+          it under the terms of the GNU General Public License as published by
+          the Free Software Foundation; either version 2, or (at your option)
+          any later version. For more information, see http://www.gnu.org/
 """
 
 ##################################################################
@@ -207,7 +207,7 @@ class RoutingException(Exception):
 
 class RoutingCache(object):
     """
-    :synopsis: Encapsulate and manage routing information of networks, stations, locations and streams read from an XML file.
+    :synopsis: Encapsulate and manage routing information of streams (N.S.L.C) read from an XML file.
     """
 
     def __init__(self, routingFile, invFile, masterFile=None):
@@ -1326,6 +1326,44 @@ def makeQueryGET(parameters):
         raise WIContentError('No routes have been found!')
     return route
 
+
+def applyFormat(resultRM, outFormat='xml'):
+    """Apply the format specified to the RequestMerge object received.
+    Returns a STRING with the result
+    """
+
+    if not isinstance(resultRM, RequestMerge):
+        raise Exception('applyFormat expects a RequestMerge object!')
+
+    if outFormat == 'json':
+        iterObj = json.dumps(resultRM, default=datetime.datetime.isoformat)
+        return iterObj
+    elif outFormat == 'get':
+        iterObj = []
+        for datacenter in resultRM:
+            for item in datacenter['params']:
+                iterObj.append(datacenter['url'] + '?' +
+                               '&'.join([k + '=' + str(item[k]) for k in item
+                                         if item[k] not in ('', '*')
+                                         and k != 'priority']))
+        iterObj = '\n'.join(iterObj)
+        return iterObj
+    elif outFormat == 'post':
+        iterObj = []
+        for datacenter in resultRM:
+            iterObj.append(datacenter['url'])
+            for item in datacenter['params']:
+                item['loc'] = item['loc'] if len(item['loc']) else '--'
+                iterObj.append(item['net'] + ' ' + item['sta'] + ' ' +
+                               item['loc'] + ' ' + item['cha'] + ' ' +
+                               item['start'] + ' ' + item['end'])
+            iterObj.append('')
+        iterObj = '\n'.join(iterObj)
+        return iterObj
+    else:
+        iterObj2 = ET.tostring(ConvertDictToXml(resultRM))
+        return iterObj2
+
 # This variable will be treated as GLOBAL by all the other functions
 routes = None
 
@@ -1409,6 +1447,18 @@ def application(environ, start_response):
         try:
             iterObj = makeQuery(form)
 
+            outForm = 'xml'
+            if 'format' in form:
+                outForm = form['format'].value.lower()
+
+            iterObj = applyFormat(iterObj, outForm)
+
+            status = '200 OK'
+            if outForm == 'xml':
+                return send_xml_response(status, iterObj, start_response)
+            else:
+                return send_plain_response(status, iterObj, start_response)
+
         except WIError as w:
             return send_plain_response(w.status, w.body, start_response)
 
@@ -1420,45 +1470,7 @@ def application(environ, start_response):
         text = "1.0.0"
         return send_plain_response('200 OK', text, start_response)
 
-    if isinstance(iterObj, basestring):
-        status = '200 OK'
-        return send_plain_response(status, iterObj, start_response)
-
-    if (isinstance(iterObj, dict) or isinstance(iterObj, list) or
-            isinstance(iterObj, tuple)):
-        status = '200 OK'
-        if 'format' in form and form['format'].value.lower() == 'json':
-            iterObj = json.dumps(iterObj, default=datetime.datetime.isoformat)
-            return send_plain_response(status, iterObj, start_response)
-        elif 'format' in form and form['format'].value.lower() == 'get':
-            result = []
-            for datacenter in iterObj:
-                for item in datacenter['params']:
-                    result.append(datacenter['url'] + '?' +
-                                  '&'.join([k + '=' + str(item[k]) for k in
-                                            item if item[k] not in ('', '*')
-                                            and k != 'priority']))
-            result = '\n'.join(result)
-            return send_plain_response(status, result, start_response)
-        elif 'format' in form and form['format'].value.lower() == 'post':
-            result = []
-            for datacenter in iterObj:
-                result.append(datacenter['url'])
-                for item in datacenter['params']:
-                    item['loc'] = item['loc'] if len(item['loc']) else '--'
-                    result.append(item['net'] + ' ' + item['sta'] + ' ' +
-                                  item['loc'] + ' ' + item['cha'] + ' ' +
-                                  item['start'] + ' ' + item['end'])
-                result.append('')
-            result = '\n'.join(result)
-            return send_plain_response(status, result, start_response)
-        else:
-            iterObj2 = ET.tostring(ConvertDictToXml(iterObj))
-            return send_xml_response(status, iterObj2, start_response)
-
-    status = '200 OK'
-    body = "\n".join(iterObj)
-    return send_plain_response(status, body, start_response)
+    raise Exception('This point should have never been reached!')
 
 
 def main():
