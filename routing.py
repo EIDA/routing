@@ -162,8 +162,8 @@ class Route(namedtuple('Route', ['address', 'start', 'end', 'priority'])):
             return True
 
         try:
-            if (((self.start <= pointTime) or (self.start is None)) and
-                    ((pointTime <= self.end) or (self.end is None))):
+            if (((self.start is None) or (self.start <= pointTime)) and
+                    ((self.end is None) or (pointTime <= self.end))):
                 return True
         except:
             pass
@@ -977,7 +977,6 @@ class RoutingCache(object):
         # Traverse through the networks
         # get an iterable
         try:
-            print self.routingFile
             context = ET.iterparse(self.routingFile, events=("start", "end"))
         except IOError:
             msg = 'Error: %s could not be opened.' % self.routingFile
