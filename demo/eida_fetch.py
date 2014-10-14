@@ -138,7 +138,7 @@ def route(url, authdata, postdata, dest, timeout, retry_count, retry_wait, maxth
     print "getting routes from %s" % query_url
 
     try:
-        fd = urllib2.urlopen(query_url, postdata, timeout)
+        fd = retry(urllib2.urlopen, query_url, postdata, timeout, retry_count, retry_wait)
 
         try:
             if fd.getcode() == 204:
