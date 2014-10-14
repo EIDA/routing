@@ -24,13 +24,7 @@ Requirements
    release in the `tools` directory, which you can use to replace your
    installed version in `$SEISCOMP_ROOT/lib/python/seiscomp/arclink`).
 
- * JavaScript libraries: jquery-base, jquery-ui [https://jquery.org/]
-
- * OpenLayers. [http://www.openlayers.org/]
-
  * Python, mod_wsgi (if using Apache). Also Python libraries for libxslt and libxml.
-
- * Finally, users' web browsers need to run JavaScript.
 
  * The ``update-metadata.sh`` script uses `wget`.
 
