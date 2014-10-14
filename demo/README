@@ -1,0 +1,32 @@
+eida_fetch
+----------
+
+$ ./eida_fetch.py 'http://geofon.gfz-potsdam.de/eidaws/routing/1/query?net=CH&sta=LIENZ&starttime=2014-10-14T10:00:00&endtime=2014-10-14T10:01:00' -o data.mseed
+getting routes from http://geofon.gfz-potsdam.de/eidaws/routing/1/query?net=CH&endtime=2014-10-14T10%3A01%3A00&sta=LIENZ&starttime=2014-10-14T10%3A00%3A00&format=post
+getting data from http://eida.ethz.ch/fdsnws/dataselect/1/query
+getting data from http://www.orfeus-eu.org/fdsnws/dataselect/1/query
+received no data from http://www.orfeus-eu.org/fdsnws/dataselect/1/query
+got 45568 bytes from http://eida.ethz.ch/fdsnws/dataselect/1/query
+
+ObsPy
+-----
+
+>>> import obspy_eida_client
+>>> from obspy import UTCDateTime
+>>> client = obspy_eida_client.Client()
+>>> t1=UTCDateTime('2014-10-14T10:00:00')
+>>> t2=UTCDateTime('2014-10-14T10:01:00')
+>>> st = client.get_waveforms("CH", "LIENZ", "*", "*", t1, t2)
+>>> print st
+9 Trace(s) in Stream:
+CH.LIENZ..HGE | 2014-10-14T09:59:55.758300Z - 2014-10-14T10:01:03.416633Z | 120.0 Hz, 8120 samples
+CH.LIENZ..HGN | 2014-10-14T09:59:59.258400Z - 2014-10-14T10:01:00.991733Z | 120.0 Hz, 7409 samples
+CH.LIENZ..HGZ | 2014-10-14T09:59:58.266700Z - 2014-10-14T10:01:04.241700Z | 120.0 Hz, 7918 samples
+CH.LIENZ..HHE | 2014-10-14T09:59:57.700000Z - 2014-10-14T10:01:00.625000Z | 120.0 Hz, 7552 samples
+CH.LIENZ..HHN | 2014-10-14T09:59:58.841700Z - 2014-10-14T10:01:01.791700Z | 120.0 Hz, 7555 samples
+CH.LIENZ..HHZ | 2014-10-14T09:59:59.241600Z - 2014-10-14T10:01:01.016600Z | 120.0 Hz, 7414 samples
+CH.LIENZ..LHE | 2014-10-14T09:54:48.366600Z - 2014-10-14T10:05:42.366600Z | 1.0 Hz, 655 samples
+CH.LIENZ..LHN | 2014-10-14T09:59:04.025000Z - 2014-10-14T10:04:36.025000Z | 1.0 Hz, 333 samples
+CH.LIENZ..LHZ | 2014-10-14T09:56:35.400000Z - 2014-10-14T10:02:15.400000Z | 1.0 Hz, 341 samples
+>>> st.plot()
+
