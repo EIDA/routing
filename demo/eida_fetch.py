@@ -10,7 +10,7 @@ import cookielib
 import threading
 import Queue
 
-VERSION = "0.1 (2014.287)"
+VERSION = "0.1 (2014.288)"
 
 class URL(object):
     def __init__(self, url):
@@ -179,14 +179,16 @@ def route(url, authdata, postdata, dest, timeout, retry_count, retry_wait, maxth
 
     for t in threads:
         if running >= maxthreads:
-            finished.get(True)
+            thr = finished.get(True)
+            thr.join()
             running -= 1
 
         t.start()
         running += 1
 
     while running:
-        finished.get(True)
+        thr = finished.get(True)
+        thr.join()
         running -= 1
 
 def main():
