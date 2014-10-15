@@ -349,7 +349,7 @@ class RoutingCache(object):
             return bgr
         elif host.startswith('141.84.'):
             return lmu
-        return None
+        raise Exception('No Dataselect equivalent found for %s' % route)
 
     def getRoute(self, n='*', s='*', l='*', c='*', startD=None, endD=None,
                  service='dataselect', alternative=False):
@@ -500,9 +500,13 @@ class RoutingCache(object):
             for st in finalset:
                     resArc = self.getRouteArc(st.n, st.s, st.l, st.c,
                                               startD, endD, alternative)
-                    for rou in resArc:
-                        rou['url'] = self.__arc2DS(rou['url'])
-                        rou['name'] = 'dataselect'
+
+                    for i in range(len(resArc) - 1, -1, -1):
+                        resArc[i]['name'] = 'dataselect'
+                        try:
+                            resArc[i]['url'] = self.__arc2DS(resArc[i]['url'])
+                        except:
+                            del resArc[i]
 
                     result.extend(resArc)
 
@@ -515,9 +519,16 @@ class RoutingCache(object):
         # If there are NO wildcards
         result = self.getRouteArc(n, s, l, c, startD, endD, alternative)
 
-        for rou in result:
-            rou['url'] = self.__arc2DS(rou['url'])
-            rou['name'] = 'dataselect'
+        for i in range(len(result) - 1, -1, -1):
+            result[i]['name'] = 'dataselect'
+            try:
+                result[i]['url'] = self.__arc2DS(result[i]['url'])
+            except:
+                del result[i]
+
+        # Check the coherency of the routes to set the return code
+        if len(result) == 0:
+            raise WIContentError('No routes have been found!')
 
         return result
 
