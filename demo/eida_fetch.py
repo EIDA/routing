@@ -137,19 +137,17 @@ def fetch(url, authdata, postdata, dest, lock, timeout, retry_count, retry_wait,
                         msg(verb, "got %d bytes from %s" % (size, query_url))
 
                     elif content_type == "application/xml":
-                        tmpfd = tempfile.TemporaryFile()
+                        with tempfile.TemporaryFile() as tmpfd:
+                            while True:
+                                buf = fd.read(4096)
+                                if not buf: break
+                                tmpfd.write(buf)
+                                size += len(buf)
 
-                        while True:
-                            buf = fd.read(4096)
-                            if not buf: break
-                            tmpfd.write(buf)
-                            size += len(buf)
+                            msg(verb, "got %d bytes from %s" % (size, query_url))
 
-                        msg(verb, "got %d bytes from %s" % (size, query_url))
-
-                        tmpfd.seek(0)
-                        with lock: shutil.copyfileobj(tmpfd, dest)
-                        tmpfd.close()
+                            tmpfd.seek(0)
+                            with lock: shutil.copyfileobj(tmpfd, dest)
 
                     else:
                         msg(True, "getting data from %s failed: unsupported content type '%s'" % (query_url, content_type))
