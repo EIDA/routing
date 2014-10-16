@@ -313,8 +313,12 @@ def main():
     dest = open(options.output_file, 'w')
     lock = threading.Lock()
 
-    route(pseudourl, authdata, postdata, dest, lock, options.timeout, options.retries, options.retry_wait,
-        options.threads, options.verbose)
+    try:
+        route(pseudourl, authdata, postdata, dest, lock, options.timeout, options.retries, options.retry_wait,
+            options.threads, options.verbose)
+
+    except Error as e:
+        msg(True, str(e))
 
     return 0
 
