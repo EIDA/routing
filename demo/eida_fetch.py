@@ -149,6 +149,7 @@ def fetch(url, authdata, postdata, dest, lock, timeout, retry_count, retry_wait,
 
                         tmpfd.seek(0)
                         with lock: shutil.copyfileobj(tmpfd, dest)
+                        tmpfd.close()
 
                     else:
                         msg(True, "getting data from %s failed: unsupported content type '%s'" % (query_url, content_type))
