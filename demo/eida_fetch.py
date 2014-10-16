@@ -2,17 +2,31 @@
 
 import sys
 import time
+import shutil
 import optparse
 import urlparse
 import urllib
 import urllib2
 import cookielib
+import tempfile
 import threading
 import Queue
 
-VERSION = "0.1 (2014.288)"
+VERSION = "1.0-rc1 (2014.289)"
+
+class Error(Exception):
+    pass
 
 class URL(object):
+    routing_params = set(('net', 'network',
+                          'sta', 'station',
+                          'loc', 'location',
+                          'cha', 'channel',
+                          'start', 'starttime',
+                          'end', 'endtime',
+                          'service', 'format',
+                          'alternative'))
+
     def __init__(self, url):
         self.__url = urlparse.urlparse(url)
 
@@ -32,13 +46,19 @@ class URL(object):
             u[0] = 'https'
 
         if kw:
-            q = urlparse.parse_qs(u[4])
+            q = dict((p, v) for (p, v) in urlparse.parse_qs(u[4]).items() if p in URL.routing_params)
             q.update(kw)
             u[4] = urllib.urlencode(q, True)
 
         return urlparse.urlunparse(u)
 
-def retry(urlopen, url, data, timeout, count, wait):
+    def target_params(self):
+        return [(p, v[0]) for (p, v) in urlparse.parse_qs(self.__url[4]).items() if p not in URL.routing_params]
+
+def msg(verb, s):
+    if verb: print s
+
+def retry(urlopen, url, data, timeout, count, wait, verb):
     n = 0
 
     while True:
@@ -53,14 +73,14 @@ def retry(urlopen, url, data, timeout, count, wait):
             if fd.getcode() == 200 or fd.getcode() == 204:
                 return fd
 
-            print "retrying %s (%d) after %d seconds due to HTTP status code %d" % (url, n, wait, fd.getcode())
+            msg(verb, "retrying %s (%d) after %d seconds due to HTTP status code %d" % (url, n, wait, fd.getcode()))
             time.sleep(wait)
 
         except urllib2.URLError as e:
-            print "retrying %s (%d) after %d seconds due to %s" % (url, n, wait, str(e))
+            msg(verb, "retrying %s (%d) after %d seconds due to %s" % (url, n, wait, str(e)))
             time.sleep(wait)
 
-def fetch(url, authdata, postdata, dest, timeout, retry_count, retry_wait, finished):
+def fetch(url, authdata, postdata, dest, lock, timeout, retry_count, retry_wait, finished, verb):
     try:
         cj = cookielib.CookieJar()
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
@@ -69,38 +89,38 @@ def fetch(url, authdata, postdata, dest, timeout, retry_count, retry_wait, finis
             auth_url = url.auth()
             query_url = url.query(True)
 
-            print "authenticating at %s" % auth_url
+            msg(verb, "authenticating at %s" % auth_url)
 
             try:
-                fd = retry(opener.open, auth_url, authdata, timeout, retry_count, retry_wait)
+                fd = retry(opener.open, auth_url, authdata, timeout, retry_count, retry_wait, verb)
 
                 try:
                     if fd.getcode() == 200:
-                        print "authentication at %s successful" % auth_url
+                        msg(verb, "authentication at %s successful" % auth_url)
 
                     else:
-                        print "authentication at %s failed with HTTP status code %d" % (auth_url, fd.getcode())
+                        msg(True, "authentication at %s failed with HTTP status code %d" % (auth_url, fd.getcode()))
 
                 finally:
                     fd.close()
 
             except urllib2.URLError as e:
-                print "authentication at %s failed: %s" % (auth_url, str(e))
+                raise msg(True, "authentication at %s failed: %s" % (auth_url, str(e)))
 
         else:
             query_url = url.query(False)
 
-        print "getting data from %s" % query_url
+        msg(verb, "getting data from %s" % query_url)
 
         try:
-            fd = retry(opener.open, query_url, postdata, timeout, retry_count, retry_wait)
+            fd = retry(opener.open, query_url, postdata, timeout, retry_count, retry_wait, verb)
 
             try:
                 if fd.getcode() == 204:
-                    print "received no data from %s" % query_url
+                    msg(verb, "received no data from %s" % query_url)
 
                 elif fd.getcode() != 200:
-                    print "getting data from %s failed with HTTP status code %d" % fd.getcode()
+                    msg(True, "getting data from %s failed with HTTP status code %d" % fd.getcode())
 
                 else:
                     size = 0
@@ -111,58 +131,72 @@ def fetch(url, authdata, postdata, dest, timeout, retry_count, retry_wait, finis
                         while True:
                             buf = fd.read(4096)
                             if not buf: break
-                            dest.write(buf)
+                            with lock: dest.write(buf)
                             size += len(buf)
 
-                        print "got %d bytes from %s" % (size, query_url)
+                        msg(verb, "got %d bytes from %s" % (size, query_url))
 
-                    # XML content (eg., station webservice) is not supported yet
+                    elif content_type == "application/xml":
+                        tmpfd = tempfile.TemporaryFile()
+
+                        while True:
+                            buf = fd.read(4096)
+                            if not buf: break
+                            tmpfd.write(buf)
+                            size += len(buf)
+
+                        msg(verb, "got %d bytes from %s" % (size, query_url))
+
+                        tmpfd.seek(0)
+                        with lock: shutil.copyfileobj(tmpfd, dest)
+
                     else:
-                        print "getting data from %s failed: unsupported content type '%s'" % (query_url, content_type)
+                        msg(True, "getting data from %s failed: unsupported content type '%s'" % (query_url, content_type))
 
             finally:
                 fd.close()
 
         except urllib2.URLError as e:
-            print "getting data from %s failed: %s" % (query_url, str(e))
+            msg(True, "getting data from %s failed: %s" % (query_url, str(e)))
 
     finally:
         finished.put(threading.current_thread())
 
-def route(url, authdata, postdata, dest, timeout, retry_count, retry_wait, maxthreads):
+def route(url, authdata, postdata, dest, lock, timeout, retry_count, retry_wait, maxthreads, verb):
     threads = []
     running = 0
     finished = Queue.Queue()
     query_url = url.query(format='post')
 
-    print "getting routes from %s" % query_url
+    msg(verb, "getting routes from %s" % query_url)
 
     try:
-        fd = retry(urllib2.urlopen, query_url, postdata, timeout, retry_count, retry_wait)
+        fd = retry(urllib2.urlopen, query_url, postdata, timeout, retry_count, retry_wait, verb)
 
         try:
             if fd.getcode() == 204:
-                print "received no routes from %s" % query_url
+                raise Error("received no routes from %s" % query_url)
 
             elif fd.getcode() != 200:
-                print "getting routes from %s failed with code %d" % (query_url, fd.getcode())
+                raise Error("getting routes from %s failed with code %d" % (query_url, fd.getcode()))
 
             else:
-                dsurl = None
+                url1 = None
                 postlines = []
 
                 while True:
                     line = fd.readline()
 
-                    if not dsurl:
-                        dsurl = URL(line.strip())
+                    if not url1:
+                        url1 = URL(line.strip())
 
                     elif not line.strip():
-                        if dsurl and postlines:
-                            threads.append(threading.Thread(target=fetch, args=(dsurl, authdata,
-                                "".join(postlines), dest, timeout, retry_count, retry_wait, finished)))
+                        if url1 and postlines:
+                            postdata1 = ''.join((p + '=' + v + '\n') for (p, v) in url.target_params()) + ''.join(postlines)
+                            threads.append(threading.Thread(target=fetch, args=(url1, authdata, postdata1,
+                                dest, lock, timeout, retry_count, retry_wait, finished, verb)))
 
-                            dsurl = None
+                            url1 = None
                             postlines = []
 
                         if not line:
@@ -175,7 +209,7 @@ def route(url, authdata, postdata, dest, timeout, retry_count, retry_wait, maxth
             fd.close()
 
     except urllib2.URLError as e:
-        print "getting routes from %s failed: %s" % (query_url, str(e))
+        raise Error("getting routes from %s failed: %s" % (query_url, str(e)))
 
     for t in threads:
         if running >= maxthreads:
@@ -192,40 +226,96 @@ def route(url, authdata, postdata, dest, timeout, retry_count, retry_wait, maxth
         running -= 1
 
 def main():
-    parser = optparse.OptionParser(usage="Usage: %prog [-h|--help] [OPTIONS] url", version="%prog v" + VERSION)
+    qp = {}
 
-    parser.add_option("-t", "--timeout", type="int", dest="timeout", default=600,
-      help="request timeout in seconds (default %default)")
+    def add_qp(option, opt_str, value, parser):
+        if option.dest == 'query':
+            try:
+                (p, v) = value.split('=', 1)
+                qp[p] = v
 
-    parser.add_option("-r", "--retries", type="int", dest="retry_count", default=10,
-      help="number of retries (default %default)")
+            except ValueError as e:
+                raise optparse.OptionValueError("%s expects parameter=value" % opt_str)
 
-    parser.add_option("-w", "--retry-wait", type="int", dest="retry_wait", default=60,
-      help="seconds to wait before each retry (default %default)")
+        else:
+            qp[option.dest] = value
 
-    parser.add_option("-n", "--threads", type="int", dest="threads", default=10,
-      help="maximum number of download threads (default %default)")
+    parser = optparse.OptionParser(usage="Usage: %prog [-h|--help] [OPTIONS]", version="%prog v" + VERSION)
 
-    parser.add_option("-a", "--auth-file", type="string", dest="auth_file", default=None,
-      help="auth file (secure mode)")
+    parser.set_defaults(url = "http://geofon.gfz-potsdam.de/eidaws/routing/1/",
+                        timeout = 600,
+                        retries = 10,
+                        retry_wait = 60,
+                        threads = 5)
 
-    parser.add_option("-p", "--post-file", type="string", dest="post_file",
-      help="data file for POST request")
+    parser.add_option("-v", "--verbose", action="store_true", default=False,
+        help="verbose mode")
 
-    parser.add_option("-o", "--output-file", type="string", dest="output_file",
-      help="file where downloaded data is written")
+    parser.add_option("-u", "--url", type="string",
+        help="URL of routing service (default %default)")
+
+    parser.add_option("-y", "--service", type="string", action="callback", callback=add_qp,
+        help="target service (default dataselect)")
+
+    parser.add_option("-N", "--network", type="string", action="callback", callback=add_qp,
+        help="network code or pattern")
+
+    parser.add_option("-S", "--station", type="string", action="callback", callback=add_qp,
+        help="station code or pattern")
+
+    parser.add_option("-L", "--location", type="string", action="callback", callback=add_qp,
+        help="location code or pattern")
+
+    parser.add_option("-C", "--channel", type="string", action="callback", callback=add_qp,
+        help="channel code or pattern")
+
+    parser.add_option("-s", "--starttime", type="string", action="callback", callback=add_qp,
+        help="start time")
+
+    parser.add_option("-e", "--endtime", type="string", action="callback", callback=add_qp,
+        help="end time")
+
+    parser.add_option("-q", "--query", type="string", action="callback", callback=add_qp,
+        help="additional query parameter", metavar="PARAMETER=VALUE")
+
+    parser.add_option("-t", "--timeout", type="int",
+        help="request timeout in seconds (default %default)")
+
+    parser.add_option("-r", "--retries", type="int",
+        help="number of retries (default %default)")
+
+    parser.add_option("-w", "--retry-wait", type="int",
+        help="seconds to wait before each retry (default %default)")
+
+    parser.add_option("-n", "--threads", type="int",
+        help="maximum number of download threads (default %default)")
+
+    parser.add_option("-a", "--auth-file", type="string",
+        help="auth file (secure mode)")
+
+    parser.add_option("-p", "--post-file", type="string",
+        help="data file for POST request")
+
+    parser.add_option("-o", "--output-file", type="string",
+        help="file where downloaded data is written")
 
     (options, args) = parser.parse_args()
 
-    if len(args) != 1:
+    if args:
         parser.print_usage()
         return 1
 
-    url = URL(args[0])
+    u = urlparse.urlparse(options.url)
+    pseudourl = URL(urlparse.urlunparse((u.scheme, u.netloc, u.path.rstrip('query').rstrip('/') + '/query', '',
+        urllib.urlencode(qp, True), '')))
+
     authdata = open(options.auth_file).read() if options.auth_file else None
     postdata = open(options.post_file).read() if options.post_file else None
     dest = open(options.output_file, 'w')
-    route(url, authdata, postdata, dest, options.timeout, options.retry_count, options.retry_wait, options.threads)
+    lock = threading.Lock()
+
+    route(pseudourl, authdata, postdata, dest, lock, options.timeout, options.retries, options.retry_wait,
+        options.threads, options.verbose)
 
     return 0
 
