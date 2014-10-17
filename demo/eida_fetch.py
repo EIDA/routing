@@ -12,7 +12,7 @@ import tempfile
 import threading
 import Queue
 
-VERSION = "1.0-rc1 (2014.289)"
+VERSION = "1.0 (2014.290)"
 
 class Error(Exception):
     pass
@@ -56,7 +56,7 @@ class URL(object):
         return [(p, v[0]) for (p, v) in urlparse.parse_qs(self.__url[4]).items() if p not in URL.routing_params]
 
 def msg(verb, s):
-    if verb: print s
+    if verb: print >>sys.stderr, s
 
 def retry(urlopen, url, data, timeout, count, wait, verb):
     n = 0
@@ -95,7 +95,7 @@ def fetch(url, authdata, postdata, dest, lock, timeout, retry_count, retry_wait,
                 fd = retry(opener.open, auth_url, authdata, timeout, retry_count, retry_wait, verb)
 
                 try:
-                    if fd.getcode() == 200:
+                    if fd.getcode() == 200 or fd.getcode() == 204:
                         msg(verb, "authentication at %s successful" % auth_url)
 
                     else:
