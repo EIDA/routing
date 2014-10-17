@@ -5,12 +5,12 @@ import eida_fetch
 import obspy.fdsn.client
 
 class Client(obspy.fdsn.client.Client):
-    def __init__(self, base_url="GFZ", retry_count=10, retry_wait=60, maxthreads=10, auth_file=None, **kwargs):
+    def __init__(self, base_url="GFZ", retry_count=10, retry_wait=60, maxthreads=10, authdata=None, **kwargs):
         obspy.fdsn.client.Client.__init__(self, base_url, **kwargs)
         self.__retry_count = retry_count
         self.__retry_wait = retry_wait
         self.__maxthreads = maxthreads
-        self.__authdata = open(auth_file).read() if auth_file else None
+        self.__authdata = authdata
 
     def _create_url_from_parameters(self, service, *args):
         if service in ('dataselect', 'station'):
