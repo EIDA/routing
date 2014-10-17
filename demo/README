@@ -30,6 +30,7 @@ $ ~/seiscomp3/bin/seiscomp exec python
 >>> from seiscomp3 import Core, IO, Logging
 >>> Logging.enableConsoleLogging(Logging.getGlobalChannel("debug"))
 >>> Logging.enableConsoleLogging(Logging.getGlobalChannel("info"))
+>>> Logging.enableConsoleLogging(Logging.getGlobalChannel("notice"))
 >>> Logging.enableConsoleLogging(Logging.getGlobalChannel("warning"))
 >>> Logging.enableConsoleLogging(Logging.getGlobalChannel("error"))
 >>> t1 = Core.Time.FromString("2014-10-14 10:00:00", "%Y-%m-%d %H:%M:%S")
