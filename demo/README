@@ -2,6 +2,7 @@ eida_fetch
 ----------
 
 $ ./eida_fetch.py -v -y dataselect -N CH -S LIENZ -s '2014-10-14T10:00:00' -e '2014-10-14T10:01:00' -o data.mseed
+
 getting routes from http://geofon.gfz-potsdam.de/eidaws/routing/1/query?service=dataselect&station=LIENZ&network=CH&starttime=2014-10-14T10%3A00%3A00&format=post&endtime=2014-10-14T10%3A01%3A00
 getting data from http://eida.ethz.ch/fdsnws/dataselect/1/query
 getting data from http://www.orfeus-eu.org/fdsnws/dataselect/1/query
@@ -9,6 +10,7 @@ received no data from http://www.orfeus-eu.org/fdsnws/dataselect/1/query
 got 45568 bytes from http://eida.ethz.ch/fdsnws/dataselect/1/query
 
 $ ./eida_fetch.py -v -y station -q level=channel -N CH -S LIENZ -s '2014-10-14T10:00:00' -e '2014-10-14T10:01:00' -o data.xml
+
 getting routes from http://geofon.gfz-potsdam.de/eidaws/routing/1/query?service=station&station=LIENZ&network=CH&starttime=2014-10-14T10%3A00%3A00&format=post&endtime=2014-10-14T10%3A01%3A00
 getting data from http://eida.ethz.ch/fdsnws/station/1/query
 getting data from http://www.orfeus-eu.org/fdsnws/station/1/query
@@ -19,10 +21,30 @@ Note: XML data from multiple datacenters is simply concatenated, so the result
 is not guaranteed to be a valid XML document.
 
 
-Seiscomp 3
-----------
+Seiscomp 3 / GUI
+----------------
+
+$ echo "streams.codes=CH.LIENZ.*.*" >scrttv.cfg
 
 $ ./eida_proxy.py &
+
+fdsnws://localhost:8080/query ready
+
+$ ~/seiscomp3/bin/seiscomp exec scrttv -I fdsnws://localhost:8080/query --offline --no-inventory --config-file scrttv.cfg --end-time '2014-10-17 20:00:00'
+
+Set defined endtime: 2014-10-17 20:00:00
+getting routes from http://geofon.gfz-potsdam.de/eidaws/routing/1/query?format=post
+getting data from http://eida.ethz.ch/fdsnws/dataselect/1/query
+getting data from http://www.orfeus-eu.org/fdsnws/dataselect/1/query
+received no data from http://www.orfeus-eu.org/fdsnws/dataselect/1/query
+got 1018880 bytes from http://eida.ethz.ch/fdsnws/dataselect/1/query
+
+
+Seiscomp 3 / Python
+-------------------
+
+$ ./eida_proxy.py &
+
 fdsnws://localhost:8080/query ready
 
 $ ~/seiscomp3/bin/seiscomp exec python
