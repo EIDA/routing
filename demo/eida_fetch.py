@@ -105,7 +105,7 @@ def fetch(url, authdata, postdata, dest, lock, timeout, retry_count, retry_wait,
                     fd.close()
 
             except urllib2.URLError as e:
-                raise msg(True, "authentication at %s failed: %s" % (auth_url, str(e)))
+                msg(True, "authentication at %s failed: %s" % (auth_url, str(e)))
 
         else:
             query_url = url.query(False)

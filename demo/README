@@ -24,7 +24,7 @@ is not guaranteed to be a valid XML document.
 Seiscomp 3 / GUI
 ----------------
 
-$ echo "streams.codes=CH.LIENZ.*.*" >scrttv.cfg
+$ echo "streams.codes=*.*..BHZ" >scrttv.cfg
 
 $ ./eida_proxy.py &
 
