@@ -203,23 +203,24 @@ def route(url, authdata, postdata, dest, lock, timeout, retry_count, retry_wait,
                 raise Error("getting routes from %s failed with code %d" % (query_url, fd.getcode()))
 
             else:
-                url1 = None
+                urlline = None
                 postlines = []
 
                 while True:
                     line = fd.readline()
 
-                    if not url1:
-                        url1 = TargetURL(urlparse.urlparse(line.strip()))
+                    if not urlline:
+                        urlline = line.strip()
 
                     elif not line.strip():
-                        if url1 and postlines:
+                        if postlines:
+                            url1 = TargetURL(urlparse.urlparse(urlline))
                             postdata1 = ''.join((p + '=' + v + '\n') for (p, v) in url.target_params()) + ''.join(postlines)
                             threads.append(threading.Thread(target=fetch, args=(url1, authdata, postdata1,
                                 dest, lock, timeout, retry_count, retry_wait, finished, verb)))
 
-                            url1 = None
-                            postlines = []
+                        urlline = None
+                        postlines = []
 
                         if not line:
                             break

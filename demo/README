@@ -47,6 +47,9 @@ got 1923072 bytes from http://webservices.rm.ingv.it/fdsnws/dataselect/1/query
 got 8180736 bytes from http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query
 got 3321344 bytes from http://eida.bgr.de/fdsnws/dataselect/1/query
 
+Note: limiting request size is currently not implemented, so the request might
+be too large for some datacenters (error 413).
+
 
 ObsPy
 -----
