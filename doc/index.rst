@@ -158,7 +158,7 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
 
     # cd {top directory}
     # sudo chown -R sysop.www-data .
-    # sudo chmod -R g+w data
+    # sudo chmod -R g+w .
 
  #. Arrange for regular updates of the metadata in the working directory.
     Something like the following lines will be needed in your crontab::

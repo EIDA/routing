@@ -9,7 +9,7 @@
 import os
 import sys	
 
-sys.path.append('/var/www/eidaws/routing')
+sys.path.append('/var/www/eidaws/routing/1')
 import routing
 
 application = routing.application
