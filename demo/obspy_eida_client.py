@@ -22,12 +22,15 @@ class Client(obspy.fdsn.client.Client):
             return obspy.fdsn.client.Client._create_url_from_parameters(self, service, *args)
 
     def _download(self, url, return_string=False, data=None):
-        if '&service=' in url:
+        u = urlparse.urlparse(url)
+        q = dict((p, v[0]) for (p, v) in urlparse.parse_qs(u[4]).items())
+
+        if 'service' in q:
             dest = io.BytesIO()
             lock = threading.Lock()
 
             try:
-                eida_fetch.route(eida_fetch.URL(url), self.__authdata, data, dest, lock, self.timeout,
+                eida_fetch.route(eida_fetch.RoutingURL(u, q), self.__authdata, data, dest, lock, self.timeout,
                     self.__retry_count, self.__retry_wait, self.__maxthreads, self.debug)
 
             except eida_fetch.Error as e:

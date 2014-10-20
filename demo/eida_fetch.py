@@ -12,48 +12,62 @@ import tempfile
 import threading
 import Queue
 
-VERSION = "1.0 (2014.290)"
+VERSION = "1.0 (2014.293)"
+
+GET_PARAMS = set(('net', 'network',
+                  'sta', 'station',
+                  'loc', 'location',
+                  'cha', 'channel',
+                  'start', 'starttime',
+                  'end', 'endtime',
+                  'service',
+                  'format',
+                  'alternative'))
+
+POST_PARAMS = set(('service',
+                   'format',
+                   'alternative'))
 
 class Error(Exception):
     pass
 
-class URL(object):
-    routing_params = set(('net', 'network',
-                          'sta', 'station',
-                          'loc', 'location',
-                          'cha', 'channel',
-                          'start', 'starttime',
-                          'end', 'endtime',
-                          'service', 'format',
-                          'alternative'))
-
+class TargetURL(object):
     def __init__(self, url):
-        self.__url = urlparse.urlparse(url)
+        self.__scheme = url.scheme
+        self.__netloc = url.netloc
+        self.__path = url.path.rstrip('query').rstrip('/')
 
     def auth(self):
-        u = list(self.__url)
+        path = self.__path + '/auth'
+        return urlparse.urlunparse(('https', self.__netloc, path, '', '', ''))
 
-        u[0] = 'https'
-        u[2] = u[2].rsplit('/', 1)[0] + '/auth'
-        u[4] = ''
+    def post(self, forcessl=False):
+        scheme = 'https' if forcessl else self.__scheme
+        path = self.__path + '/query'
+        return urlparse.urlunparse((scheme, self.__netloc, path, '', '', ''))
 
-        return urlparse.urlunparse(u)
+class RoutingURL(object):
+    def __init__(self, url, qp):
+        self.__scheme = url.scheme
+        self.__netloc = url.netloc
+        self.__path = url.path.rstrip('query').rstrip('/')
+        self.__qp = qp.copy()
+        self.__qp['format'] = 'post'
 
-    def query(self, ssl=False, **kw):
-        u = list(self.__url)
+    def get(self):
+        path = self.__path + '/query'
+        query = urllib.urlencode([(p, v) for (p, v) in self.__qp.items() if p in GET_PARAMS])
+        return urlparse.urlunparse((self.__scheme, self.__netloc, path, '', query, ''))
 
-        if ssl:
-            u[0] = 'https'
+    def post(self):
+        path = self.__path + '/query'
+        return urlparse.urlunparse((self.__scheme, self.__netloc, path, '', '', ''))
 
-        if kw:
-            q = dict((p, v) for (p, v) in urlparse.parse_qs(u[4]).items() if p in URL.routing_params)
-            q.update(kw)
-            u[4] = urllib.urlencode(q, True)
-
-        return urlparse.urlunparse(u)
+    def post_params(self):
+        return [(p, v) for (p, v) in self.__qp.items() if p in POST_PARAMS]
 
     def target_params(self):
-        return [(p, v[0]) for (p, v) in urlparse.parse_qs(self.__url[4]).items() if p not in URL.routing_params]
+        return [(p, v) for (p, v) in self.__qp.items() if p not in GET_PARAMS]
 
 msglock = threading.Lock()
 
@@ -90,7 +104,7 @@ def fetch(url, authdata, postdata, dest, lock, timeout, retry_count, retry_wait,
 
         if authdata:
             auth_url = url.auth()
-            query_url = url.query(True)
+            query_url = url.post(True)
 
             msg(verb, "authenticating at %s" % auth_url)
 
@@ -111,7 +125,7 @@ def fetch(url, authdata, postdata, dest, lock, timeout, retry_count, retry_wait,
                 msg(True, "authentication at %s failed: %s" % (auth_url, str(e)))
 
         else:
-            query_url = url.query(False)
+            query_url = url.post(False)
 
         msg(verb, "getting data from %s" % query_url)
 
@@ -168,7 +182,13 @@ def route(url, authdata, postdata, dest, lock, timeout, retry_count, retry_wait,
     threads = []
     running = 0
     finished = Queue.Queue()
-    query_url = url.query(format='post')
+
+    if postdata:
+        query_url = url.post()
+        postdata = ''.join((p + '=' + v + '\n') for (p, v) in url.post_params()) + postdata
+
+    else:
+        query_url = url.get()
 
     msg(verb, "getting routes from %s" % query_url)
 
@@ -190,7 +210,7 @@ def route(url, authdata, postdata, dest, lock, timeout, retry_count, retry_wait,
                     line = fd.readline()
 
                     if not url1:
-                        url1 = URL(line.strip())
+                        url1 = TargetURL(urlparse.urlparse(line.strip()))
 
                     elif not line.strip():
                         if url1 and postlines:
@@ -303,21 +323,18 @@ def main():
 
     (options, args) = parser.parse_args()
 
-    if args:
+    if args or not options.output_file:
         parser.print_usage()
         return 1
 
-    u = urlparse.urlparse(options.url)
-    pseudourl = URL(urlparse.urlunparse((u.scheme, u.netloc, u.path.rstrip('query').rstrip('/') + '/query', '',
-        urllib.urlencode(qp, True), '')))
-
+    url = RoutingURL(urlparse.urlparse(options.url), qp)
     authdata = open(options.auth_file).read() if options.auth_file else None
     postdata = open(options.post_file).read() if options.post_file else None
     dest = open(options.output_file, 'w')
     lock = threading.Lock()
 
     try:
-        route(pseudourl, authdata, postdata, dest, lock, options.timeout, options.retries, options.retry_wait,
+        route(url, authdata, postdata, dest, lock, options.timeout, options.retries, options.retry_wait,
             options.threads, options.verbose)
 
     except Error as e:

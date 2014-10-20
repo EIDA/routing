@@ -21,14 +21,14 @@ Note: XML data from multiple datacenters is simply concatenated, so the result
 is not guaranteed to be a valid XML document.
 
 
-Seiscomp 3 / GUI
-----------------
-
-$ echo "streams.codes=*.*..BHZ" >scrttv.cfg
+Seiscomp 3
+----------
 
 $ ./eida_proxy.py &
 
 fdsnws://localhost:8080/query ready
+
+$ echo "streams.codes=*.*..BHZ" >scrttv.cfg
 
 $ ~/seiscomp3/bin/seiscomp exec scrttv -I fdsnws://localhost:8080/query --offline --no-inventory --config-file scrttv.cfg --end-time '2014-10-17 20:00:00'
 
@@ -46,64 +46,6 @@ getting data from http://www.orfeus-eu.org/fdsnws/dataselect/1/query failed: HTT
 got 1923072 bytes from http://webservices.rm.ingv.it/fdsnws/dataselect/1/query
 got 8180736 bytes from http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query
 got 3321344 bytes from http://eida.bgr.de/fdsnws/dataselect/1/query
-
-
-Seiscomp 3 / Python
--------------------
-
-$ ./eida_proxy.py &
-
-fdsnws://localhost:8080/query ready
-
-$ ~/seiscomp3/bin/seiscomp exec python
-
->>> from seiscomp3 import Core, IO, Logging
->>> Logging.enableConsoleLogging(Logging.getGlobalChannel("debug"))
->>> Logging.enableConsoleLogging(Logging.getGlobalChannel("info"))
->>> Logging.enableConsoleLogging(Logging.getGlobalChannel("notice"))
->>> Logging.enableConsoleLogging(Logging.getGlobalChannel("warning"))
->>> Logging.enableConsoleLogging(Logging.getGlobalChannel("error"))
->>> t1 = Core.Time.FromString("2014-10-14 10:00:00", "%Y-%m-%d %H:%M:%S")
->>> t2 = Core.Time.FromString("2014-10-14 10:01:00", "%Y-%m-%d %H:%M:%S")
->>> recstream = IO.RecordStream.Create('fdsnws')
->>> recstream.setSource('localhost:8080/query')
->>> recstream.addStream("CH", "LIENZ", "", "HHZ", t1, t2)
->>> recinput = IO.RecordInput(recstream)
-
->>> for rec in recinput:
-...     print "SC3 received", rec.networkCode(), rec.stationCode(), rec.locationCode(), rec.channelCode(), rec.startTime().toString("%Y-%m-%d %H:%M:%S")
-
-19:45:52 [debug/Socket] localhost:8080 connected
-19:45:52 [debug/FDSNWSConnection] Request: 2014,10,14,10,00,00 2014,10,14,10,01,00 CH LIENZ HHZ 
-19:45:52 [debug/FDSNWSConnection] Sending request:
-CH LIENZ -- HHZ 2014-10-14T10:00:00.0000 2014-10-14T10:01:00.0000
-
-getting routes from http://geofon.gfz-potsdam.de/eidaws/routing/1/query?format=post
-getting data from http://eida.ethz.ch/fdsnws/dataselect/1/query
-19:45:54 [debug/FDSNWSConnection] [01] Transfer-Encoding: chunked
-19:45:54 [debug/FDSNWSConnection]  -> enabled 'chunked' transfer
-19:45:54 [debug/FDSNWSConnection] [02] Date: Fri, 17 Oct 2014 17:45:52 GMT
-19:45:54 [debug/FDSNWSConnection] [03] Content-Type: application/vnd.fdsn.mseed
-19:45:54 [debug/FDSNWSConnection] [04] Server: TwistedWeb/14.0.2
-19:45:54 [debug/FDSNWSConnection] [05] 
-SC3 received CH LIENZ  HHZ 2014-10-14 09:59:59
-SC3 received CH LIENZ  HHZ 2014-10-14 10:00:03
-SC3 received CH LIENZ  HHZ 2014-10-14 10:00:06
-SC3 received CH LIENZ  HHZ 2014-10-14 10:00:10
-SC3 received CH LIENZ  HHZ 2014-10-14 10:00:14
-SC3 received CH LIENZ  HHZ 2014-10-14 10:00:17
-SC3 received CH LIENZ  HHZ 2014-10-14 10:00:22
-SC3 received CH LIENZ  HHZ 2014-10-14 10:00:26
-got 8192 bytes from http://eida.ethz.ch/fdsnws/dataselect/1/query
-SC3 received CH LIENZ  HHZ 2014-10-14 10:00:30
-SC3 received CH LIENZ  HHZ 2014-10-14 10:00:34
-SC3 received CH LIENZ  HHZ 2014-10-14 10:00:37
-SC3 received CH LIENZ  HHZ 2014-10-14 10:00:42
-SC3 received CH LIENZ  HHZ 2014-10-14 10:00:45
-SC3 received CH LIENZ  HHZ 2014-10-14 10:00:49
-SC3 received CH LIENZ  HHZ 2014-10-14 10:00:53
-SC3 received CH LIENZ  HHZ 2014-10-14 10:00:57
-19:45:54 [debug/RecordInput] RecordStream's end reached
 
 
 ObsPy
