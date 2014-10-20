@@ -34,10 +34,18 @@ $ ~/seiscomp3/bin/seiscomp exec scrttv -I fdsnws://localhost:8080/query --offlin
 
 Set defined endtime: 2014-10-17 20:00:00
 getting routes from http://geofon.gfz-potsdam.de/eidaws/routing/1/query?format=post
-getting data from http://eida.ethz.ch/fdsnws/dataselect/1/query
+getting data from http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query
 getting data from http://www.orfeus-eu.org/fdsnws/dataselect/1/query
-received no data from http://www.orfeus-eu.org/fdsnws/dataselect/1/query
-got 1018880 bytes from http://eida.ethz.ch/fdsnws/dataselect/1/query
+getting data from http://erde.geophysik.uni-muenchen.de:8080/fdsnws/dataselect/1/query
+getting data from http://webservices.rm.ingv.it/fdsnws/dataselect/1/query
+getting data from http://ws.resif.fr/fdsnws/dataselect/1/query
+got 36864 bytes from http://erde.geophysik.uni-muenchen.de:8080/fdsnws/dataselect/1/query
+getting data from http://eida.bgr.de/fdsnws/dataselect/1/query
+got 484864 bytes from http://ws.resif.fr/fdsnws/dataselect/1/query
+getting data from http://www.orfeus-eu.org/fdsnws/dataselect/1/query failed: HTTP Error 413: Request Entity Too Large
+got 1923072 bytes from http://webservices.rm.ingv.it/fdsnws/dataselect/1/query
+got 8180736 bytes from http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query
+got 3321344 bytes from http://eida.bgr.de/fdsnws/dataselect/1/query
 
 
 Seiscomp 3 / Python
