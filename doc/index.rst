@@ -40,7 +40,7 @@ Download the tar file / source from the GEOFON web page at http://geofon.gfz-pot
     Nightly builds can be downloaded from Bitbucket. You can request access at geofon_dc@gfz-potsdam.de.
 
 Untar into a suitable directory visible to the web server,
-such as `/var/www/eidaws/routing/1/`::
+such as `/var/www/eidaws/routing/1/` ::
 
   cd /var/www/eidaws/routing/1
   tar xvzf /path/to/tarfile.tgz
@@ -59,18 +59,18 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
     (See Download_ above.)
     In these instructions we assume this directory is `/var/www/eidaws/routing/1/`.
 
- #. Enable `mod_wsgi`. For openSUSE, add 'wsgi' to the list of modules in the APACHE_MODULES variable in `/etc/sysconfig/apache2`::
+ #. Enable `mod_wsgi`. For openSUSE, add 'wsgi' to the list of modules in the APACHE_MODULES variable in `/etc/sysconfig/apache2` ::
 
        APACHE_MODULES+=" python wsgi"
 
     and restart Apache. You should now see the following line in your
-    configuration (in `/etc/apache2/sysconfig.d/loadmodule.conf` for **openSUSE**)::
+    configuration (in `/etc/apache2/sysconfig.d/loadmodule.conf` for **openSUSE**) ::
 
         LoadModule wsgi_module   /usr/lib64/apache2/mod_wsgi.so
 
     You can also look at the output from ``a2enmod -l`` - you should see wsgi listed.
 
-    For **Ubuntu/Mint**, you can enable the module with the command::
+    For **Ubuntu/Mint**, you can enable the module with the command ::
 
         sudo a2enmod wsgi
 
@@ -80,13 +80,13 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
         sudo service apache2 start
 
     If the module was added succesfully you should see the following two links in
-    ``/etc/apache2/mods-enable``::
+    ``/etc/apache2/mods-enable`` ::
 
         wsgi.conf -> ../mods-available/wsgi.conf
         wsgi.load -> ../mods-available/wsgi.load
 
     For any distribution there may be a message like this in Apache's `error_log` file, showing
-    that `mod_wsgi` was loaded::
+    that `mod_wsgi` was loaded ::
 
         [Tue Jul 16 14:24:32 2013] [notice] Apache/2.2.17 (Linux/SUSE)
         PHP/5.3.5 mod_python/3.3.1 Python/2.7 mod_wsgi/3.3 configured
@@ -94,7 +94,7 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
 
 
  #. Add the following lines to a new file, `conf.d/routing.conf`, or in
-    `default-server.conf`, or in the configuration for your virtual host::
+    `default-server.conf`, or in the configuration for your virtual host ::
 
      WSGIScriptAlias /eidaws/routing/1 /var/www/eidaws/routing/1/routing.wsgi
         <Directory /var/www/eidaws/routing/1/>
@@ -103,7 +103,7 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
         </Directory>
 
     Change `/var/www/eidaws/routing/1` to suit your own web server's needs.
-    You may also need to add a section like::
+    You may also need to add a section like ::
 
         <Directory /var/www/eidaws/routing/1/>
             Order allow,deny
@@ -111,13 +111,13 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
         </Directory>
 
  #. Copy `routing.cfg.sample` to `routing.cfg`,
-    or make a symbolic link::
+    or make a symbolic link ::
 
       cp routing.cfg.sample routing.cfg
 
  #. Edit `routing.cfg` and be sure to configure everything corectly. This is discussed under "`Configuration Options`_" below.
 
- #. Start/restart the web server e.g. as root. In **OpenSUSE**::
+ #. Start/restart the web server e.g. as root. In **OpenSUSE** ::
 
       # /etc/init.d/apache2 configtest
       # /etc/init.d/apache2 restart
@@ -129,12 +129,7 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
       # sudo service apache2 start
 
 
- #. Check that the value of ``arclink.address`` is properly set in
-    `routing.cfg`. For instance::
-
-      arclink.address=eida.gfz-potsdam.de:18002
-
-    Then, get initial metadata in the `data` directory by running the ``update-metadata.sh`` script in that directory.::
+ #. Get initial metadata in the `data` directory by running the ``update-metadata.sh`` script in that directory. ::
 
       # cd /var/www/eidaws/routing/1
       # ./update-metadata.sh
@@ -154,17 +149,17 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
 
     One possible configuration would be to install the system as a user (for
     instance, `sysop`), who will run the crontab update, with the working directory writable by the group of
-    the user running Apache (`www-data` in **Ubuntu/Mint**).::
+    the user running Apache (`www-data` in **Ubuntu/Mint**). ::
 
     # cd {top directory}
     # sudo chown -R sysop.www-data .
     # sudo chmod -R g+w .
 
  #. Arrange for regular updates of the metadata in the working directory.
-    Something like the following lines will be needed in your crontab::
+    Something like the following lines will be needed in your crontab ::
 
-      # Daily metadata update for routing service
-      52 03 * * * /var/www/eidaws/routing/1/update-metadata.sh
+    # Daily metadata update for routing service
+    52 03 * * * /var/www/eidaws/routing/1/update-metadata.sh
 
 Installation problems
 ~~~~~~~~~~~~~~~~~~~~~
@@ -173,9 +168,9 @@ Always check your web server log files (e.g. for Apache: `access_log` and
 `error_log`) for clues.
 
 If you visit http://localhost/eidaws/routing/1/version on your machine
-you should see the version information of the deployed service::
+you should see the version information of the deployed service ::
 
-  Routing Service v1.0.0
+    1.0.0
 
 If these information cannot be retrieved, the installation was not successfull.
 If they *do* show up, check that the information there looks correct.
@@ -185,7 +180,14 @@ If they *do* show up, check that the information there looks correct.
 Configuration options
 ~~~~~~~~~~~~~~~~~~~~~
 
-Blah, blah, blah...
+The configuration file contains only a couple of variables up to this moment.
+Namely, the Arclink server where the default routing table should be retrieved.
+the default value is the Arclink server running at GEOFON, but this can be
+configured with the address of any Arclink server. ::
+
+    [Arclink]
+    server = eida.gfz-potsdam.de
+    port = 18002
 
 Maintenance
 ~~~~~~~~~~~
@@ -199,13 +201,13 @@ Upgrade
 -------
 
 At this stage, it's best to back up and then remove the old installation
-first.::
+first. ::
 
     cd /var/www/eidaws/routing/ ; mv 1 1.old
 
 Then reinstall from scratch, as in the :ref:`installation instructions <oper_installation-on-apache>`.
 Your web server configuration should need no modification.
-At Steps 4-6, re-use your previous versions of ``routing.wsgi`` and ``routing.cfg``::
+At Steps 4-6, re-use your previous versions of ``routing.wsgi`` and ``routing.cfg`` ::
 
     cp ../1.old/routing.wsgi routing.wsgi
     cp ../1.old/routing.cfg routing.cfg

@@ -545,9 +545,9 @@ class RoutingCache(object):
 
     def getRouteMaster(self, n, startD=None, endD=None, service='dataselect',
                        alternative=False):
-        """Implement the following table lookup for the Master Table
+        """Implement the following table lookup for the Master Table::
 
-        11 NET --- --- ---
+              11 NET --- --- ---
 
         The result is returned in a RequestMerge object, which inherits from
         a list.
@@ -584,24 +584,24 @@ class RoutingCache(object):
         return result2
 
     def getRouteSL(self, n, s, l, c, alternative):
-        """Implement the following table lookup for the Seedlink service
+        """Implement the following table lookup for the Seedlink service::
 
-        01 NET STA CHA LOC
-        02 NET STA CHA ---
-        03 NET STA --- LOC
-        04 NET --- CHA LOC
-        05 --- STA CHA LOC
-        06 NET STA --- ---
-        07 NET --- CHA ---
-        08 NET --- --- LOC
-        09 --- STA CHA ---
-        09 --- STA --- LOC
-        10 --- --- CHA LOC
-        11 NET --- --- ---
-        12 --- STA --- ---
-        13 --- --- CHA ---
-        14 --- --- --- LOC
-        15 --- --- --- ---
+                01 NET STA CHA LOC
+                02 NET STA CHA ---
+                03 NET STA --- LOC
+                04 NET --- CHA LOC
+                05 --- STA CHA LOC
+                06 NET STA --- ---
+                07 NET --- CHA ---
+                08 NET --- --- LOC
+                09 --- STA CHA ---
+                09 --- STA --- LOC
+                10 --- --- CHA LOC
+                11 NET --- --- ---
+                12 --- STA --- ---
+                13 --- --- CHA ---
+                14 --- --- --- LOC
+                15 --- --- --- ---
 
         The result is returned in a RequestMerge object, which inherits from
         a list.
@@ -690,24 +690,24 @@ class RoutingCache(object):
                                            datetime.date.today().month,
                                            datetime.date.today().day),
                     alternative=False):
-        """Implement the following table lookup for the Arclink service
+        """Implement the following table lookup for the Arclink service::
 
-        01 NET STA CHA LOC
-        02 NET STA CHA ---
-        03 NET STA --- LOC
-        04 NET --- CHA LOC
-        05 --- STA CHA LOC
-        06 NET STA --- ---
-        07 NET --- CHA ---
-        08 NET --- --- LOC
-        09 --- STA CHA ---
-        09 --- STA --- LOC
-        10 --- --- CHA LOC
-        11 NET --- --- ---
-        12 --- STA --- ---
-        13 --- --- CHA ---
-        14 --- --- --- LOC
-        15 --- --- --- ---
+                01 NET STA CHA LOC
+                02 NET STA CHA ---
+                03 NET STA --- LOC
+                04 NET --- CHA LOC
+                05 --- STA CHA LOC
+                06 NET STA --- ---
+                07 NET --- CHA ---
+                08 NET --- --- LOC
+                09 --- STA CHA ---
+                09 --- STA --- LOC
+                10 --- --- CHA LOC
+                11 NET --- --- ---
+                12 --- STA --- ---
+                13 --- --- CHA ---
+                14 --- --- --- LOC
+                15 --- --- --- ---
 
         The result is returned in a RequestMerge object, which inherits from
         a list.
