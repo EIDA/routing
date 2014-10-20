@@ -31,6 +31,7 @@ import fnmatch
 import json
 import telnetlib
 import xml.etree.cElementTree as ET
+import ConfigParser
 from time import sleep
 from collections import namedtuple
 from operator import add
@@ -254,11 +255,19 @@ class RoutingCache(object):
         with open(os.path.join(here, 'routing.xml')) as f:
             return f.read()
 
-    def configArclink(self, arcServ='eida.gfz-potsdam.de', arcPort=18002):
+    def configArclink(self):
+        # Check Arclink server that must be contacted to get a routing table
+        config = ConfigParser.RawConfigParser()
+
+        here = os.path.dirname(__file__)
+        config.read(os.path.join(here, 'routing.cfg'))
+        arcServ = config.get('Arclink', 'server')
+        arcPort = config.getint('Arclink', 'port')
+
         tn = telnetlib.Telnet(arcServ, arcPort)
         tn.write('HELLO\n')
         # FIXME The institution should be detected here. Shouldn't it?
-        print tn.read_until('GFZ')
+        print tn.read_until('GFZ', 5)
         tn.write('user routing@eida\n')
         print tn.read_until('OK', 5)
         tn.write('request routing\n')
@@ -506,6 +515,8 @@ class RoutingCache(object):
                         try:
                             resArc[i]['url'] = self.__arc2DS(resArc[i]['url'])
                         except:
+                            # No mapping between Arclink and Dataselect
+                            # We should delete it from the result
                             del resArc[i]
 
                     result.extend(resArc)
@@ -553,9 +564,6 @@ class RoutingCache(object):
         for r in realRoutes:
             # Check if the timewindow is encompassed in the returned dates
             if ((startD in r) or (endD in r)):
-            #if (((r[2] is None) or (startD is None) or
-            #        (startD < r[2])) and
-            #        ((endD is None) or (endD > r[1]))):
                 # Filtering with the service parameter!
                 if service == r.service:
                     result.append(r)
@@ -565,8 +573,6 @@ class RoutingCache(object):
         # If I found nothing raise 204
         if not len(result):
             raise WIContentError('No routes have been found!')
-
-        #result = sorted(result, key=lambda res: res.address)
 
         result2 = RequestMerge()
         for r in result:
@@ -666,7 +672,6 @@ class RoutingCache(object):
         result = RequestMerge()
         if realRoute is None:
             raise WIContentError('No routes have been found!')
-            #return result
 
         for route in realRoute:
             # Check that I found a route
@@ -1288,7 +1293,7 @@ def makeQueryGET(parameters):
     try:
         if 'starttime' in parameters:
             start = datetime.datetime.strptime(
-                parameters['starttime'].value.upper(),
+                parameters['starttime'].value[:19].upper(),
                 '%Y-%m-%dT%H:%M:%S')
         elif 'start' in parameters:
             start = datetime.datetime.strptime(
@@ -1297,12 +1302,13 @@ def makeQueryGET(parameters):
         else:
             start = None
     except:
-        return 'Error while converting starttime parameter.'
+        raise WIError('400 Bad Request',
+                      'Error while converting starttime parameter.')
 
     try:
         if 'endtime' in parameters:
             endt = datetime.datetime.strptime(
-                parameters['endtime'].value.upper(),
+                parameters['endtime'].value[:19].upper(),
                 '%Y-%m-%dT%H:%M:%S')
         elif 'end' in parameters:
             endt = datetime.datetime.strptime(
@@ -1311,7 +1317,8 @@ def makeQueryGET(parameters):
         else:
             endt = None
     except:
-        return 'Error while converting endtime parameter.'
+        raise WIError('400 Bad Request',
+                      'Error while converting endtime parameter.')
 
     try:
         if 'service' in parameters:
