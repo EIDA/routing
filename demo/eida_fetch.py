@@ -55,8 +55,11 @@ class URL(object):
     def target_params(self):
         return [(p, v[0]) for (p, v) in urlparse.parse_qs(self.__url[4]).items() if p not in URL.routing_params]
 
+msglock = threading.Lock()
+
 def msg(verb, s):
-    if verb: print >>sys.stderr, s
+    if verb:
+        with msglock: print >>sys.stderr, s
 
 def retry(urlopen, url, data, timeout, count, wait, verb):
     n = 0
