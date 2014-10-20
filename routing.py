@@ -1344,6 +1344,48 @@ def makeQueryGET(parameters):
     return route
 
 
+def makeQueryPOST(postText):
+    global routes
+
+    result = RequestMerge()
+
+    for line in postText.splitlines():
+        if not len(line):
+            continue
+
+        net, sta, loc, cha, start, endt, ser = line.split()
+        net = net.upper()
+        sta = sta.upper()
+        loc = loc.upper()
+        try:
+            start = None if start in ("''", '""') else \
+                datetime.datetime.strptime(start[:19].upper(),
+                                           '%Y-%m-%dT%H:%M:%S')
+        except:
+            raise WIError('400 Bad Request',
+                          'Error while converting %s to datetime' % start)
+
+        try:
+            endt = None if endt in ("''", '""') else \
+                datetime.datetime.strptime(endt[:19].upper(),
+                                           '%Y-%m-%dT%H:%M:%S')
+        except:
+            raise WIError('400 Bad Request',
+                          'Error while converting %s to datetime' % endt)
+
+        ser = ser.lower()
+        alt = False
+
+        #print 'Parameters', net, sta, loc, cha, start, endt, ser
+
+        result.extend(routes.getRoute(net, sta, loc, cha,
+                                      start, endt, ser, alt))
+
+    if len(result) == 0:
+        raise WIContentError('No routes have been found!')
+    return result
+
+
 def applyFormat(resultRM, outFormat='xml'):
     """Apply the format specified to the RequestMerge object received.
     Returns a STRING with the result
@@ -1412,6 +1454,7 @@ def application(environ, start_response):
                 length = int(environ.get('CONTENT_LENGTH', '0'))
             except ValueError:
                 length = 0
+
             # If there is a body to read
             if length != 0:
                 form = environ['wsgi.input'].read(length)
