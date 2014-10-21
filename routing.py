@@ -1526,8 +1526,12 @@ def application(environ, start_response):
         # return send_html_response(status, 'Error! ' + status, start_response)
 
     try:
+        outForm = 'xml'
+
         if environ['REQUEST_METHOD'] == 'GET':
             form = cgi.FieldStorage(fp=environ['wsgi.input'], environ=environ)
+            if 'format' in form:
+                outForm = form['format'].value.lower()
         elif environ['REQUEST_METHOD'] == 'POST':
             form = ''
             try:
@@ -1540,6 +1544,16 @@ def application(environ, start_response):
                 form = environ['wsgi.input'].read(length)
             else:
                 form = environ['wsgi.input'].read()
+
+            for line in form.splitlines():
+                if not len(line):
+                    continue
+
+                if '=' not in line:
+                    break
+                k, v = line.split('=')
+                if k.strip() == 'format':
+                    outForm = v.strip()
 
         else:
             raise Exception
@@ -1586,10 +1600,6 @@ def application(environ, start_response):
         makeQuery = globals()['makeQuery%s' % environ['REQUEST_METHOD']]
         try:
             iterObj = makeQuery(form)
-
-            outForm = 'xml'
-            if 'format' in form:
-                outForm = form['format'].value.lower()
 
             iterObj = applyFormat(iterObj, outForm)
 
