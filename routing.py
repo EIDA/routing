@@ -155,6 +155,55 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
         return True
 
 
+class TW(namedtuple('TW', ['start', 'end'])):
+    __slots__ = ()
+
+    def __contains__(self, otherTW):
+
+        # Trivial case
+        if otherTW.start is None and otherTW.end is None:
+            return True
+
+        if otherTW.start is not None:
+            auxStart = self.start if self.start is not None else \
+                otherTW.start - datetime.timedelta(seconds=1)
+            auxEnd = self.end if self.end is not None else \
+                otherTW.start + datetime.timedelta(seconds=1)
+            if (auxStart < otherTW.start < auxEnd):
+                return True
+            if otherTW.end is None and (otherTW.start < auxEnd):
+                return True
+
+        if otherTW.end is not None:
+            auxStart = self.start if self.start is not None else \
+                otherTW.end - datetime.timedelta(seconds=1)
+            auxEnd = self.end if self.end is not None else \
+                otherTW.end + datetime.timedelta(seconds=1)
+            if (auxStart < otherTW.end < auxEnd):
+                return True
+            if otherTW.start is None and (auxStart < otherTW.end):
+                return True
+
+        return False
+
+    def difference(self, otherTW):
+        result = []
+
+        if otherTW.start is not None:
+            if ((self.start is None and otherTW.start is not None) or
+                    ((self.start is not None) and
+                     (self.start < otherTW.start))):
+                result.append(TW(self.start, otherTW.start))
+
+        if otherTW.end is not None:
+            if ((self.end is None and otherTW.end is not None) or
+                    ((self.end is not None) and
+                     (self.end > otherTW.end))):
+                result.append(TW(otherTW.end, self.end))
+
+        return result
+
+
 class Route(namedtuple('Route', ['address', 'start', 'end', 'priority'])):
     __slots__ = ()
 
@@ -163,8 +212,8 @@ class Route(namedtuple('Route', ['address', 'start', 'end', 'priority'])):
             return True
 
         try:
-            if (((self.start is None) or (self.start <= pointTime)) and
-                    ((self.end is None) or (pointTime <= self.end))):
+            if (((self.start is None) or (self.start < pointTime)) and
+                    ((self.end is None) or (pointTime < self.end))):
                 return True
         except:
             pass
@@ -506,20 +555,21 @@ class RoutingCache(object):
             # In finalset I have all the streams (including expanded and
             # the ones with wildcards), that I need to request.
             # Now I need the URLs
-            for st in finalset:
-                    resArc = self.getRouteArc(st.n, st.s, st.l, st.c,
-                                              startD, endD, alternative)
+            while finalset:
+                st = finalset.pop()
+                resArc = self.getRouteArc(st.n, st.s, st.l, st.c,
+                                          startD, endD, alternative)
 
-                    for i in range(len(resArc) - 1, -1, -1):
-                        resArc[i]['name'] = 'dataselect'
-                        try:
-                            resArc[i]['url'] = self.__arc2DS(resArc[i]['url'])
-                        except:
-                            # No mapping between Arclink and Dataselect
-                            # We should delete it from the result
-                            del resArc[i]
+                for i in range(len(resArc) - 1, -1, -1):
+                    resArc[i]['name'] = 'dataselect'
+                    try:
+                        resArc[i]['url'] = self.__arc2DS(resArc[i]['url'])
+                    except:
+                        # No mapping between Arclink and Dataselect
+                        # We should delete it from the result
+                        del resArc[i]
 
-                    result.extend(resArc)
+                result.extend(resArc)
 
             # Check the coherency of the routes to set the return code
             if len(result) == 0:
@@ -563,6 +613,7 @@ class RoutingCache(object):
         # Check that I found a route
         for r in realRoutes:
             # Check if the timewindow is encompassed in the returned dates
+            # FIXME This should be changed to use the IN clause from TW
             if ((startD in r) or (endD in r)):
                 # Filtering with the service parameter!
                 if service == r.service:
@@ -777,19 +828,35 @@ class RoutingCache(object):
             #raise Exception('No route in Arclink for stream %s.%s.%s.%s' %
             #                (n, s, l, c))
 
+        # Requested timewindow
+        tw = set()
+        tw.add(TW(startD, endD))
+
         # We don't need to loop as routes are already ordered by
         # priority. Take the first one!
-        for route in realRoute:
-            # Check if the timewindow is encompassed in the returned dates
-            if ((startD in route) or (endD in route)):
-                result.append('arclink', route.address,
-                              route.priority if route.priority is not
-                              None else '', n, s, l, c,
-                              startD if startD is not None else '',
-                              endD if endD is not None else '')
-                # Unless alternative routes are needed I can stop here
-                if not alternative:
-                    break
+        while tw:
+            #sleep(1)
+            toProc = tw.pop()
+            #print 'Processing', toProc
+            for ro in realRoute:
+                # Check if the timewindow is encompassed in the returned dates
+                #print (toProc in TW(ro.start, ro.end))
+                if (toProc in TW(ro.start, ro.end)):
+
+                    # If the timewindow is not complete then add the missing
+                    # ranges to the tw set.
+                    for auxTW in toProc.difference(TW(ro.start, ro.end)):
+                        #print 'Adding', auxTW
+                        tw.add(auxTW)
+
+                    result.append('arclink', ro.address,
+                                  ro.priority if ro.priority is not
+                                  None else '', n, s, l, c,
+                                  ro.start if ro.start is not None else '',
+                                  ro.end if ro.end is not None else '')
+                    # Unless alternative routes are needed I can stop here
+                    if not alternative:
+                        break
 
         return result
 
