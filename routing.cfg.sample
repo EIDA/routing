@@ -2,3 +2,6 @@
 server = eida.gfz-potsdam.de
 port = 18002
 
+[Service]
+info = Routing information from the Arclink Server at GEOFON
+

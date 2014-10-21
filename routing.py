@@ -1507,7 +1507,7 @@ def application(environ, start_response):
 
     # Check whether the function called is implemented
     implementedFunctions = ['query', 'application.wadl', 'localconfig',
-                            'version']
+                            'version', 'info']
 
     if routes is None:
         # Add routing cache here, to be accessible to all modules
@@ -1559,6 +1559,14 @@ def application(environ, start_response):
 
     elif fname == 'version':
         text = "1.0.0"
+        return send_plain_response('200 OK', text, start_response)
+
+    elif fname == 'info':
+        config = ConfigParser.RawConfigParser()
+        here = os.path.dirname(__file__)
+        config.read(os.path.join(here, 'routing.cfg'))
+
+        text = config.get('Service', 'info')
         return send_plain_response('200 OK', text, start_response)
 
     raise Exception('This point should have never been reached!')
