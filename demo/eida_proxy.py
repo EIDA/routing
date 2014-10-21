@@ -6,7 +6,7 @@ from twisted.web.server import Site, NOT_DONE_YET
 from twisted.web.resource import Resource
 
 HTTP_PORT = 8080
-EIDA_FETCH = ('./eida_fetch.py', '-v', '-p', '/dev/stdin', '-o', '/dev/stdout')
+EIDA_FETCH = ('./eida_fetch.py', '-p', '/dev/stdin', '-o', '/dev/stdout', '-v', '-t', '120', '-r', '0')
 
 class DataPipe(object):
     def __init__(self, req, proc):
@@ -14,6 +14,9 @@ class DataPipe(object):
         self.proc = proc
 
     def resumeProducing(self):
+        # The read call blocks the event loop (eg., the proxy would not be
+        # accepting connections until receiving something from eida_fetch).
+        # How to solve this with Twisted?
         buf = self.proc.stdout.read(4096)
 
         if not buf:
