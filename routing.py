@@ -684,11 +684,7 @@ class RoutingCache(object):
 
         return result
 
-    # FIXME start and end dates with wrong default values!
-    def getRouteArc(self, n, s, l, c, startD=datetime.datetime(1980, 1, 1),
-                    endD=datetime.datetime(datetime.date.today().year,
-                                           datetime.date.today().month,
-                                           datetime.date.today().day),
+    def getRouteArc(self, n, s, l, c, startD=None, endD=None,
                     alternative=False):
         """Implement the following table lookup for the Arclink service::
 
@@ -781,33 +777,19 @@ class RoutingCache(object):
             #raise Exception('No route in Arclink for stream %s.%s.%s.%s' %
             #                (n, s, l, c))
 
-        # FIXME I think we don't need to loop as routes are already ordered by
+        # We don't need to loop as routes are already ordered by
         # priority. Take the first one!
-        bestPrio = None
         for route in realRoute:
-            # Check that I found a route
-            if route is not None:
-                # Check if the timewindow is encompassed in the returned dates
-                if ((startD not in route) and (endD not in route)):
-                    # If it is not, return None
-                    #realRoute = None
-                    continue
-                else:
-                    if alternative:
-                        result.append('arclink', route.address,
-                                      route.priority if route.priority is not
-                                      None else '', n, s, l, c,
-                                      startD if startD is not None else '',
-                                      endD if endD is not None else '')
-                    elif ((bestPrio is None) or
-                          (route.priority < bestPrio)):
-                        result = RequestMerge()
-                        result.append('arclink', route.address,
-                                      route.priority if route.priority is not
-                                      None else '', n, s, l, c,
-                                      startD if startD is not None else '',
-                                      endD if endD is not None else '')
-                        bestPrio = route.priority
+            # Check if the timewindow is encompassed in the returned dates
+            if ((startD in route) or (endD in route)):
+                result.append('arclink', route.address,
+                              route.priority if route.priority is not
+                              None else '', n, s, l, c,
+                              startD if startD is not None else '',
+                              endD if endD is not None else '')
+                # Unless alternative routes are needed I can stop here
+                if not alternative:
+                    break
 
         return result
 
