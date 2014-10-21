@@ -21,6 +21,7 @@ class DataPipe(object):
             self.req.finish()
             self.proc.terminate()
             self.proc.stdout.close()
+            print "eida_fetch finished"
             return
 
         self.req.write(buf)
@@ -28,6 +29,7 @@ class DataPipe(object):
     def stopProducing(self):
         self.proc.terminate()
         self.proc.stdout.close()
+        print "eida_fetch aborted"
 
 class Query(Resource):
     def render_POST(self, req):
