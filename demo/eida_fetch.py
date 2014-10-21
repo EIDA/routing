@@ -11,6 +11,7 @@ import cookielib
 import tempfile
 import threading
 import Queue
+import socket
 
 VERSION = "1.0 (2014.294)"
 
@@ -104,7 +105,7 @@ def retry(urlopen, url, data, timeout, count, wait, verb):
             msg(True, "retrying %s (%d) after %d seconds due to HTTP status code %d" % (url, n, wait, e.code))
             time.sleep(wait)
 
-        except urllib2.URLError as e:
+        except (urllib2.URLError, socket.error) as e:
             msg(verb, "retrying %s (%d) after %d seconds due to %s" % (url, n, wait, str(e)))
             time.sleep(wait)
 
@@ -135,7 +136,7 @@ def fetch(url, authdata, postlines, dest, lock, timeout, retry_count, retry_wait
             except urllib2.HTTPError as e:
                 msg(True, "authentication at %s failed with HTTP status code %d" % (auth_url, e.code))
 
-            except urllib2.URLError as e:
+            except (urllib2.URLError, socket.error) as e:
                 msg(True, "authentication at %s failed: %s" % (auth_url, str(e)))
 
         else:
@@ -209,7 +210,7 @@ def fetch(url, authdata, postlines, dest, lock, timeout, retry_count, retry_wait
                     msg(True, "getting data from %s failed with HTTP status code %d" % (query_url, e.code))
                     break
 
-            except urllib2.URLError as e:
+            except (urllib2.URLError, socket.error) as e:
                 msg(True, "getting data from %s failed: %s" % (query_url, str(e)))
                 break
 
@@ -271,7 +272,7 @@ def route(url, authdata, postdata, dest, lock, timeout, retry_count, retry_wait,
     except urllib2.HTTPError as e:
         raise Error("getting routes from %s failed with HTTP status code %d" % (query_url, e.code))
 
-    except urllib2.URLError as e:
+    except (urllib2.URLError, socket.error) as e:
         raise Error("getting routes from %s failed: %s" % (query_url, str(e)))
 
     for t in threads:
