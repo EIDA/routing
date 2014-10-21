@@ -13,7 +13,7 @@ import threading
 import Queue
 import socket
 
-VERSION = "1.0 (2014.294)"
+VERSION = "1.0 (2014.295)"
 
 GET_PARAMS = set(('net', 'network',
                   'sta', 'station',
