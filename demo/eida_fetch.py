@@ -254,7 +254,7 @@ def route(url, authdata, postdata, dest, lock, timeout, retry_count, retry_wait,
                         if postlines:
                             target_url = TargetURL(urlparse.urlparse(urlline), url.target_params())
                             threads.append(threading.Thread(target=fetch, args=(target_url, authdata,
-                            postlines, dest, lock, timeout, retry_count, retry_wait, finished, verb)))
+                                postlines, dest, lock, timeout, retry_count, retry_wait, finished, verb)))
 
                         urlline = None
                         postlines = []

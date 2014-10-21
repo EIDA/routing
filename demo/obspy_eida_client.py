@@ -14,7 +14,7 @@ class Client(obspy.fdsn.client.Client):
 
     def _create_url_from_parameters(self, service, *args):
         if service in ('dataselect', 'station'):
-            # construct a pseudo-URL for the routing service
+            # construct a URL for the routing service
             u = urlparse.urlparse(obspy.fdsn.client.Client._create_url_from_parameters(self, service, *args))
             return urlparse.urlunparse((u.scheme, u.netloc, '/eidaws/routing/1/query', '', u.query + '&service=' + service, ''))
 
