@@ -33,6 +33,7 @@ $ echo "streams.codes=*.*..BHZ" >scrttv.cfg
 $ ~/seiscomp3/bin/seiscomp exec scrttv -I fdsnws://localhost:8080/query --offline --no-inventory --config-file scrttv.cfg --end-time '2014-10-17 20:00:00'
 
 Set defined endtime: 2014-10-17 20:00:00
+getting routes from http://geofon.gfz-potsdam.de/eidaws/routing/1/query
 getting data from http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query
 getting data from http://erde.geophysik.uni-muenchen.de:8080/fdsnws/dataselect/1/query
 getting data from http://www.orfeus-eu.org/fdsnws/dataselect/1/query
