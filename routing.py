@@ -203,6 +203,28 @@ class TW(namedtuple('TW', ['start', 'end'])):
 
         return result
 
+    def intersection(self, otherTW):
+        resSt = None
+        resEn = None
+
+        # Trivial case
+        if otherTW.start is None and otherTW.end is None:
+            return self
+
+        if otherTW.start is not None:
+            resSt = max(self.start, otherTW.start) if self.start is not None \
+                else otherTW.start
+        else:
+            resSt = self.start
+
+        if otherTW.end is not None:
+            resEn = min(self.end, otherTW.end) if self.end is not None \
+                else otherTW.end
+        else:
+            resEn = self.end
+
+        return TW(resSt, resEn)
+
 
 class Route(namedtuple('Route', ['address', 'start', 'end', 'priority'])):
     __slots__ = ()
@@ -840,7 +862,8 @@ class RoutingCache(object):
             #print 'Processing', toProc
             for ro in realRoute:
                 # Check if the timewindow is encompassed in the returned dates
-                #print (toProc in TW(ro.start, ro.end))
+                #print toProc, ' in ', TW(ro.start, ro.end), \
+                    #(toProc in TW(ro.start, ro.end))
                 if (toProc in TW(ro.start, ro.end)):
 
                     # If the timewindow is not complete then add the missing
@@ -849,11 +872,12 @@ class RoutingCache(object):
                         #print 'Adding', auxTW
                         tw.add(auxTW)
 
+                    auxSt, auxEn = toProc.intersection(TW(ro.start, ro.end))
                     result.append('arclink', ro.address,
                                   ro.priority if ro.priority is not
                                   None else '', n, s, l, c,
-                                  ro.start if ro.start is not None else '',
-                                  ro.end if ro.end is not None else '')
+                                  auxSt if auxSt is not None else '',
+                                  auxEn if auxEn is not None else '')
                     # Unless alternative routes are needed I can stop here
                     if not alternative:
                         break
