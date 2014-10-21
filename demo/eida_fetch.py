@@ -12,7 +12,7 @@ import tempfile
 import threading
 import Queue
 
-VERSION = "1.0 (2014.293)"
+VERSION = "1.0 (2014.294)"
 
 GET_PARAMS = set(('net', 'network',
                   'sta', 'station',
@@ -32,10 +32,11 @@ class Error(Exception):
     pass
 
 class TargetURL(object):
-    def __init__(self, url):
+    def __init__(self, url, qp):
         self.__scheme = url.scheme
         self.__netloc = url.netloc
         self.__path = url.path.rstrip('query').rstrip('/')
+        self.__qp = dict(qp)
 
     def auth(self):
         path = self.__path + '/auth'
@@ -46,12 +47,15 @@ class TargetURL(object):
         path = self.__path + '/query'
         return urlparse.urlunparse((scheme, self.__netloc, path, '', '', ''))
 
+    def post_params(self):
+        return self.__qp.items()
+
 class RoutingURL(object):
     def __init__(self, url, qp):
         self.__scheme = url.scheme
         self.__netloc = url.netloc
         self.__path = url.path.rstrip('query').rstrip('/')
-        self.__qp = qp.copy()
+        self.__qp = dict(qp)
         self.__qp['format'] = 'post'
 
     def get(self):
@@ -93,11 +97,18 @@ def retry(urlopen, url, data, timeout, count, wait, verb):
             msg(verb, "retrying %s (%d) after %d seconds due to HTTP status code %d" % (url, n, wait, fd.getcode()))
             time.sleep(wait)
 
+        except urllib2.HTTPError as e:
+            if e.code == 413:
+                raise
+
+            msg(True, "retrying %s (%d) after %d seconds due to HTTP status code %d" % (url, n, wait, e.code))
+            time.sleep(wait)
+
         except urllib2.URLError as e:
             msg(verb, "retrying %s (%d) after %d seconds due to %s" % (url, n, wait, str(e)))
             time.sleep(wait)
 
-def fetch(url, authdata, postdata, dest, lock, timeout, retry_count, retry_wait, finished, verb):
+def fetch(url, authdata, postlines, dest, lock, timeout, retry_count, retry_wait, finished, verb):
     try:
         cj = cookielib.CookieJar()
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
@@ -121,59 +132,86 @@ def fetch(url, authdata, postdata, dest, lock, timeout, retry_count, retry_wait,
                 finally:
                     fd.close()
 
+            except urllib2.HTTPError as e:
+                msg(True, "authentication at %s failed with HTTP status code %d" % (auth_url, e.code))
+
             except urllib2.URLError as e:
                 msg(True, "authentication at %s failed: %s" % (auth_url, str(e)))
 
         else:
             query_url = url.post(False)
 
-        msg(verb, "getting data from %s" % query_url)
+        i = 0
+        n = len(postlines)
 
-        try:
-            fd = retry(opener.open, query_url, postdata, timeout, retry_count, retry_wait, verb)
+        while i < len(postlines):
+            if n == len(postlines):
+                msg(verb, "getting data from %s" % query_url)
+
+            else:
+                msg(verb, "getting data from %s (%d%%..%d%%)" % (query_url, 100*i/len(postlines), min(100, 100*(i+n)/len(postlines))))
+
+            postdata = ''.join((p + '=' + v + '\n') for (p, v) in url.post_params()) + ''.join(postlines[i:i+n])
 
             try:
-                if fd.getcode() == 204:
-                    msg(verb, "received no data from %s" % query_url)
+                fd = retry(opener.open, query_url, postdata, timeout, retry_count, retry_wait, verb)
 
-                elif fd.getcode() != 200:
-                    msg(True, "getting data from %s failed with HTTP status code %d" % fd.getcode())
+                try:
+                    if fd.getcode() == 204:
+                        msg(verb, "received no data from %s" % query_url)
 
-                else:
-                    size = 0
+                    elif fd.getcode() != 200:
+                        msg(True, "getting data from %s failed with HTTP status code %d" % (query_url, fd.getcode()))
+                        break
 
-                    content_type = fd.info().getheader('Content-Type')
+                    else:
+                        size = 0
 
-                    if content_type == "application/vnd.fdsn.mseed":
-                        while True:
-                            buf = fd.read(4096)
-                            if not buf: break
-                            with lock: dest.write(buf)
-                            size += len(buf)
+                        content_type = fd.info().getheader('Content-Type')
 
-                        msg(verb, "got %d bytes from %s" % (size, query_url))
-
-                    elif content_type == "application/xml":
-                        with tempfile.TemporaryFile() as tmpfd:
+                        if content_type == "application/vnd.fdsn.mseed":
                             while True:
                                 buf = fd.read(4096)
                                 if not buf: break
-                                tmpfd.write(buf)
+                                with lock: dest.write(buf)
                                 size += len(buf)
 
                             msg(verb, "got %d bytes from %s" % (size, query_url))
 
-                            tmpfd.seek(0)
-                            with lock: shutil.copyfileobj(tmpfd, dest)
+                        elif content_type == "application/xml":
+                            with tempfile.TemporaryFile() as tmpfd:
+                                while True:
+                                    buf = fd.read(4096)
+                                    if not buf: break
+                                    tmpfd.write(buf)
+                                    size += len(buf)
 
-                    else:
-                        msg(True, "getting data from %s failed: unsupported content type '%s'" % (query_url, content_type))
+                                msg(verb, "got %d bytes from %s" % (size, query_url))
 
-            finally:
-                fd.close()
+                                tmpfd.seek(0)
+                                with lock: shutil.copyfileobj(tmpfd, dest)
 
-        except urllib2.URLError as e:
-            msg(True, "getting data from %s failed: %s" % (query_url, str(e)))
+                        else:
+                            msg(True, "getting data from %s failed: unsupported content type '%s'" % (query_url, content_type))
+                            break
+
+                    i += n
+
+                finally:
+                    fd.close()
+
+            except urllib2.HTTPError as e:
+                if e.code == 413 and n > 1:
+                    msg(verb, "request too large for %s, splitting" % query_url)
+                    n = -(n//-2)
+
+                else:
+                    msg(True, "getting data from %s failed with HTTP status code %d" % (query_url, e.code))
+                    break
+
+            except urllib2.URLError as e:
+                msg(True, "getting data from %s failed: %s" % (query_url, str(e)))
+                break
 
     finally:
         finished.put(threading.current_thread())
@@ -200,7 +238,7 @@ def route(url, authdata, postdata, dest, lock, timeout, retry_count, retry_wait,
                 raise Error("received no routes from %s" % query_url)
 
             elif fd.getcode() != 200:
-                raise Error("getting routes from %s failed with code %d" % (query_url, fd.getcode()))
+                raise Error("getting routes from %s failed with HTTP status code %d" % (query_url, fd.getcode()))
 
             else:
                 urlline = None
@@ -214,10 +252,9 @@ def route(url, authdata, postdata, dest, lock, timeout, retry_count, retry_wait,
 
                     elif not line.strip():
                         if postlines:
-                            url1 = TargetURL(urlparse.urlparse(urlline))
-                            postdata1 = ''.join((p + '=' + v + '\n') for (p, v) in url.target_params()) + ''.join(postlines)
-                            threads.append(threading.Thread(target=fetch, args=(url1, authdata, postdata1,
-                                dest, lock, timeout, retry_count, retry_wait, finished, verb)))
+                            target_url = TargetURL(urlparse.urlparse(urlline), url.target_params())
+                            threads.append(threading.Thread(target=fetch, args=(target_url, authdata,
+                            postlines, dest, lock, timeout, retry_count, retry_wait, finished, verb)))
 
                         urlline = None
                         postlines = []
@@ -230,6 +267,9 @@ def route(url, authdata, postdata, dest, lock, timeout, retry_count, retry_wait,
 
         finally:
             fd.close()
+
+    except urllib2.HTTPError as e:
+        raise Error("getting routes from %s failed with HTTP status code %d" % (query_url, e.code))
 
     except urllib2.URLError as e:
         raise Error("getting routes from %s failed: %s" % (query_url, str(e)))

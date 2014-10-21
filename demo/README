@@ -33,22 +33,22 @@ $ echo "streams.codes=*.*..BHZ" >scrttv.cfg
 $ ~/seiscomp3/bin/seiscomp exec scrttv -I fdsnws://localhost:8080/query --offline --no-inventory --config-file scrttv.cfg --end-time '2014-10-17 20:00:00'
 
 Set defined endtime: 2014-10-17 20:00:00
-getting routes from http://geofon.gfz-potsdam.de/eidaws/routing/1/query
 getting data from http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query
-getting data from http://www.orfeus-eu.org/fdsnws/dataselect/1/query
 getting data from http://erde.geophysik.uni-muenchen.de:8080/fdsnws/dataselect/1/query
+getting data from http://www.orfeus-eu.org/fdsnws/dataselect/1/query
 getting data from http://webservices.rm.ingv.it/fdsnws/dataselect/1/query
 getting data from http://ws.resif.fr/fdsnws/dataselect/1/query
-got 36864 bytes from http://erde.geophysik.uni-muenchen.de:8080/fdsnws/dataselect/1/query
-getting data from http://eida.bgr.de/fdsnws/dataselect/1/query
 got 484864 bytes from http://ws.resif.fr/fdsnws/dataselect/1/query
-getting data from http://www.orfeus-eu.org/fdsnws/dataselect/1/query failed: HTTP Error 413: Request Entity Too Large
-got 1923072 bytes from http://webservices.rm.ingv.it/fdsnws/dataselect/1/query
-got 8180736 bytes from http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query
+getting data from http://eida.bgr.de/fdsnws/dataselect/1/query
+got 36864 bytes from http://erde.geophysik.uni-muenchen.de:8080/fdsnws/dataselect/1/query
+request too large for http://www.orfeus-eu.org/fdsnws/dataselect/1/query, splitting
+getting data from http://www.orfeus-eu.org/fdsnws/dataselect/1/query (0%..50%)
 got 3321344 bytes from http://eida.bgr.de/fdsnws/dataselect/1/query
-
-Note: limiting request size is currently not implemented, so the request might
-be too large for some datacenters (error 413).
+got 8180736 bytes from http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query
+got 1923072 bytes from http://webservices.rm.ingv.it/fdsnws/dataselect/1/query
+got 5778944 bytes from http://www.orfeus-eu.org/fdsnws/dataselect/1/query
+getting data from http://www.orfeus-eu.org/fdsnws/dataselect/1/query (50%..100%)
+got 4209664 bytes from http://www.orfeus-eu.org/fdsnws/dataselect/1/query
 
 
 ObsPy
