@@ -9,34 +9,33 @@ HTTP_PORT = 8080
 EIDA_FETCH = ('./eida_fetch.py', '-v', '-p', '/dev/stdin', '-o', '/dev/stdout')
 
 class DataPipe(object):
-    def __init__(self, req, inp):
+    def __init__(self, req, proc):
         self.req = req
-        self.inp = inp
-        self.__paused = False
+        self.proc = proc
 
     def resumeProducing(self):
-        self.__paused = False
+        buf = self.proc.stdout.read(4096)
 
-        while not self.__paused:
-            buf = self.inp.read(4096)
+        if not buf:
+            self.req.unregisterProducer()
+            self.req.finish()
+            self.proc.terminate()
+            self.proc.stdout.close()
+            return
 
-            if not buf:
-                self.req.unregisterProducer()
-                self.req.finish()
-                return
-
-            self.req.write(buf)
+        self.req.write(buf)
 
     def stopProducing(self):
-        self.__paused = True
+        self.proc.terminate()
+        self.proc.stdout.close()
 
 class Query(Resource):
     def render_POST(self, req):
-        p = subprocess.Popen(EIDA_FETCH, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        p.stdin.write(req.content.getvalue())
-        p.stdin.close()
+        proc = subprocess.Popen(EIDA_FETCH, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        proc.stdin.write(req.content.getvalue())
+        proc.stdin.close()
         req.setHeader('Content-Type', 'application/vnd.fdsn.mseed')
-        req.registerProducer(DataPipe(req, p.stdout), True)
+        req.registerProducer(DataPipe(req, proc), False)
         return NOT_DONE_YET
 
 root = Resource()
