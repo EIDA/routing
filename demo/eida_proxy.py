@@ -6,25 +6,29 @@ from twisted.web.server import Site, NOT_DONE_YET
 from twisted.web.resource import Resource
 
 HTTP_PORT = 8080
-EIDA_FETCH = ('./eida_fetch.py', '-p', '/dev/stdin', '-o', '/dev/stdout', '-v', '-t', '60', '-r', '0')
+EIDA_FETCH = ('./eida_fetch.py', '-v', '-p', '/dev/stdin', '-o', '/dev/stdout')
 
 class DataPipe(object):
     def __init__(self, req, inp):
         self.req = req
         self.inp = inp
+        self.__paused = False
 
     def resumeProducing(self):
-        buf = self.inp.read(4096)
+        self.__paused = False
 
-        if not buf:
-            self.req.unregisterProducer()
-            self.req.finish()
-            return
+        while not self.__paused:
+            buf = self.inp.read(4096)
 
-        self.req.write(buf)
+            if not buf:
+                self.req.unregisterProducer()
+                self.req.finish()
+                return
+
+            self.req.write(buf)
 
     def stopProducing(self):
-        pass
+        self.__paused = True
 
 class Query(Resource):
     def render_POST(self, req):
@@ -32,7 +36,7 @@ class Query(Resource):
         p.stdin.write(req.content.getvalue())
         p.stdin.close()
         req.setHeader('Content-Type', 'application/vnd.fdsn.mseed')
-        req.registerProducer(DataPipe(req, p.stdout), False)
+        req.registerProducer(DataPipe(req, p.stdout), True)
         return NOT_DONE_YET
 
 root = Resource()
