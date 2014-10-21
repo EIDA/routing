@@ -1347,13 +1347,49 @@ def makeQueryGET(parameters):
 def makeQueryPOST(postText):
     global routes
 
+    # This are the parameters accepted appart from N.S.L.C
+    extraParams = ['format', 'service', 'alternative']
+
+    # Defualt values
+    ser = 'dataselect'
+    alt = False
+
     result = RequestMerge()
+    # Check if we are still processing the header of the POST body. This has a
+    # format like key=value, one per line.
+    inHeader = True
 
     for line in postText.splitlines():
         if not len(line):
             continue
 
-        net, sta, loc, cha, start, endt, ser = line.split()
+        if (inHeader and ('=' not in line)):
+            inHeader = False
+
+        if inHeader:
+            try:
+                key, value = line.split('=')
+                key = key.strip()
+                value = value.strip()
+            except:
+                raise WIError('400 Bad Request',
+                              'Wrong format detected while processing: %s' %
+                              line)
+
+            if key not in extraParams:
+                raise WIError('400 Bad Request',
+                              'Unknown parameter "%s"' % key)
+
+            if key == 'service':
+                ser = value
+            elif key == 'alternative':
+                alt = True if value.lower() == 'true' else False
+
+            continue
+
+        # I'm already in the main part of the POST body, where the streams are
+        # specified
+        net, sta, loc, cha, start, endt = line.split()
         net = net.upper()
         sta = sta.upper()
         loc = loc.upper()
@@ -1372,11 +1408,6 @@ def makeQueryPOST(postText):
         except:
             raise WIError('400 Bad Request',
                           'Error while converting %s to datetime' % endt)
-
-        ser = ser.lower()
-        alt = False
-
-        #print 'Parameters', net, sta, loc, cha, start, endt, ser
 
         result.extend(routes.getRoute(net, sta, loc, cha,
                                       start, endt, ser, alt))
