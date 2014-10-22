@@ -5,7 +5,7 @@ import eida_fetch
 import obspy.fdsn.client
 
 class Client(obspy.fdsn.client.Client):
-    def __init__(self, base_url="GFZ", retry_count=10, retry_wait=60, maxthreads=10, authdata=None, **kwargs):
+    def __init__(self, base_url="GFZ", retry_count=10, retry_wait=60, maxthreads=5, authdata=None, **kwargs):
         obspy.fdsn.client.Client.__init__(self, base_url, **kwargs)
         self.__retry_count = retry_count
         self.__retry_wait = retry_wait
