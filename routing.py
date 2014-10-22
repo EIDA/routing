@@ -1482,8 +1482,11 @@ def makeQueryPOST(postText):
             raise WIError('400 Bad Request',
                           'Error while converting %s to datetime' % endt)
 
-        result.extend(routes.getRoute(net, sta, loc, cha,
-                                      start, endt, ser, alt))
+        try:
+            result.extend(routes.getRoute(net, sta, loc, cha,
+                                          start, endt, ser, alt))
+        except WIContentError:
+            pass
 
     if len(result) == 0:
         raise WIContentError('No routes have been found!')
@@ -1623,6 +1626,7 @@ def application(environ, start_response):
     elif fname == 'query':
         makeQuery = globals()['makeQuery%s' % environ['REQUEST_METHOD']]
         try:
+            print form
             iterObj = makeQuery(form)
 
             iterObj = applyFormat(iterObj, outForm)
