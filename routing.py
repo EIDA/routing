@@ -1370,7 +1370,7 @@ def makeQueryGET(parameters):
                 '%Y-%m-%dT%H:%M:%S')
         elif 'start' in parameters:
             start = datetime.datetime.strptime(
-                parameters['start'].value.upper(),
+                parameters['start'].value[:19].upper(),
                 '%Y-%m-%dT%H:%M:%S')
         else:
             start = None
@@ -1385,7 +1385,7 @@ def makeQueryGET(parameters):
                 '%Y-%m-%dT%H:%M:%S')
         elif 'end' in parameters:
             endt = datetime.datetime.strptime(
-                parameters['end'].value.upper(),
+                parameters['end'].value[:19].upper(),
                 '%Y-%m-%dT%H:%M:%S')
         else:
             endt = None
