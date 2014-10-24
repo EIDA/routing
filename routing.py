@@ -7,14 +7,12 @@
 #
 # ----------------------------------------------------------------------
 
-"""Routing Webservice for EIDA. Encapsulate and manage routing information of networks, stations, locations and streams read from an XML file.
+"""
+.. module:: routing
+   :platform: Linux
+   :synopsis: Routing Webservice for EIDA
 
 .. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
-
-.. note:: This program is free software; you can redistribute it and/or modify
-          it under the terms of the GNU General Public License as published by
-          the Free Software Foundation; either version 2, or (at your option)
-          any later version. For more information, see http://www.gnu.org/
 """
 
 ##################################################################
@@ -279,10 +277,22 @@ class RoutingException(Exception):
 
 class RoutingCache(object):
     """
-    :synopsis: Encapsulate and manage routing information of streams (N.S.L.C) read from an XML file.
+:synopsis: Manage routing information of streams read from an Arclink-XML file.
+:platform: Linux (maybe also Windows)
     """
 
     def __init__(self, routingFile, invFile, masterFile=None):
+        """RoutingCache constructor
+
+        :param routingFile: XML file with routing information
+        :type routingFile: str
+        :param invFile: XML file with full inventory information
+        :type invFile: str
+        :param masterFile: XML file with high priority routes at network level
+        :type masterFile: str
+
+        """
+
         # Arclink routing file in XML format
         self.routingFile = routingFile
 
@@ -306,11 +316,11 @@ class RoutingCache(object):
             self.configArclink()
             self.update()
 
-        if masterFile is None:
-            return
-
         # Add inventory cache here, to be able to expand request if necessary
         self.ic = InventoryCache(invFile)
+
+        if masterFile is None:
+            return
 
         # Master routing file in XML format
         self.masterFile = masterFile
@@ -321,12 +331,31 @@ class RoutingCache(object):
         self.updateMT()
 
     def localConfig(self):
+        """Returns the local routing configuration
+
+        :returns: str -- local routing information in Arclink-XML format
+
+        """
+
         here = os.path.dirname(__file__)
 
         with open(os.path.join(here, 'routing.xml')) as f:
             return f.read()
 
     def configArclink(self):
+        """Connects via telnet to an Arclink server to get routing information.
+The address and port of the server are read from *routing.cfg*.
+The data is saved in the file *routing.xml*. Generally used to start operating
+with an EIDA default configuration.
+
+.. note::
+
+    In the future this method should not be used and the configuration should
+    be independent from Arclink. Namely, the *routing.xml* file must exist in
+    advance.
+
+        """
+
         # Check Arclink server that must be contacted to get a routing table
         config = ConfigParser.RawConfigParser()
 
@@ -400,7 +429,13 @@ class RoutingCache(object):
         print 'Configuration read from Arclink!'
 
     def __arc2DS(self, route):
-        """Map from an Arclink address to a Dataselect one."""
+        """Map from an Arclink address to a Dataselect one
+
+:param route: Arclink route
+:type route: str
+:returns: str -- Dataselect equivalent of the given Arclink route
+:raises: Exception -- if no translation is possible
+        """
 
         gfz = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
         odc = 'http://www.orfeus-eu.org/fdsnws/dataselect/1/query'
@@ -410,6 +445,7 @@ class RoutingCache(object):
         bgr = 'http://eida.bgr.de/fdsnws/dataselect/1/query'
         lmu = 'http://erde.geophysik.uni-muenchen.de:8080/fdsnws/' +\
             'dataselect/1/query'
+        ipgp = 'http://eida.ipgp.fr/fdsnws/dataselect/1/query'
         # iris = 'http://service.iris.edu/fdsnws/dataselect/1/query'
 
         # Try to identify the hosting institution
@@ -429,13 +465,35 @@ class RoutingCache(object):
             return bgr
         elif host.startswith('141.84.'):
             return lmu
+        elif host.endswith('ipgp.fr'):
+            return ipgp
         raise Exception('No Dataselect equivalent found for %s' % route)
 
     def getRoute(self, n='*', s='*', l='*', c='*', startD=None, endD=None,
                  service='dataselect', alternative=False):
-        """getRoute receives a stream and a timewindow and returns a list.
-        The result is returned in a RequestMerge object, which inherits from
-        a list.
+        """Based on a stream(s) and a timewindow returns all the neccessary
+information (URLs and parameters) to do the requests to different datacenters
+(if needed) and be able to merge the returned data avoiding duplication.
+
+:param n: Network code
+:param n: str
+:param s: Station code
+:param s: str
+:param l: Location code
+:param l: str
+:param c: Channel code
+:param c: str
+:param startD: Start date and time
+:param startD: datetime
+:param endD: End date and time
+:param endD: datetime
+:param service: Service from which you want to get information
+:param service: str
+:param alternative: Specifies whether alternative routes should be included
+:param alternative: bool
+:returns: RequestMerge -- URLs and parameters to request the data
+:raises: RoutingException, WIContentError
+
         """
 
         # Give priority to the masterTable!
@@ -479,10 +537,30 @@ class RoutingCache(object):
 
     def getRouteST(self, n='*', s='*', l='*', c='*',
                    startD=None, endD=None, alternative=False):
-        """Use the Dataselect implementation and map to Station-WS.
-        The result is returned in a RequestMerge object, which inherits from
-        a list.
-"""
+        """Based on a stream(s) and a timewindow returns all the neccessary
+information (URLs and parameters) to request station data from different
+datacenters (if needed) and be able to merge it avoiding duplication.
+The getRouteDS (Dataselect) method is used and the URL is changed to the FDSN
+station service style.
+
+:param n: Network code
+:param n: str
+:param s: Station code
+:param s: str
+:param l: Location code
+:param l: str
+:param c: Channel code
+:param c: str
+:param startD: Start date and time
+:param startD: datetime
+:param endD: End date and time
+:param endD: datetime
+:param alternative: Specifies whether alternative routes should be included
+:param alternative: bool
+:returns: RequestMerge -- URLs and parameters to request the data
+:raises: WIContentError
+
+        """
 
         result = self.getRouteDS(n, s, l, c, startD, endD, alternative)
         for item in result:
@@ -493,10 +571,30 @@ class RoutingCache(object):
 
     def getRouteDS(self, n='*', s='*', l='*', c='*',
                    startD=None, endD=None, alternative=False):
-        """Use the table lookup from Arclink to route the Dataselect service.
-        The result is returned in a RequestMerge object, which inherits from
-        a list.
-"""
+        """Based on a stream(s) and a timewindow returns all the neccessary
+information (URLs and parameters) to request waveforms from different
+datacenters (if needed) and be able to merge it avoiding duplication.
+The Arclink routing table is used to select the datacenters and a mapping is
+used to translate the Arclink address to Dataselect address (see __arc2DS).
+
+:param n: Network code
+:param n: str
+:param s: Station code
+:param s: str
+:param l: Location code
+:param l: str
+:param c: Channel code
+:param c: str
+:param startD: Start date and time
+:param startD: datetime
+:param endD: End date and time
+:param endD: datetime
+:param alternative: Specifies whether alternative routes should be included
+:param alternative: bool
+:returns: RequestMerge -- URLs and parameters to request the data
+:raises: WIContentError
+
+        """
 
         # Check if there are wildcards!
         if (('*' in n + s + l + c) or ('?' in n + s + l + c)):
@@ -617,13 +715,24 @@ class RoutingCache(object):
 
     def getRouteMaster(self, n, startD=None, endD=None, service='dataselect',
                        alternative=False):
-        """Implement the following table lookup for the Master Table::
+        """Looks for a high priority route for a particular network This would
+provide the flexibility to incorporate new networks that override the Arclink
+configuration that is now automatically used. For instance, there are streams
+from II an IU hosted at ODC, but if we want to route the whole network we need
+to enter here the two codes and point to IRIS.
 
-              11 NET --- --- ---
+:param n: Network code
+:param n: str
+:param startD: Start date and time
+:param startD: datetime
+:param endD: End date and time
+:param endD: datetime
+:param alternative: Specifies whether alternative routes should be included
+:param alternative: bool
+:returns: RequestMerge -- URLs and parameters to request the data
+:raises: WIContentError
 
-        The result is returned in a RequestMerge object, which inherits from
-        a list.
-"""
+        """
 
         result = list()
         realRoutes = None
@@ -657,7 +766,10 @@ class RoutingCache(object):
         return result2
 
     def getRouteSL(self, n, s, l, c, alternative):
-        """Implement the following table lookup for the Seedlink service::
+        """Based on a stream(s) returns all the neccessary information (URLs
+and parameters) to connect to a Seedlink server shiping real-time information
+of the specified streams. Implements the following table lookup for the
+Seedlink service::
 
                 01 NET STA CHA LOC
                 02 NET STA CHA ---
@@ -676,9 +788,20 @@ class RoutingCache(object):
                 14 --- --- --- LOC
                 15 --- --- --- ---
 
-        The result is returned in a RequestMerge object, which inherits from
-        a list.
-"""
+:param n: Network code
+:param n: str
+:param s: Station code
+:param s: str
+:param l: Location code
+:param l: str
+:param c: Channel code
+:param c: str
+:param alternative: Specifies whether alternative routes should be included
+:param alternative: bool
+:returns: RequestMerge -- URLs and parameters to request the data
+:raises: WIContentError
+
+        """
 
         realRoute = None
 
@@ -759,7 +882,14 @@ class RoutingCache(object):
 
     def getRouteArc(self, n, s, l, c, startD=None, endD=None,
                     alternative=False):
-        """Implement the following table lookup for the Arclink service::
+        """Based on a stream(s) and a timewindow returns all the neccessary
+information (URLs and parameters) split by hosting datacenter.
+This is not too useful because Arclink can already do automatically the
+splitting of the request. However, this is used by the others methods in order
+to see where the waveforms are being hosted and give the location of the
+other services under the assumption that the one providing the waveforms
+through Arclink will be also providing the data for Dataselect and Station.
+The following table lookup is implemented for the Arclink service::
 
                 01 NET STA CHA LOC
                 02 NET STA CHA ---
@@ -778,9 +908,24 @@ class RoutingCache(object):
                 14 --- --- --- LOC
                 15 --- --- --- ---
 
-        The result is returned in a RequestMerge object, which inherits from
-        a list.
-"""
+:param n: Network code
+:param n: str
+:param s: Station code
+:param s: str
+:param l: Location code
+:param l: str
+:param c: Channel code
+:param c: str
+:param startD: Start date and time
+:param startD: datetime
+:param endD: End date and time
+:param endD: datetime
+:param alternative: Specifies whether alternative routes should be included
+:param alternative: bool
+:returns: RequestMerge -- URLs and parameters to request the data
+:raises: WIContentError
+
+        """
 
         realRoute = None
 
