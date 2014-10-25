@@ -1771,7 +1771,6 @@ def application(environ, start_response):
     elif fname == 'query':
         makeQuery = globals()['makeQuery%s' % environ['REQUEST_METHOD']]
         try:
-            print form
             iterObj = makeQuery(form)
 
             iterObj = applyFormat(iterObj, outForm)
