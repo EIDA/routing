@@ -437,21 +437,21 @@ information (URLs and parameters) to do the requests to different datacenters
 (if needed) and be able to merge the returned data avoiding duplication.
 
 :param n: Network code
-:param n: str
+:type n: str
 :param s: Station code
-:param s: str
+:type s: str
 :param l: Location code
-:param l: str
+:type l: str
 :param c: Channel code
-:param c: str
+:type c: str
 :param startD: Start date and time
-:param startD: datetime
+:type startD: datetime
 :param endD: End date and time
-:param endD: datetime
+:type endD: datetime
 :param service: Service from which you want to get information
-:param service: str
+:type service: str
 :param alternative: Specifies whether alternative routes should be included
-:param alternative: bool
+:type alternative: bool
 :returns: RequestMerge -- URLs and parameters to request the data
 :raises: RoutingException
 
@@ -505,20 +505,12 @@ datacenters (if needed) and be able to merge it avoiding duplication.
 The getRouteDS (Dataselect) method is used and the URL is changed to the FDSN
 station service style.
 
-:param n: Network code
-:param n: str
-:param s: Station code
-:param s: str
-:param l: Location code
-:param l: str
-:param c: Channel code
-:param c: str
-:param startD: Start date and time
-:param startD: datetime
-:param endD: End date and time
-:param endD: datetime
+:param stream: Stream definition including wildcards
+:type stream: Stream
+:param tw: Timewindow
+:type tw: TW
 :param alternative: Specifies whether alternative routes should be included
-:param alternative: bool
+:type alternative: bool
 :returns: RequestMerge -- URLs and parameters to request the data
 :raises: RoutingException
 
@@ -538,20 +530,12 @@ datacenters (if needed) and be able to merge it avoiding duplication.
 The Arclink routing table is used to select the datacenters and a mapping is
 used to translate the Arclink address to Dataselect address (see __arc2DS).
 
-:param n: Network code
-:param n: str
-:param s: Station code
-:param s: str
-:param l: Location code
-:param l: str
-:param c: Channel code
-:param c: str
-:param startD: Start date and time
-:param startD: datetime
-:param endD: End date and time
-:param endD: datetime
+:param stream: Stream definition including wildcards
+:type stream: Stream
+:param tw: Timewindow
+:type tw: TW
 :param alternative: Specifies whether alternative routes should be included
-:param alternative: bool
+:type alternative: bool
 :returns: RequestMerge -- URLs and parameters to request the data
 :raises: RoutingException
 
@@ -684,13 +668,11 @@ from II an IU hosted at ODC, but if we want to route the whole network we need
 to enter here the two codes and point to IRIS.
 
 :param n: Network code
-:param n: str
-:param startD: Start date and time
-:param startD: datetime
-:param endD: End date and time
-:param endD: datetime
+:type n: str
+:param tw: Timewindow
+:type tw: TW
 :param alternative: Specifies whether alternative routes should be included
-:param alternative: bool
+:type alternative: bool
 :returns: RequestMerge -- URLs and parameters to request the data
 :raises: RoutingException
 
@@ -751,16 +733,10 @@ Seedlink service::
                 14 --- --- --- LOC
                 15 --- --- --- ---
 
-:param n: Network code
-:param n: str
-:param s: Station code
-:param s: str
-:param l: Location code
-:param l: str
-:param c: Channel code
-:param c: str
+:param stream: Stream definition including wildcards
+:type stream: Stream
 :param alternative: Specifies whether alternative routes should be included
-:param alternative: bool
+:type alternative: bool
 :returns: RequestMerge -- URLs and parameters to request the data
 :raises: RoutingException
 
@@ -871,20 +847,12 @@ The following table lookup is implemented for the Arclink service::
                 14 --- --- --- LOC
                 15 --- --- --- ---
 
-:param n: Network code
-:param n: str
-:param s: Station code
-:param s: str
-:param l: Location code
-:param l: str
-:param c: Channel code
-:param c: str
-:param startD: Start date and time
-:param startD: datetime
-:param endD: End date and time
-:param endD: datetime
+:param stream: Stream definition including wildcards
+:type stream: Stream
+:param tw: Timewindow
+:type tw: TW
 :param alternative: Specifies whether alternative routes should be included
-:param alternative: bool
+:type alternative: bool
 :returns: RequestMerge -- URLs and parameters to request the data
 :raises: RoutingException
 
