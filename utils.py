@@ -37,21 +37,23 @@ from inventorycache import InventoryCache
 class RequestMerge(list):
     __slots__ = ()
 
-    def append(self, service, url, priority, net, sta, loc, cha, start=None,
+    def append(self, service, url, priority, stream, start=None,
                end=None):
         try:
             pos = self.index(service, url)
-            self[pos]['params'].append({'net': net, 'sta': sta, 'loc': loc,
-                                        'cha': cha, 'start': start,
-                                        'end': end, 'priority': priority if
-                                        priority is not None else ''})
+            self[pos]['params'].append({'net': stream.n, 'sta': stream.s,
+                                        'loc': stream.l, 'cha': stream.c,
+                                        'start': start, 'end': end,
+                                        'priority': priority if priority
+                                        is not None else ''})
         except:
             listPar = super(RequestMerge, self)
             listPar.append({'name': service, 'url': url,
-                            'params': [{'net': net, 'sta': sta, 'loc': loc,
-                                        'cha': cha, 'start': start,
-                                        'end': end, 'priority': priority
-                                        if priority is not None else ''}]})
+                            'params': [{'net': stream.n, 'sta': stream.s,
+                                        'loc': stream.l, 'cha': stream.c,
+                                        'start': start, 'end': end,
+                                        'priority': priority if priority
+                                        is not None else ''}]})
 
     def index(self, service, url):
         for ind, r in enumerate(self):
@@ -82,10 +84,10 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
         return False
 
     def strictMatch(self, other):
-        """Return a new Stream iwith a "reduction" of this one to force the
+        """Returns a new Stream with a "reduction" of this one to force the
         matching of the specification received as an input.
 
-        The other parameter is expected to be of Stream type
+        The *other* parameter is expected to be of Stream type
         """
 
         res = list()
@@ -182,16 +184,17 @@ class TW(namedtuple('TW', ['start', 'end'])):
         return TW(resSt, resEn)
 
 
-class Route(namedtuple('Route', ['address', 'start', 'end', 'priority'])):
+class Route(namedtuple('Route', ['address', 'tw', 'priority'])):
     __slots__ = ()
 
     def __contains__(self, pointTime):
+        print 'This should not be used! Switch to the TW method!'
         if pointTime is None:
             return True
 
         try:
-            if (((self.start is None) or (self.start < pointTime)) and
-                    ((self.end is None) or (pointTime < self.end))):
+            if (((self.tw.start is None) or (self.tw.start < pointTime)) and
+                    ((self.tw.end is None) or (pointTime < self.tw.end))):
                 return True
         except:
             pass
@@ -205,17 +208,18 @@ Route.__gt__ = lambda self, other: self.priority > other.priority
 Route.__ge__ = lambda self, other: self.priority >= other.priority
 
 
-class RouteMT(namedtuple('RouteMT', ['address', 'start', 'end', 'priority',
+class RouteMT(namedtuple('RouteMT', ['address', 'tw', 'priority',
                                      'service'])):
     __slots__ = ()
 
     def __contains__(self, pointTime):
+        print 'This should not be used! Switch to the TW method!'
         if pointTime is None:
             return True
 
         try:
-            if (((self.start <= pointTime) or (self.start is None)) and
-                    ((pointTime <= self.end) or (self.end is None))):
+            if (((self.tw.start <= pointTime) or (self.tw.start is None)) and
+                    ((pointTime <= self.tw.end) or (self.tw.end is None))):
                 return True
         except:
             pass
@@ -404,7 +408,6 @@ with an EIDA default configuration.
         lmu = 'http://erde.geophysik.uni-muenchen.de:8080/fdsnws/' +\
             'dataselect/1/query'
         ipgp = 'http://eida.ipgp.fr/fdsnws/dataselect/1/query'
-        # iris = 'http://service.iris.edu/fdsnws/dataselect/1/query'
 
         # Try to identify the hosting institution
         host = route.split(':')[0]
@@ -454,10 +457,12 @@ information (URLs and parameters) to do the requests to different datacenters
 
         """
 
+        stream = Stream(n, s, l, c)
+        tw = TW(startD, endD)
+
         # Give priority to the masterTable!
         try:
-            masterRoute = self.getRouteMaster(n, startD=startD, endD=endD,
-                                              service=service,
+            masterRoute = self.getRouteMaster(n, tw=tw, service=service,
                                               alternative=alternative)
             for mr in masterRoute:
                 for reqL in mr['params']:
@@ -470,13 +475,13 @@ information (URLs and parameters) to do the requests to different datacenters
 
         result = None
         if service == 'arclink':
-            result = self.getRouteArc(n, s, l, c, startD, endD, alternative)
+            result = self.getRouteArc(stream, tw, alternative)
         elif service == 'dataselect':
-            result = self.getRouteDS(n, s, l, c, startD, endD, alternative)
+            result = self.getRouteDS(stream, tw, alternative)
         elif service == 'seedlink':
-            result = self.getRouteSL(n, s, l, c, alternative)
+            result = self.getRouteSL(stream, alternative)
         elif service == 'station':
-            result = self.getRouteST(n, s, l, c, startD, endD, alternative)
+            result = self.getRouteST(stream, tw, alternative)
 
         if result is None:
             # Through an exception if there is an error
@@ -493,8 +498,7 @@ information (URLs and parameters) to do the requests to different datacenters
 
         return result
 
-    def getRouteST(self, n='*', s='*', l='*', c='*',
-                   startD=None, endD=None, alternative=False):
+    def getRouteST(self, stream, tw, alternative=False):
         """Based on a stream(s) and a timewindow returns all the neccessary
 information (URLs and parameters) to request station data from different
 datacenters (if needed) and be able to merge it avoiding duplication.
@@ -520,15 +524,14 @@ station service style.
 
         """
 
-        result = self.getRouteDS(n, s, l, c, startD, endD, alternative)
+        result = self.getRouteDS(stream, tw, alternative)
         for item in result:
             item['name'] = 'station'
             item['url'] = item['url'].replace('dataselect', 'station')
 
         return result
 
-    def getRouteDS(self, n='*', s='*', l='*', c='*',
-                   startD=None, endD=None, alternative=False):
+    def getRouteDS(self, stream, tw, alternative=False):
         """Based on a stream(s) and a timewindow returns all the neccessary
 information (URLs and parameters) to request waveforms from different
 datacenters (if needed) and be able to merge it avoiding duplication.
@@ -555,42 +558,43 @@ used to translate the Arclink address to Dataselect address (see __arc2DS).
         """
 
         # Check if there are wildcards!
-        if (('*' in n + s + l + c) or ('?' in n + s + l + c)):
+        if (('*' in stream.n + stream.s + stream.l + stream.c) or
+                ('?' in stream.n + stream.s + stream.l + stream.c)):
             # Filter first by the attributes without wildcards
             subs = self.routingTable.keys()
 
-            if (('*' not in s) and ('?' not in s)):
+            if (('*' not in stream.s) and ('?' not in stream.s)):
                 subs = [k for k in subs if (k.s is None or k.s == '*' or
-                                            k.s == s)]
+                                            k.s == stream.s)]
 
-            if (('*' not in n) and ('?' not in n)):
+            if (('*' not in stream.n) and ('?' not in stream.n)):
                 subs = [k for k in subs if (k.n is None or k.n == '*' or
-                                            k.n == n)]
+                                            k.n == stream.n)]
 
-            if (('*' not in c) and ('?' not in c)):
+            if (('*' not in stream.c) and ('?' not in stream.c)):
                 subs = [k for k in subs if (k.c is None or k.c == '*' or
-                                            k.c == c)]
+                                            k.c == stream.c)]
 
-            if (('*' not in l) and ('?' not in l)):
+            if (('*' not in stream.l) and ('?' not in stream.l)):
                 subs = [k for k in subs if (k.l is None or k.l == '*' or
-                                            k.l == l)]
+                                            k.l == stream.l)]
 
             # Filter then by the attributes WITH wildcards
-            if (('*' in s) or ('?' in s)):
+            if (('*' in stream.s) or ('?' in stream.s)):
                 subs = [k for k in subs if (k.s is None or k.s == '*' or
-                                            fnmatch.fnmatch(k.s, s))]
+                                            fnmatch.fnmatch(k.s, stream.s))]
 
-            if (('*' in n) or ('?' in n)):
+            if (('*' in stream.n) or ('?' in stream.n)):
                 subs = [k for k in subs if (k.n is None or k.n == '*' or
-                                            fnmatch.fnmatch(k.n, n))]
+                                            fnmatch.fnmatch(k.n, stream.n))]
 
-            if (('*' in c) or ('?' in c)):
+            if (('*' in stream.c) or ('?' in stream.c)):
                 subs = [k for k in subs if (k.c is None or k.c == '*' or
-                                            fnmatch.fnmatch(k.c, c))]
+                                            fnmatch.fnmatch(k.c, stream.c))]
 
-            if (('*' in l) or ('?' in l)):
+            if (('*' in stream.l) or ('?' in stream.l)):
                 subs = [k for k in subs if (k.l is None or k.l == '*' or
-                                            fnmatch.fnmatch(k.l, l))]
+                                            fnmatch.fnmatch(k.l, stream.l))]
 
             # Alternative NEW approach based on number of wildcards
             orderS = [sum([3 for t in r if '*' in t]) for r in subs]
@@ -608,7 +612,7 @@ used to translate the Arclink address to Dataselect address (see __arc2DS).
                         print 'Overlap between %s and %s' % (r1, r2)
                         break
                 else:
-                    finalset.add(r1.strictMatch(Stream(n, s, l, c)))
+                    finalset.add(r1.strictMatch(stream))
                     continue
 
                 # The break from 10 lines above jumps until this line in
@@ -616,7 +620,7 @@ used to translate the Arclink address to Dataselect address (see __arc2DS).
                 # streams
                 # r1n, r1s, r1l, r1c = r1
                 for rExp in self.ic.expand(r1.n, r1.s, r1.l, r1.c,
-                                           startD, endD, True):
+                                           tw.start, tw.end, True):
                     rExp = Stream(*rExp)
                     for r3 in finalset:
                         if rExp.overlap(r3):
@@ -625,7 +629,7 @@ used to translate the Arclink address to Dataselect address (see __arc2DS).
                             break
                     else:
                         # print 'Adding expanded', rExp
-                        if (rExp in Stream(n, s, l, c)):
+                        if (rExp in stream):
                             finalset.add(rExp)
 
             result = RequestMerge()
@@ -635,8 +639,7 @@ used to translate the Arclink address to Dataselect address (see __arc2DS).
             # Now I need the URLs
             while finalset:
                 st = finalset.pop()
-                resArc = self.getRouteArc(st.n, st.s, st.l, st.c,
-                                          startD, endD, alternative)
+                resArc = self.getRouteArc(st, tw, alternative)
 
                 for i in range(len(resArc) - 1, -1, -1):
                     resArc[i]['name'] = 'dataselect'
@@ -657,7 +660,7 @@ used to translate the Arclink address to Dataselect address (see __arc2DS).
             return result
 
         # If there are NO wildcards
-        result = self.getRouteArc(n, s, l, c, startD, endD, alternative)
+        result = self.getRouteArc(stream, tw, alternative)
 
         for i in range(len(result) - 1, -1, -1):
             result[i]['name'] = 'dataselect'
@@ -673,8 +676,7 @@ used to translate the Arclink address to Dataselect address (see __arc2DS).
 
         return result
 
-    def getRouteMaster(self, n, startD=None, endD=None, service='dataselect',
-                       alternative=False):
+    def getRouteMaster(self, n, tw, service='dataselect', alternative=False):
         """Looks for a high priority route for a particular network This would
 provide the flexibility to incorporate new networks that override the Arclink
 configuration that is now automatically used. For instance, there are streams
@@ -705,7 +707,7 @@ to enter here the two codes and point to IRIS.
         for r in realRoutes:
             # Check if the timewindow is encompassed in the returned dates
             # FIXME This should be changed to use the IN clause from TW
-            if ((startD in r) or (endD in r)):
+            if ((tw.start in r) or (tw.end in r)):
                 # Filtering with the service parameter!
                 if service == r.service:
                     result.append(r)
@@ -721,12 +723,12 @@ to enter here the two codes and point to IRIS.
         for r in result:
             result2.append(service, r.address, r.priority if r.priority
                            is not None else '', n, None, None,
-                           None, startD if startD is not None else '',
-                           endD if endD is not None else '')
+                           None, tw.start if tw.start is not None else '',
+                           tw.end if tw.end is not None else '')
 
         return result2
 
-    def getRouteSL(self, n, s, l, c, alternative):
+    def getRouteSL(self, stream, alternative):
         """Based on a stream(s) returns all the neccessary information (URLs
 and parameters) to connect to a Seedlink server shiping real-time information
 of the specified streams. Implements the following table lookup for the
@@ -767,60 +769,60 @@ Seedlink service::
         realRoute = None
 
         # Case 1
-        if (n, s, l, c) in self.slTable:
-            realRoute = self.slTable[n, s, l, c]
+        if stream in self.slTable:
+            realRoute = self.slTable[stream]
 
         # Case 2
-        elif (n, s, '*', c) in self.slTable:
-            realRoute = self.slTable[n, s, '*', c]
+        elif (stream.n, stream.s, '*', stream.c) in self.slTable:
+            realRoute = self.slTable[stream.n, stream.s, '*', stream.c]
 
         # Case 3
-        elif (n, s, l, '*') in self.slTable:
-            realRoute = self.slTable[n, s, l, '*']
+        elif (stream.n, stream.s, stream.l, '*') in self.slTable:
+            realRoute = self.slTable[stream.n, stream.s, stream.l, '*']
 
         # Case 4
-        elif (n, '*', l, c) in self.slTable:
-            realRoute = self.slTable[n, '*', l, c]
+        elif (stream.n, '*', stream.l, stream.c) in self.slTable:
+            realRoute = self.slTable[stream.n, '*', stream.l, stream.c]
 
         # Case 5
-        elif ('*', s, l, c) in self.slTable:
-            realRoute = self.slTable['*', s, l, c]
+        elif ('*', stream.s, stream.l, stream.c) in self.slTable:
+            realRoute = self.slTable['*', stream.s, stream.l, stream.c]
 
         # Case 6
-        elif (n, s, '*', '*') in self.slTable:
-            realRoute = self.slTable[n, s, '*', '*']
+        elif (stream.n, stream.s, '*', '*') in self.slTable:
+            realRoute = self.slTable[stream.n, stream.s, '*', '*']
 
         # Case 7
-        elif (n, '*', '*', c) in self.slTable:
-            realRoute = self.slTable[n, '*', '*', c]
+        elif (stream.n, '*', '*', stream.c) in self.slTable:
+            realRoute = self.slTable[stream.n, '*', '*', stream.c]
 
         # Case 8
-        elif (n, '*', l, '*') in self.slTable:
-            realRoute = self.slTable[n, '*', l, '*']
+        elif (stream.n, '*', stream.l, '*') in self.slTable:
+            realRoute = self.slTable[stream.n, '*', stream.l, '*']
 
         # Case 9
-        elif ('*', s, '*', c) in self.slTable:
-            realRoute = self.slTable['*', s, '*', c]
+        elif ('*', stream.s, '*', stream.c) in self.slTable:
+            realRoute = self.slTable['*', stream.s, '*', stream.c]
 
         # Case 10
-        elif ('*', '*', l, c) in self.slTable:
-            realRoute = self.slTable['*', '*', l, c]
+        elif ('*', '*', stream.l, stream.c) in self.slTable:
+            realRoute = self.slTable['*', '*', stream.l, stream.c]
 
         # Case 11
-        elif (n, '*', '*', '*') in self.slTable:
-            realRoute = self.slTable[n, '*', '*', '*']
+        elif (stream.n, '*', '*', '*') in self.slTable:
+            realRoute = self.slTable[stream.n, '*', '*', '*']
 
         # Case 12
-        elif ('*', s, '*', '*') in self.slTable:
-            realRoute = self.slTable['*', s, '*', '*']
+        elif ('*', stream.s, '*', '*') in self.slTable:
+            realRoute = self.slTable['*', stream.s, '*', '*']
 
         # Case 13
-        elif ('*', '*', '*', c) in self.slTable:
-            realRoute = self.slTable['*', '*', '*', c]
+        elif ('*', '*', '*', stream.c) in self.slTable:
+            realRoute = self.slTable['*', '*', '*', stream.c]
 
         # Case 14
-        elif ('*', '*', l, '*') in self.slTable:
-            realRoute = self.slTable['*', '*', l, '*']
+        elif ('*', '*', stream.l, '*') in self.slTable:
+            realRoute = self.slTable['*', '*', stream.l, '*']
 
         # Case 15
         elif ('*', '*', '*', '*') in self.slTable:
@@ -835,15 +837,14 @@ Seedlink service::
             # Check that I found a route
             if route is not None:
                 result.append('seedlink', route.address, route.priority,
-                              n, s, l, c, '', '')
+                              stream, '', '')
 
                 if not alternative:
                     break
 
         return result
 
-    def getRouteArc(self, n, s, l, c, startD=None, endD=None,
-                    alternative=False):
+    def getRouteArc(self, stream, tw, alternative=False):
         """Based on a stream(s) and a timewindow returns all the neccessary
 information (URLs and parameters) split by hosting datacenter.
 This is not too useful because Arclink can already do automatically the
@@ -892,60 +893,60 @@ The following table lookup is implemented for the Arclink service::
         realRoute = None
 
         # Case 1
-        if (n, s, l, c) in self.routingTable:
-            realRoute = self.routingTable[n, s, l, c]
+        if stream in self.routingTable:
+            realRoute = self.routingTable[stream]
 
         # Case 2
-        elif (n, s, '*', c) in self.routingTable:
-            realRoute = self.routingTable[n, s, '*', c]
+        elif (stream.n, stream.s, '*', stream.c) in self.routingTable:
+            realRoute = self.routingTable[stream.n, stream.s, '*', stream.c]
 
         # Case 3
-        elif (n, s, l, '*') in self.routingTable:
-            realRoute = self.routingTable[n, s, l, '*']
+        elif (stream.n, stream.s, stream.l, '*') in self.routingTable:
+            realRoute = self.routingTable[stream.n, stream.s, stream.l, '*']
 
         # Case 4
-        elif (n, '*', l, c) in self.routingTable:
-            realRoute = self.routingTable[n, '*', l, c]
+        elif (stream.n, '*', stream.l, stream.c) in self.routingTable:
+            realRoute = self.routingTable[stream.n, '*', stream.l, stream.c]
 
         # Case 5
-        elif ('*', s, l, c) in self.routingTable:
-            realRoute = self.routingTable['*', s, l, c]
+        elif ('*', stream.s, stream.l, stream.c) in self.routingTable:
+            realRoute = self.routingTable['*', stream.s, stream.l, stream.c]
 
         # Case 6
-        elif (n, s, '*', '*') in self.routingTable:
-            realRoute = self.routingTable[n, s, '*', '*']
+        elif (stream.n, stream.s, '*', '*') in self.routingTable:
+            realRoute = self.routingTable[stream.n, stream.s, '*', '*']
 
         # Case 7
-        elif (n, '*', '*', c) in self.routingTable:
-            realRoute = self.routingTable[n, '*', '*', c]
+        elif (stream.n, '*', '*', stream.c) in self.routingTable:
+            realRoute = self.routingTable[stream.n, '*', '*', stream.c]
 
         # Case 8
-        elif (n, '*', l, '*') in self.routingTable:
-            realRoute = self.routingTable[n, '*', l, '*']
+        elif (stream.n, '*', stream.l, '*') in self.routingTable:
+            realRoute = self.routingTable[stream.n, '*', stream.l, '*']
 
         # Case 9
-        elif ('*', s, '*', c) in self.routingTable:
-            realRoute = self.routingTable['*', s, '*', c]
+        elif ('*', stream.s, '*', stream.c) in self.routingTable:
+            realRoute = self.routingTable['*', stream.s, '*', stream.c]
 
         # Case 10
-        elif ('*', '*', l, c) in self.routingTable:
-            realRoute = self.routingTable['*', '*', l, c]
+        elif ('*', '*', stream.l, stream.c) in self.routingTable:
+            realRoute = self.routingTable['*', '*', stream.l, stream.c]
 
         # Case 11
-        elif (n, '*', '*', '*') in self.routingTable:
-            realRoute = self.routingTable[n, '*', '*', '*']
+        elif (stream.n, '*', '*', '*') in self.routingTable:
+            realRoute = self.routingTable[stream.n, '*', '*', '*']
 
         # Case 12
-        elif ('*', s, '*', '*') in self.routingTable:
-            realRoute = self.routingTable['*', s, '*', '*']
+        elif ('*', stream.s, '*', '*') in self.routingTable:
+            realRoute = self.routingTable['*', stream.s, '*', '*']
 
         # Case 13
-        elif ('*', '*', '*', c) in self.routingTable:
-            realRoute = self.routingTable['*', '*', '*', c]
+        elif ('*', '*', '*', stream.c) in self.routingTable:
+            realRoute = self.routingTable['*', '*', '*', stream.c]
 
         # Case 14
-        elif ('*', '*', l, '*') in self.routingTable:
-            realRoute = self.routingTable['*', '*', l, '*']
+        elif ('*', '*', stream.l, '*') in self.routingTable:
+            realRoute = self.routingTable['*', '*', stream.l, '*']
 
         # Case 15
         elif ('*', '*', '*', '*') in self.routingTable:
@@ -957,31 +958,31 @@ The following table lookup is implemented for the Arclink service::
             #raise WIContentError('No routes have been found!')
 
         # Requested timewindow
-        tw = set()
-        tw.add(TW(startD, endD))
+        setTW = set()
+        setTW.add(tw)
 
         # We don't need to loop as routes are already ordered by
         # priority. Take the first one!
-        while tw:
+        while setTW:
             #sleep(1)
-            toProc = tw.pop()
+            toProc = setTW.pop()
             #print 'Processing', toProc
             for ro in realRoute:
                 # Check if the timewindow is encompassed in the returned dates
                 #print toProc, ' in ', TW(ro.start, ro.end), \
                     #(toProc in TW(ro.start, ro.end))
-                if (toProc in TW(ro.start, ro.end)):
+                if (toProc in ro.tw):
 
                     # If the timewindow is not complete then add the missing
                     # ranges to the tw set.
-                    for auxTW in toProc.difference(TW(ro.start, ro.end)):
+                    for auxTW in toProc.difference(ro.tw):
                         #print 'Adding', auxTW
-                        tw.add(auxTW)
+                        setTW.add(auxTW)
 
-                    auxSt, auxEn = toProc.intersection(TW(ro.start, ro.end))
+                    auxSt, auxEn = toProc.intersection(ro.tw)
                     result.append('arclink', ro.address,
                                   ro.priority if ro.priority is not
-                                  None else '', n, s, l, c,
+                                  None else '', stream,
                                   auxSt if auxSt is not None else '',
                                   auxEn if auxEn is not None else '')
                     # Unless alternative routes are needed I can stop here
@@ -1128,20 +1129,15 @@ The following table lookup is implemented for the Arclink service::
                             print 'Error while converting END attribute.'
 
                         # Append the network to the list of networks
-                        if (networkCode, stationCode, locationCode,
-                                streamCode) not in ptMT:
-                            ptMT[Stream(networkCode, stationCode, locationCode,
-                                        streamCode)] = [RouteMT(address,
-                                                                startD, endD,
-                                                                prio, service)]
+                        st = Stream(networkCode, stationCode, locationCode,
+                                    streamCode)
+                        tw = TW(startD, endD)
+
+                        if st not in ptMT:
+                            ptMT[st] = [RouteMT(address, tw, prio, service)]
                         else:
-                            ptMT[Stream(networkCode, stationCode,
-                                        locationCode,
-                                        streamCode)].append(RouteMT(address,
-                                                                    startD,
-                                                                    endD,
-                                                                    prio,
-                                                                    service))
+                            ptMT[st].append(RouteMT(address, tw, prio,
+                                                    service))
 
                         arcl.clear()
 
@@ -1253,16 +1249,15 @@ The following table lookup is implemented for the Arclink service::
                             priority = 99
 
                         # Append the network to the list of networks
-                        if (networkCode, stationCode, locationCode,
-                                streamCode) not in ptSL:
-                            ptSL[Stream(networkCode, stationCode, locationCode,
-                                        streamCode)] = [Route(address, None,
-                                                              None, priority)]
+                        st = Stream(networkCode, stationCode, locationCode,
+                                    streamCode)
+
+                        if st not in ptSL:
+                            ptSL[st] = [Route(address, TW(None, None),
+                                              priority)]
                         else:
-                            ptSL[Stream(networkCode, stationCode, locationCode,
-                                        streamCode)].append(Route(address,
-                                                                  None, None,
-                                                                  priority))
+                            ptSL[st].append(Route(address, TW(None, None),
+                                                  priority))
                         sl.clear()
 
                     # Traverse through the sources
@@ -1319,15 +1314,14 @@ The following table lookup is implemented for the Arclink service::
                             priority = 99
 
                         # Append the network to the list of networks
-                        if (networkCode, stationCode, locationCode,
-                                streamCode) not in ptRT:
-                            ptRT[Stream(networkCode, stationCode, locationCode,
-                                        streamCode)] = [Route(address, startD,
-                                                              endD, priority)]
+                        st = Stream(networkCode, stationCode, locationCode,
+                                    streamCode)
+                        tw = TW(startD, endD)
+
+                        if st not in ptRT:
+                            ptRT[st] = [Route(address, tw, priority)]
                         else:
-                            ptRT[Stream(networkCode, stationCode, locationCode,
-                                 streamCode)].append(Route(address, startD,
-                                                           endD, priority))
+                            ptRT[st].append(Route(address, tw, priority))
                         arcl.clear()
 
                     # Traverse through the sources
@@ -1384,15 +1378,14 @@ The following table lookup is implemented for the Arclink service::
                             priority = 99
 
                         # Append the network to the list of networks
-                        if (networkCode, stationCode, locationCode,
-                                streamCode) not in ptST:
-                            ptST[Stream(networkCode, stationCode, locationCode,
-                                        streamCode)] = [Route(address, startD,
-                                                              endD, priority)]
+                        st = Stream(networkCode, stationCode, locationCode,
+                                    streamCode)
+                        tw = TW(startD, endD)
+
+                        if st not in ptST:
+                            ptST[st] = [Route(address, tw, priority)]
                         else:
-                            ptST[Stream(networkCode, stationCode, locationCode,
-                                 streamCode)].append(Route(address, startD,
-                                                           endD, priority))
+                            ptST[st].append(Route(address, tw, priority))
                         statServ.clear()
 
                     route.clear()
