@@ -216,43 +216,50 @@ At Steps 4-6, re-use your previous versions of ``routing.wsgi`` and ``routing.cf
 Documentation for developers
 ============================
 
-Routing module
---------------
+Definition of the classes
+-------------------------
 
-.. automodule:: routing
+.. automodule:: utils
 
 RoutingCache class
 ------------------
 
-.. autoclass:: routing.RoutingCache
+.. autoclass:: utils.RoutingCache
    :members:
    :undoc-members:
 
 Route class
 -----------
 
-.. autoclass:: routing.Route
+.. autoclass:: utils.Route
    :members:
    :undoc-members:
 
 Stream class
 ------------
 
-.. autoclass:: routing.Stream
+.. autoclass:: utils.Stream
+   :members:
+   :undoc-members:
+
+TW (timewindow)  class
+----------------------
+
+.. autoclass:: utils.TW
    :members:
    :undoc-members:
 
 RouteMT class
 -------------
 
-.. autoclass:: routing.RouteMT
+.. autoclass:: utils.RouteMT
    :members:
    :undoc-members:
 
 RequestMerge class
 ------------------
 
-.. autoclass:: routing.RequestMerge
+.. autoclass:: utils.RequestMerge
    :members:
    :undoc-members:
 
@@ -268,4 +275,3 @@ InventoryCache class
    * :ref:`genindex`
    * :ref:`modindex`
    * :ref:`search`
-
