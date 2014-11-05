@@ -183,7 +183,7 @@ def usage():
 
 global host
 
-host = 'http://localhost/eidaws/routing/query'
+host = 'http://localhost/eidaws/routing/1/query'
 
 if __name__ == '__main__':
 
