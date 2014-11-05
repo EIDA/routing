@@ -32,7 +32,6 @@ version. For more information, see http://www.gnu.org/
 
 import datetime
 import os
-###import tempfile
 import math
 import cPickle as pickle
 import xml.etree.cElementTree as ET
@@ -41,11 +40,8 @@ import fnmatch
 from collections import defaultdict
 
 import wsgicomm
-from seiscomp import logs
-import seiscomp3.Math as Math
 
-###tempdir = tempfile.gettempdir()
-
+logs = wsgicomm.Logs(2)
 
 class InventoryCache(object):
     """Encapsulate and manage the information of networks,
@@ -1223,54 +1219,6 @@ class InventoryCache(object):
                                   ptStats[st][6], ptNets[parent_net][7],
                                   ptNets[parent_net][8], ptNets[parent_net][9],
                                   ptNets[parent_net][10], loc_ch, restricted))
-
-        elif events is not None:
-
-            events = json.loads(events)
-
-            for st in statsOK:
-                # Pointer to the parent network
-                parent_net = ptStats[st][0]
-
-                # Retrieve latitude and longitude of station
-                slat = ptStats[st][5]
-                slon = ptStats[st][6]
-
-                for evt in events:
-                    # Retrieve latitude and longitude of event
-                    lat = evt[0]
-                    lon = evt[1]
-
-                    # Calculate radial distance and azimuth
-                    (dist, azi, other) = Math.delazi(slat, slon, lat, lon)
-
-                    if (minradius < dist) and (dist < maxradius) and \
-                       (minazimuth < azi) and (azi < maxazimuth):
-                        (loc_ch, restricted) = \
-                            self.__buildStreamsList(st, streams, sensortype,
-                                                    preferredsps, start_date,
-                                                    end_date)
-
-                        if len(loc_ch):
-                            stats.append(('%s-%s-%s-%s%s%s' %
-                                          (ptNets[parent_net][0],
-                                           ptNets[parent_net][4],
-                                           ptStats[st][4],
-                                           ptStats[st][8].year,
-                                           ptStats[st][8].month,
-                                           ptStats[st][8].day),
-                                          ptNets[parent_net][0],
-                                          ptStats[st][4], ptStats[st][5],
-                                          ptStats[st][6],
-                                          ptStats[st][11],
-                                          ptNets[parent_net][8],
-                                          ptNets[parent_net][9],
-                                          ptNets[parent_net][10], loc_ch,
-                                          restricted))
-
-                        # Stop the loop through events and go for the
-                        # next station
-                        break
 
         else:
             msg = 'Error: not enough parameters have been given.'
