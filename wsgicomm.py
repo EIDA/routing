@@ -18,6 +18,45 @@
 """
 
 
+class Logs(object):
+    """
+:synopsis: Given the log level redirects the output to the proper destination
+:platform: Linux
+
+"""
+
+    def __init__(self, level=2):
+        self.setLevel(level)
+
+    def setLevel(self, level):
+        """Constructor
+
+:param level: Log level (1: Error, 2: Warning, 3: Info, 4: Debug)
+:type level: str
+
+        """
+
+        # Remap the functions in agreement with the output level
+        # Default values are the following
+        self.error = self.__write
+        self.warning = self.__write
+        self.info = self.__pass
+        self.debug = self.__pass
+
+        if level >= 2:
+            self.warning = self.__write
+        if level >= 3:
+            self.info = self.__write
+        if level >= 4:
+            self.debug = self.__write
+
+    def __write(self, msg):
+        print msg
+
+    def __pass(self, msg):
+        pass
+
+
 ##################################################################
 #
 # Exceptions to be caught (usually) by the application handler
