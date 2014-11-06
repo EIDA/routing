@@ -688,8 +688,7 @@ to enter here the two codes and point to IRIS.
         # Check that I found a route
         for r in realRoutes:
             # Check if the timewindow is encompassed in the returned dates
-            # FIXME This should be changed to use the IN clause from TW
-            if ((tw.start in r) or (tw.end in r)):
+            if (tw in r.tw):
                 # Filtering with the service parameter!
                 if service == r.service:
                     result.append(r)
