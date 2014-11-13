@@ -29,7 +29,9 @@ import telnetlib
 import xml.etree.cElementTree as ET
 import ConfigParser
 from time import sleep
+import datetime
 from collections import namedtuple
+from collections import deque
 from operator import add
 from inventorycache import InventoryCache
 
@@ -281,6 +283,27 @@ class RoutingCache(object):
         # Add inventory cache here, to be able to expand request if necessary
         self.ic = InventoryCache(invFile)
 
+        # Read the configuration file and checks when do we need to update
+        # the routes
+        config = ConfigParser.RawConfigParser()
+
+        here = os.path.dirname(__file__)
+        config.read(os.path.join(here, 'routing.cfg'))
+        updTime = config.get('Global', 'updateTime')
+
+        auxL = list()
+        for auxT in updTime.split():
+            auxL.append(datetime.time(*tuple(map(int, auxT.split(':')))))
+
+        self.updTimes = deque(sorted(auxL))
+
+        # The time for the update must be rotated in order to have always the
+        # next update in the first position
+        for ind in range(len(self.updTimes)):
+            if datetime.datetime.time(datetime.datetime.now()) < self.updTimes[0]:
+                break
+            self.updTimes.rotate(-1)
+
         if masterFile is None:
             return
 
@@ -454,6 +477,13 @@ information (URLs and parameters) to do the requests to different datacenters
 :raises: RoutingException
 
         """
+
+        # First check whether the information should be updated or not
+        #print datetime.datetime.time(datetime.datetime.now()), self.updTimes[0]
+        if datetime.datetime.time(datetime.datetime.now()) > self.updTimes[0]:
+            print 'Hay que actualizar!'
+            # and move to the next time
+            self.updTimes.rotate(-1)
 
         stream = Stream(n, s, l, c)
         tw = TW(startD, endD)
