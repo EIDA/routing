@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 
 import sys
+import os
+
+here = os.path.dirname(__file__)
+sys.path.append(os.path.join(here, '..'))
+
 import unittest
 from unittestTools import WITestRunner
 from routing import RoutingCache
@@ -17,8 +22,8 @@ class RouteCacheTests(unittest.TestCase):
         "Setting up test"
         if hasattr(cls, 'rc'):
             return
-        cls.rc = RoutingCache('./routing.xml', './Arclink-inventory.xml',
-                              './masterTable.xml')
+        cls.rc = RoutingCache('../routing.xml', '../Arclink-inventory.xml',
+                              '../masterTable.xml')
 
     def testDS_GE(self):
         "Dataselect GE.*.*.*"
