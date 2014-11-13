@@ -47,10 +47,10 @@ fi
 cd $DIR
 
 # Check for arclink_fetch in PATH
-if ! hash arclink_fetch 2>/dev/null; then
-    echo "ERROR: arclink_fetch was not found! Check your SeisComP environment variables."
-    exit 1;
-fi
+#if ! hash arclink_fetch 2>/dev/null; then
+#    echo "ERROR: arclink_fetch was not found! Check your SeisComP environment variables."
+#    exit 1;
+#fi
 
 # Retrieve inventory information from your local Arclink server
 ADDRESS=eida.gfz-potsdam.de:18002
@@ -59,7 +59,7 @@ if [ $verbosity -gt 0 ]; then
     echo "Requesting inventory from $ADDRESS with arclink_fetch as $ARCLINKUSER"
 fi
 YEAR=$(($(date +%Y)+1))
-echo "1980,1,1,0,0,0 $YEAR,1,1,0,0,0 * * * * " | arclink_fetch -a $ADDRESS -u $ARCLINKUSER -k inv -o ./Arclink-inventory.download 2>&1 >./Arclink-inventory.out
+echo "1980,1,1,0,0,0 $YEAR,1,1,0,0,0 * * * * " | ./arclink_fetch -a $ADDRESS -u $ARCLINKUSER -k inv -o ./Arclink-inventory.download 2>&1 >./Arclink-inventory.out
 
 status=$?
 if [[ "$status" != "0" ]]; then

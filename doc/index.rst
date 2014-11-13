@@ -15,16 +15,9 @@ Installation and use
 Requirements
 ------------
 
- * SeisComP(reg) 3 provides useful functions for configuration, geometry, travel time computation.
-   If you use the :program:`update-metadata.sh` script, you will need :program:`arclink_fetch`, either included in the SeisComP distribution, or standalone [http://www.seiscomp3.org/wiki/doc/applications/arclink_fetch].
-
- * Seiscomp Python library (`$SEISCOMP_ROOT/lib/python/seiscomp`), including a
-   recent version of `manager.py`
-   (SeisComP 3 release >= 2013.200; there is a temporary version with this
-   release in the `tools` directory, which you can use to replace your
-   installed version in `$SEISCOMP_ROOT/lib/python/seiscomp/arclink`).
-
- * Python, mod_wsgi (if using Apache). Also Python libraries for libxslt and libxml.
+ * Python 2.7
+   
+ * mod_wsgi (if using Apache). Also Python libraries for libxslt and libxml.
 
  * The ``update-metadata.sh`` script uses `wget`.
 
@@ -103,12 +96,6 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
         </Directory>
 
     Change `/var/www/eidaws/routing/1` to suit your own web server's needs.
-    You may also need to add a section like ::
-
-        <Directory /var/www/eidaws/routing/1/>
-            Order allow,deny
-            Allow from all
-        </Directory>
 
  #. Copy `routing.cfg.sample` to `routing.cfg`,
     or make a symbolic link ::
@@ -131,7 +118,7 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
 
  #. Get initial metadata in the `data` directory by running the ``update-metadata.sh`` script in that directory. ::
 
-      # cd /var/www/eidaws/routing/1
+      # cd /var/www/eidaws/routing/1/data
       # ./update-metadata.sh
 
  #. It is important to check the permissions of the working directory
@@ -153,13 +140,14 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
 
     # cd {top directory}
     # sudo chown -R sysop.www-data .
+    # cd data
     # sudo chmod -R g+w .
 
  #. Arrange for regular updates of the metadata in the working directory.
     Something like the following lines will be needed in your crontab ::
 
     # Daily metadata update for routing service
-    52 03 * * * /var/www/eidaws/routing/1/update-metadata.sh
+    52 03 * * * /var/www/eidaws/routing/1/data/update-metadata.sh
 
 Installation problems
 ~~~~~~~~~~~~~~~~~~~~~
