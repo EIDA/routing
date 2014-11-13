@@ -13,9 +13,9 @@ To get the documentation of the current version of the Routing Service you
 please follow these steps:
 
 1) Go to the "doc" subdirectory located where the package was decompressed.
-Let's suppose it is "~/routing".
+Let's suppose it is "/var/www/eidaws/routing/1".
 
-$ cd ~/routing/doc
+$ cd /var/www/eidaws/routing/1
 
 2) Build the documentation.
 
