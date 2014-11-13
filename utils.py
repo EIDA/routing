@@ -299,9 +299,7 @@ class RoutingCache(object):
 
         """
 
-        here = os.path.dirname(__file__)
-
-        with open(os.path.join(here, 'routing.xml')) as f:
+        with open(self.routingFile) as f:
             return f.read()
 
     def configArclink(self):
