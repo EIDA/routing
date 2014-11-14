@@ -35,13 +35,11 @@ import os
 import math
 import cPickle as pickle
 import xml.etree.cElementTree as ET
-import json
 import fnmatch
 from collections import defaultdict
 
 import wsgicomm
 
-logs = wsgicomm.Logs(2)
 
 class InventoryCache(object):
     """Encapsulate and manage the information of networks,
@@ -51,9 +49,12 @@ class InventoryCache(object):
 
     """
 
-    def __init__(self, inventory):
+    def __init__(self, inventory, logs=wsgicomm.Logs(2)):
         # Arclink inventory file in XML format
         self.inventory = inventory
+
+        # Check where should we log all our output
+        self.logs = logs
 
         # Temporary file to store the internal representation of the cache
         # in pickle format
@@ -176,12 +177,12 @@ class InventoryCache(object):
                 with open(self.cachefile) as cache:
                     (self.networks, self.stations, self.sensorsLoc,
                      self.streams, self.streamidx) = pickle.load(cache)
-                    logs.info('Inventory loaded from pickle version')
+                    self.logs.info('Inventory loaded from pickle version')
                     return
             except:
                 pass
 
-        logs.info('Processing XML: %s' % start_time)
+        self.logs.info('Processing XML: %s' % start_time)
 
         sensors = {}
         dataloggers = {}
@@ -195,7 +196,7 @@ class InventoryCache(object):
             invfile = open(self.inventory)
         except IOError:
             msg = 'Error: Arclink-inventory.xml could not be opened.'
-            logs.error(msg)
+            self.logs.error(msg)
             raise wsgicomm.WIInternalError, msg
 
         for parsetype in ['SENSDAT', 'NET_STA']:
@@ -207,7 +208,7 @@ class InventoryCache(object):
                 context = ET.iterparse(invfile, events=("start", "end"))
             except IOError:
                 msg = 'Error while trying to parse Arclink-inventory.xml.'
-                logs.error(msg)
+                self.logs.error(msg)
                 raise wsgicomm.WIInternalError, msg
 
             # turn it into an iterator
@@ -219,7 +220,7 @@ class InventoryCache(object):
             # Check that it is really an inventory
             if root.tag[-len('inventory'):] != 'inventory':
                 msg = 'The file parsed seems not to be an inventory (XML).'
-                logs.error(msg)
+                self.logs.error(msg)
                 raise wsgicomm.WIInternalError, msg
 
             # Extract the namespace from the root node
@@ -473,7 +474,7 @@ class InventoryCache(object):
 
         end_time = datetime.datetime.now()
         # Python 2.7: (end_time - start_time).total_seconds())
-        logs.info('Done with XML:  %s' % (end_time))
+        self.logs.info('Done with XML:  %s' % (end_time))
 
         self.__indexStreams()
 
@@ -483,11 +484,12 @@ class InventoryCache(object):
                 os.chmod(lockfile, 0666)
                 lck.close()
             except:
-                logs.warning(('Error while attempting to create a lockfile' +
-                              ' (%s). Check whether the inventory is parsed' +
-                              ' every %d seconds. This could potentialy' +
-                              ' make some requests slower.') %
-                             (lockfile, self.time2refresh))
+                self.logs.warning(('Error while attempting to create a ' +
+                                   'lockfile (%s). Check whether the ' +
+                                   'inventory is parsed every %d seconds. ' +
+                                   'This could potentialy make some ' +
+                                   'requests slower.') %
+                                  (lockfile, self.time2refresh))
                 return
 
             with open(self.cachefile, 'wb') as cache:
@@ -498,9 +500,9 @@ class InventoryCache(object):
             try:
                 os.remove(lockfile)
             except:
-                logs.error(('Error by removing lockfile (%s). Remove it' +
-                            ' manually or the pickle version will be always' +
-                            ' skipped.') % lockfile)
+                self.logs.error(('Error by removing lockfile (%s). Remove it' +
+                                 ' manually or the pickle version will be ' +
+                                 'always skipped.') % lockfile)
 
     def expand(self, n='*', s='*', l='*', c='*',
                start=None, end=None, restricted=False):
@@ -538,7 +540,6 @@ class InventoryCache(object):
                                 for chaidx in xrange(first_child_cha,
                                                      last_child_cha):
                                     ptCha = self.streams[chaidx]
-                                    # print ptCha
                                     # Check whether stream is restricted or not
                                     if (ptCha[8] == 1 and not restricted):
                                         continue
@@ -547,7 +548,8 @@ class InventoryCache(object):
                                            ((start is not None) and
                                                 (start > ptCha[7]))):
                                             continue
-                                        if ((end is not None) and (end < ptCha[6])):
+                                        if ((end is not None) and
+                                                (end < ptCha[6])):
                                             continue
                                         result.append((net[0],
                                                        ptSta[4],
@@ -1123,10 +1125,10 @@ class InventoryCache(object):
             msg = 'Error: maxazimuth must be a float number.'
             raise wsgicomm.WIClientError, msg
 
-        try:
-            events = params.get('events', None)
-        except:
-            events = None
+        #try:
+        #    events = params.get('events', None)
+        #except:
+        #    events = None
 
         # Try to check parameters for different modes of selecting stations
         # One or all stations have been selected and also lat/lon parameters
@@ -1236,7 +1238,7 @@ class InventoryCache(object):
         try:
             stream_epochs = self.streamidx[(net, sta, cha, loc)]
         except KeyError:
-            logs.error("%s,%s,%s,%s not found" % (net, sta, cha, loc))
+            self.logs.error("%s,%s,%s,%s not found" % (net, sta, cha, loc))
             return None
 
         for stream in stream_epochs:
@@ -1244,7 +1246,7 @@ class InventoryCache(object):
                 station = self.stations[self.sensorsLoc[stream[0]][0]]
 
             except IndexError:
-                logs.error("cache inconsistency")
+                self.logs.error("cache inconsistency")
                 return None
 
             # stream_start = datetime.datetime(station[8], 1, 1)
