@@ -185,18 +185,22 @@ configured with the address of any Arclink server. ::
 Service
 """""""
 
-This section contains two variables. The variable *info* specifies the string
-that the *config* method from the service should return, while the variable
-*updateTime* determines at which moment of the day should be updated all the
-routing information. ::
+This section contains three variables. The variable *info* specifies the string
+that the *config* method from the service should return.
+The variable *updateTime* determines at which moment of the day should be
+updated all the routing information.
+The format for the update time should be *HH:MM* separated by a space. It is
+not necessary that the different time entries are in order. If no update is
+required, there should be nothing at the right side of the *=* character.
+
+*verbosity* controls the amount of output send to the logging system depending
+of the importance of the messages. The levels are: 1) Error, 2) Warning, 3)
+Info and 4) Debug. ::
 
     [Service]
     info = Routing information from the Arclink Server at GEOFON
     updateTime = 23:01 22:05 21:58
-
-The format for the update time should be *HH:MM* separated by a space. It is
-not necessary that the different time entries are in order. If no update is
-required, there should be nothing at the right side of the *=* character.
+    verbosity = 3
 
 Maintenance
 -----------

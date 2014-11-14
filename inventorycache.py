@@ -45,8 +45,6 @@ class InventoryCache(object):
     """Encapsulate and manage the information of networks,
     stations, locations and streams read from an Arclink XML file inventory.
 
-    Begun by Javier Quinteros <javier@gfz-potsdam.de>, GEOFON team, June 2013
-
     """
 
     def __init__(self, inventory, logs=wsgicomm.Logs(2)):
