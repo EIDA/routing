@@ -33,6 +33,7 @@ from wsgicomm import WIClientError
 from wsgicomm import WIError
 from wsgicomm import send_plain_response
 from wsgicomm import send_xml_response
+from wsgicomm import Logs
 from utils import RequestMerge
 from utils import RoutingCache
 from utils import RoutingException
@@ -366,13 +367,17 @@ def application(environ, start_response):
     implementedFunctions = ['query', 'application.wadl', 'localconfig',
                             'version', 'info']
 
+    config = ConfigParser.RawConfigParser()
+    here = os.path.dirname(__file__)
+    config.read(os.path.join(here, 'routing.cfg'))
+    verbo = config.getint('Service', 'verbosity')
+
     if routes is None:
         # Add routing cache here, to be accessible to all modules
-        here = os.path.dirname(__file__)
         routesFile = os.path.join(here, 'data', 'routing.xml')
         invFile = os.path.join(here, 'data', 'Arclink-inventory.xml')
         masterFile = os.path.join(here, 'data', 'masterTable.xml')
-        routes = RoutingCache(routesFile, invFile, masterFile)
+        routes = RoutingCache(routesFile, invFile, masterFile, Logs(verbo))
 
     fname = environ['PATH_INFO'].split('/')[-1]
     if fname not in implementedFunctions:
