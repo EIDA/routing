@@ -33,6 +33,7 @@ import datetime
 from collections import namedtuple
 from collections import deque
 from operator import add
+from operator import itemgetter
 from inventorycache import InventoryCache
 
 
@@ -289,20 +290,23 @@ class RoutingCache(object):
 
         here = os.path.dirname(__file__)
         config.read(os.path.join(here, 'routing.cfg'))
-        updTime = config.get('Global', 'updateTime')
+        updTime = config.get('Service', 'updateTime')
 
         auxL = list()
         for auxT in updTime.split():
-            auxL.append(datetime.time(*tuple(map(int, auxT.split(':')))))
+            auxL.append(datetime.datetime.strptime(auxT, '%H:%M'))
 
-        self.updTimes = deque(sorted(auxL))
+        # Configure the expected update moment of the day
+        now = datetime.datetime.now()
 
-        # The time for the update must be rotated in order to have always the
-        # next update in the first position
-        for ind in range(len(self.updTimes)):
-            if datetime.datetime.time(datetime.datetime.now()) < self.updTimes[0]:
-                break
-            self.updTimes.rotate(-1)
+        self.updTimes = sorted(auxL)
+        self.nextUpd = None
+        self.lastUpd = now
+        secsDay = 60 * 60 * 24
+        if auxL:
+            self.nextUpd = min(enumerate([(x - now).total_seconds() %
+                    secsDay for x in self.updTimes]),
+                    key=itemgetter(1))[0]
 
         if masterFile is None:
             return
@@ -478,12 +482,36 @@ information (URLs and parameters) to do the requests to different datacenters
 
         """
 
+        secsDay = 60 * 60 * 24
+        lU = self.lastUpd
         # First check whether the information should be updated or not
-        #print datetime.datetime.time(datetime.datetime.now()), self.updTimes[0]
-        if datetime.datetime.time(datetime.datetime.now()) > self.updTimes[0]:
-            print 'Hay que actualizar!'
-            # and move to the next time
-            self.updTimes.rotate(-1)
+        if self.nextUpd is not None:
+            try:
+                now = datetime.datetime.now()
+                if len(self.updTimes) == 1:
+                    now2lastUpd = (now - lU).seconds % secsDay \
+                            if lU else secsDay
+                    upd2lastUpd = (self.updTimes[0] - lU).seconds % secsDay \
+                            if lU else secsDay
+
+                    # Check for more than one day or updateTime in the past
+                    if (((now - self.lastUpd) > datetime.timedelta(days=1)) or
+                            (now2lastUpd > upd2lastUpd)):
+                        print 'Updating!', self.updTimes[0]
+                        self.updateAll()
+                        self.lastUpd = now
+                else:
+                    auxU = min(enumerate([(x - now).total_seconds() % secsDay \
+                        for x in self.updTimes]), key=itemgetter(1))[0]
+                    if ((auxU != self.nextUpd) or \
+                            ((now - lU) > datetime.timedelta(days=1))):
+                        print 'Updating!', self.updTimes[0]
+                        self.updateAll()
+                        # and move to the next time
+                        self.nextUpd = auxU
+                        self.lastUpd = now
+            except:
+                pass
 
         stream = Stream(n, s, l, c)
         tw = TW(startD, endD)
@@ -985,6 +1013,15 @@ The following table lookup is implemented for the Arclink service::
                         break
 
         return result
+
+    def updateAll(self):
+        """Call the three methods to update routing and inventory information"""
+
+        self.update()
+        if self.masterFile is not None:
+            self.updateMT()
+        # Add inventory cache here, to be able to expand request if necessary
+        self.ic = InventoryCache(invFile)
 
     def updateMT(self):
         """Read the routes with highest priority and store it in memory.

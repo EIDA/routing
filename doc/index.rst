@@ -150,7 +150,7 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
     52 03 * * * /var/www/eidaws/routing/1/data/update-metadata.sh
 
 Installation problems
-~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^
 
 Always check your web server log files (e.g. for Apache: `access_log` and
 `error_log`) for clues.
@@ -166,22 +166,44 @@ If they *do* show up, check that the information there looks correct.
 .. _configuration-options-extra:
 
 Configuration options
-~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^
 
-The configuration file contains only a couple of variables up to this moment.
-Namely, the Arclink server where the default routing table should be retrieved.
-the default value is the Arclink server running at GEOFON, but this can be
+The configuration file contains two sections up to this moment.
+
+Arclink
+"""""""
+
+In the Arclink section an arclink server must be defined, from which the
+default routing table should be retrieved.
+The default value is the Arclink server running at GEOFON, but this can be
 configured with the address of any Arclink server. ::
 
     [Arclink]
     server = eida.gfz-potsdam.de
     port = 18002
 
-Maintenance
-~~~~~~~~~~~
+Service
+"""""""
 
-Metadata may need updating after changes in Arclink inventory - you
-can safely run the ``update-metadata.sh`` script at any time to do that.
+This section contains two variables. The variable *info* specifies the string
+that the *config* method from the service should return, while the variable
+*updateTime* determines at which moment of the day should be updated all the
+routing information. ::
+
+    [Service]
+    info = Routing information from the Arclink Server at GEOFON
+    updateTime = 23:01 22:05 21:58
+
+The format for the update time should be *HH:MM* separated by a space. It is
+not necessary that the different time entries are in order. If no update is
+required, there should be nothing at the right side of the *=* character.
+
+Maintenance
+-----------
+
+Metadata needs to be updated regularly due to the small but constant changes in
+the Arclink inventory. You can always run safely the ``update-metadata.sh``
+script at any time you want.
 The Routing Service creates a processed version of the Arclink XML, but this
 will be automatically updated each time a new inventory XML file is detected.
 
