@@ -29,9 +29,7 @@ import telnetlib
 import xml.etree.cElementTree as ET
 import ConfigParser
 from time import sleep
-import datetime
 from collections import namedtuple
-from collections import deque
 from operator import add
 from operator import itemgetter
 from inventorycache import InventoryCache
@@ -305,8 +303,8 @@ class RoutingCache(object):
         secsDay = 60 * 60 * 24
         if auxL:
             self.nextUpd = min(enumerate([(x - now).total_seconds() %
-                    secsDay for x in self.updTimes]),
-                    key=itemgetter(1))[0]
+                                          secsDay for x in self.updTimes]),
+                               key=itemgetter(1))[0]
 
         if masterFile is None:
             return
@@ -433,6 +431,7 @@ with an EIDA default configuration.
         lmu = 'http://erde.geophysik.uni-muenchen.de/fdsnws/' +\
             'dataselect/1/query'
         ipgp = 'http://eida.ipgp.fr/fdsnws/dataselect/1/query'
+        neis = 'http://eida-sc3.infp.ro/fdsnws/dataselect/1/query'
 
         # Try to identify the hosting institution
         host = route.split(':')[0]
@@ -453,6 +452,8 @@ with an EIDA default configuration.
             return lmu
         elif host.endswith('ipgp.fr'):
             return ipgp
+        elif host.endswith('infp.ro'):
+            return neis
         raise Exception('No Dataselect equivalent found for %s' % route)
 
     def getRoute(self, n='*', s='*', l='*', c='*', startD=None, endD=None,
@@ -490,9 +491,9 @@ information (URLs and parameters) to do the requests to different datacenters
                 now = datetime.datetime.now()
                 if len(self.updTimes) == 1:
                     now2lastUpd = (now - lU).seconds % secsDay \
-                            if lU else secsDay
+                        if lU else secsDay
                     upd2lastUpd = (self.updTimes[0] - lU).seconds % secsDay \
-                            if lU else secsDay
+                        if lU else secsDay
 
                     # Check for more than one day or updateTime in the past
                     if (((now - self.lastUpd) > datetime.timedelta(days=1)) or
@@ -501,9 +502,10 @@ information (URLs and parameters) to do the requests to different datacenters
                         self.updateAll()
                         self.lastUpd = now
                 else:
-                    auxU = min(enumerate([(x - now).total_seconds() % secsDay \
-                        for x in self.updTimes]), key=itemgetter(1))[0]
-                    if ((auxU != self.nextUpd) or \
+                    auxU = min(enumerate([(x - now).total_seconds() % secsDay
+                                          for x in self.updTimes]),
+                               key=itemgetter(1))[0]
+                    if ((auxU != self.nextUpd) or
                             ((now - lU) > datetime.timedelta(days=1))):
                         print 'Updating!', self.updTimes[0]
                         self.updateAll()
@@ -1015,13 +1017,13 @@ The following table lookup is implemented for the Arclink service::
         return result
 
     def updateAll(self):
-        """Call the three methods to update routing and inventory information"""
+        """Call the three sources of routing and inventory information"""
 
         self.update()
         if self.masterFile is not None:
             self.updateMT()
         # Add inventory cache here, to be able to expand request if necessary
-        self.ic = InventoryCache(invFile)
+        self.ic = InventoryCache(self.invFile)
 
     def updateMT(self):
         """Read the routes with highest priority and store it in memory.
