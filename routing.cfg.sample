@@ -4,4 +4,4 @@ port = 18002
 
 [Service]
 info = Routing information from the Arclink Server at GEOFON
-updateTime = 23:01 22:05 21:58
+updateTime = 03:00
