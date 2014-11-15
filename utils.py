@@ -37,10 +37,37 @@ from wsgicomm import Logs
 
 
 class RequestMerge(list):
+    """
+:synopsis: Extend a list to merge the information from the same datacenters.
+:platform: Any
+    """
+
     __slots__ = ()
 
     def append(self, service, url, priority, stream, start=None,
                end=None):
+        """Append a new Route to the list without repeating the datacenter.
+
+Overrides the *append* method of the inherited list. If another route for the
+datacenter was already added, the remaining attributes are appended in
+*params* for the datacenter. If this is the first Route for the datacenter,
+everything is added.
+
+:param service: Service name (f.i., 'dataselect')
+:type service: str
+:param url: URL for the service (f.i., 'http://server/path/query')
+:type url: str
+:param priority: Priority of the Route (1: highest priority)
+:type priority: int
+:param stream: Stream(s) associated with the Route
+:type stream: Stream
+:param start: Start date for the Route
+:type start: datetime or None
+:param end: End date for the Route
+:type end: datetime or None
+:returns: Bool
+        """
+
         try:
             pos = self.index(service, url)
             self[pos]['params'].append({'net': stream.n, 'sta': stream.s,
@@ -49,6 +76,7 @@ class RequestMerge(list):
                                         'priority': priority if priority
                                         is not None else ''})
         except:
+            # Take a reference to the inherited *list* and do a normal append
             listPar = super(RequestMerge, self)
             listPar.append({'name': service, 'url': url,
                             'params': [{'net': stream.n, 'sta': stream.s,
@@ -74,9 +102,21 @@ class RequestMerge(list):
 
 
 class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
+    """
+:synopsis: Namedtuple with methods to calculate matching and overlapping of 
+:platform: Any
+    """
+
     __slots__ = ()
 
     def __contains__(self, st):
+        """Check if one Stream is contained in this Stream.
+
+        :param st: Stream which should checked for overlapping
+        :type st: Stream
+        :returns: Bool
+        """
+
         if (fnmatch.fnmatch(st.n, self.n) and
                 fnmatch.fnmatch(st.s, self.s) and
                 fnmatch.fnmatch(st.l, self.l) and
@@ -89,7 +129,8 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
         """Returns a new Stream with a "reduction" of this one to force the
         matching of the specification received as an input.
 
-        The *other* parameter is expected to be of Stream type
+        :param other: Stream which should checked for overlapping
+        :type other: Stream
         """
 
         res = list()
@@ -104,7 +145,8 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
     def overlap(self, other):
         """Checks if there is an overlap between this stream and other one
 
-        The other parameter is expected to be of Stream type
+        :param other: Stream which should checked for overlapping
+        :type other: Stream
         """
 
         for i in range(len(other)):
