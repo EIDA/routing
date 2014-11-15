@@ -149,20 +149,6 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
     # Daily metadata update for routing service
     52 03 * * * /var/www/eidaws/routing/1/data/update-metadata.sh
 
-Installation problems
-^^^^^^^^^^^^^^^^^^^^^
-
-Always check your web server log files (e.g. for Apache: `access_log` and
-`error_log`) for clues.
-
-If you visit http://localhost/eidaws/routing/1/version on your machine
-you should see the version information of the deployed service ::
-
-    1.0.0
-
-If these information cannot be retrieved, the installation was not successfull.
-If they *do* show up, check that the information there looks correct.
-
 .. _configuration-options-extra:
 
 Configuration options
@@ -201,6 +187,66 @@ Info and 4) Debug. ::
     info = Routing information from the Arclink Server at GEOFON
     updateTime = 23:01 22:05 21:58
     verbosity = 3
+
+Installation problems
+^^^^^^^^^^^^^^^^^^^^^
+
+Always check your web server log files (e.g. for Apache: `access_log` and
+`error_log`) for clues.
+
+If you visit http://localhost/eidaws/routing/1/version on your machine
+you should see the version information of the deployed service ::
+
+    1.0.0
+
+If these information cannot be retrieved, the installation was not successfull.
+If they *do* show up, check that the information there looks correct.
+
+Testing the service
+-------------------
+
+Two scripts are provided to test the functionality of the service at different
+levels.
+
+Class level
+^^^^^^^^^^^
+
+The script called *testRoute.py* will try to import the objects used in the
+Routing Service in order to test their functionality. The data will not be
+provided by the web service, but from the classes inside the package. In this
+way, the logic of the package and teh coherence of the information can be
+tested, excluding other factors related to the configuration of other pieces
+of software (f.i. web server, firewall, etc.). ::
+
+    ./testRoute.py
+    Running test...
+    Checking Dataselect CH.LIENZ.*.BHZ... [OK]
+    Checking Dataselect CH.LIENZ.*.HHZ... [OK]
+    Checking Dataselect CH.LIENZ.*.?HZ... [OK]
+    Checking Dataselect GE.*.*.*... [OK]
+    Checking Dataselect GE.APE.*.*... [OK]
+    Checking Dataselect RO.BZS.*.BHZ... [OK]
+
+Service level
+^^^^^^^^^^^^^
+
+The script called *testService.py* will try to connect a Routing Service at
+a particular URL, which can be passed as a parameter. The default value will
+test the service at: http://localhost/eidaws/routing/1/query, what can be
+used to check the local installation. ::
+
+    ./testService.py -u http://server/path/query
+    Running test...
+    Checking Dataselect CH.LIENZ.*.BHZ... [OK]
+    Checking Dataselect CH.LIENZ.*.HHZ... [OK]
+    Checking Dataselect CH.LIENZ.*.?HZ... [OK]
+    Checking Dataselect GE.*.*.*... [OK]
+    Checking Dataselect GE.APE.*.*... [OK]
+    Checking Dataselect RO.BZS.*.BHZ... [OK]
+    
+A set of test cases have been implemented and the expected responses are
+compared with the ones returned by the service.
+
 
 Maintenance
 -----------
