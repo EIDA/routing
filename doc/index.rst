@@ -9,8 +9,8 @@ Welcome to Routing-WS's documentation!
 .. toctree::
    :maxdepth: 2
 
-Installation and use
-====================
+Installation
+============
 
 Requirements
 ------------
@@ -271,6 +271,79 @@ At Steps 4-6, re-use your previous versions of ``routing.wsgi`` and ``routing.cf
 
     cp ../1.old/routing.wsgi routing.wsgi
     cp ../1.old/routing.cfg routing.cfg
+
+
+Using the Service
+=================
+
+Default configuration
+---------------------
+
+The RoutingCache class includes a method called *configArclink*, that retrieves
+the routing information for EIDA from an Arclink Server. The address and port
+of the server are the ones specified in the configuration file.
+
+When the service starts, it checks if there is a file called *routing.xml* in
+the *data* directory. This file is expected to contain all the information
+needed to feed the routing table. The file must be in an Arclink-XML format.
+
+The following is an example of an Arclink-XML file. ::
+
+    <?xml version="1.0" encoding="utf-8"?>
+    <ns0:routing xmlns:ns0="http://server/ns/Routing/1.0/">
+        <ns0:route locationCode="" networkCode="BE" stationCode="" streamCode="">
+            <ns0:arclink address="bhlsa02.knmi.nl:18002" end="" priority="1"
+                start="1980-01-01T00:00:00.0000Z" />
+        </ns0:route>
+        <ns0:route locationCode="" networkCode="BA" stationCode="" streamCode="">
+            <ns0:arclink address="eida.rm.ingv.it:18002" end="" priority="1"
+                start="1980-01-01T00:00:00.0000Z" />
+            <ns0:seedlink address="eida.rm.ingv.it:18000" priority="1" />
+        </ns0:route>
+    </ns0:routing>
+
+If the file is not present, *configArclink* is called and the file is created
+with the information provided by the Arclink server. With this information and the metadata
+downloaded by ``update_metadata.sh`` the service can be provided.
+
+Manual configuration
+--------------------
+
+A better option would be to create the file manually, taking the one obtained
+from Arclink as a base. The number of routes could be reduced drastically by
+means of a clever use of the wildcards.
+
+If some extra information not available within EIDA would like to be also
+routed, there is a *masterTable* that can be used. If the service finds a file
+called *masterTable.xml* when it starts, these routes are loaded in a separate
+table and are given the maximum priority. Only the network will be used when
+a request is processed. This could be perfect to route request to other
+networks, whose internal structure is not well known.
+
+In the following example, we show how to route to the service from IRIS, when
+the *II* network is requested. ::
+
+    <?xml version="1.0" encoding="utf-8"?>
+    <ns0:routing xmlns:ns0="http://geofon.gfz-potsdam.de/ns/Routing/1.0/">
+        <ns0:route locationCode="" networkCode="II" stationCode="" streamCode="">
+            <ns0:dataselect address="service.iris.edu/fdsnws/dataselect/1/query"
+                end="" priority="9" start="1980-01-01T00:00:00.0000Z" />
+        </ns0:route>
+    </ns0:routing>
+
+.. warning:: The *priority* attribute will be valid only in the context of the
+             masterTable. There is no relation with the priority for a similar
+             route that could be in the normal routing table.
+
+The routes that are part of the *masterTable.xml* will not be sent when the
+*localconfig* method of the service is called, only the ones in the normal
+routing table.
+
+The aim is that the routes in the normal routing table are the ones that should
+be synchronized with other Routing Services.
+
+.. todo:: EL OTRO METODO!
+
 
 
 Documentation for developers
