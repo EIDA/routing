@@ -315,12 +315,12 @@ means of a clever use of the wildcards.
 
 If some extra information not available within EIDA would like to be also
 routed, there is a *masterTable* that can be used. If the service finds a file
-called *masterTable.xml* when it starts, these routes are loaded in a separate
-table and are given the maximum priority. Only the network will be used when
-a request is processed. This could be perfect to route request to other
-networks, whose internal structure is not well known.
+called *masterTable.xml* in the *data* folder when it starts, these routes are
+loaded in a separate table and are given the maximum priority. Only the
+network level will be used when a request is processed. This could be perfect
+to route request to other networks, whose internal structure is not well known.
 
-In the following example, we show how to route to the service from IRIS, when
+In the following example, we show how to point to the service in IRIS, when
 the *II* network is requested. ::
 
     <?xml version="1.0" encoding="utf-8"?>
@@ -342,7 +342,7 @@ routing table.
 The aim is that the routes in the normal routing table are the ones that should
 be synchronized with other Routing Services.
 
-.. todo:: EL OTRO METODO!
+.. todo:: Test the method to synchronize among the nodes!
 
 
 
