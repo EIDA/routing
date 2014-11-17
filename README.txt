@@ -15,7 +15,7 @@ please follow these steps:
 1) Go to the "doc" subdirectory located where the package was decompressed.
 Let's suppose it is "/var/www/eidaws/routing/1".
 
-$ cd /var/www/eidaws/routing/1
+$ cd /var/www/eidaws/routing/1/doc
 
 2) Build the documentation.
 
