@@ -38,7 +38,8 @@ from wsgicomm import Logs
 
 class RequestMerge(list):
     """
-:synopsis: Extend a list to merge the information from the same datacenters.
+:synopsis: Extend a list to group automatically by datacenter the information
+           from many requests
 :platform: Any
     """
 
@@ -103,7 +104,8 @@ everything is added.
 
 class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
     """
-:synopsis: Namedtuple with methods to calculate matching and overlapping of 
+:synopsis: Namedtuple with methods to calculate matching and overlapping of
+           streams including (or not) wildcards
 :platform: Any
     """
 
@@ -158,6 +160,11 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
 
 
 class TW(namedtuple('TW', ['start', 'end'])):
+    """
+:synopsis: Namedtuple with methods to perform calculations on timewindows
+:platform: Any
+    """
+
     __slots__ = ()
 
     def __contains__(self, otherTW):
@@ -229,6 +236,12 @@ class TW(namedtuple('TW', ['start', 'end'])):
 
 
 class Route(namedtuple('Route', ['address', 'tw', 'priority'])):
+    """
+:synopsis: Namedtuple including the information to define a route (a URL, a
+           timewindow and a priority)
+:platform: Any
+    """
+
     __slots__ = ()
 
     def __contains__(self, pointTime):
@@ -254,6 +267,12 @@ Route.__ge__ = lambda self, other: self.priority >= other.priority
 
 class RouteMT(namedtuple('RouteMT', ['address', 'tw', 'priority',
                                      'service'])):
+    """
+:synopsis: Namedtuple including the information to define a route in relation
+           to a particular service
+:platform: Any
+    """
+
     __slots__ = ()
 
     def __contains__(self, pointTime):
@@ -770,10 +789,8 @@ used to translate the Arclink address to Dataselect address (see __arc2DS).
 
     def getRouteMaster(self, n, tw, service='dataselect', alternative=False):
         """Looks for a high priority route for a particular network This would
-provide the flexibility to incorporate new networks that override the Arclink
-configuration that is now automatically used. For instance, there are streams
-from II an IU hosted at ODC, but if we want to route the whole network we need
-to enter here the two codes and point to IRIS.
+provide the flexibility to incorporate new networks and override the normal
+configuration.
 
 :param n: Network code
 :type n: str
@@ -820,8 +837,8 @@ to enter here the two codes and point to IRIS.
     def getRouteSL(self, stream, alternative):
         """Based on a stream(s) returns all the neccessary information (URLs
 and parameters) to connect to a Seedlink server shiping real-time information
-of the specified streams. Implements the following table lookup for the
-Seedlink service::
+of the specified streams. This method implements the following table lookup
+for the Seedlink service::
 
                 01 NET STA CHA LOC
                 02 NET STA CHA ---

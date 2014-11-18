@@ -30,7 +30,7 @@ Download the tar file / source from the GEOFON web page at http://geofon.gfz-pot
 [Eventually it may be included in the SeisComP distribution.]
 
 .. note ::
-    Nightly builds can be downloaded from Bitbucket. You can request access at geofon_dc@gfz-potsdam.de.
+    Nightly builds can be downloaded from Bitbucket (git@bitbucket.org:javiquinte/routing.git). You can request access at geofon_dc@gfz-potsdam.de.
 
 Untar into a suitable directory visible to the web server,
 such as `/var/www/eidaws/routing/1/` ::
@@ -171,15 +171,15 @@ configured with the address of any Arclink server. ::
 Service
 """""""
 
-This section contains three variables. The variable *info* specifies the string
-that the *config* method from the service should return.
-The variable *updateTime* determines at which moment of the day should be
+This section contains three variables. The variable `info` specifies the string
+that the ``config`` method from the service should return.
+The variable `updateTime` determines at which moment of the day should be
 updated all the routing information.
-The format for the update time should be *HH:MM* separated by a space. It is
+The format for the update time should be ``HH:MM`` separated by a space. It is
 not necessary that the different time entries are in order. If no update is
-required, there should be nothing at the right side of the *=* character.
+required, there should be nothing at the right side of the ``=`` character.
 
-*verbosity* controls the amount of output send to the logging system depending
+`verbosity` controls the amount of output send to the logging system depending
 of the importance of the messages. The levels are: 1) Error, 2) Warning, 3)
 Info and 4) Debug. ::
 
@@ -191,30 +191,31 @@ Info and 4) Debug. ::
 Installation problems
 ^^^^^^^^^^^^^^^^^^^^^
 
-Always check your web server log files (e.g. for Apache: `access_log` and
-`error_log`) for clues.
+Always check your web server log files (e.g. for Apache: ``access_log`` and
+``error_log``) for clues.
 
 If you visit http://localhost/eidaws/routing/1/version on your machine
 you should see the version information of the deployed service ::
 
     1.0.0
 
-If these information cannot be retrieved, the installation was not successfull.
-If they *do* show up, check that the information there looks correct.
+If this information cannot be retrieved, the installation was not successfull.
+If this **do** show up, check that the information there looks correct.
 
 Testing the service
 -------------------
 
 Two scripts are provided to test the functionality of the service at different
-levels.
+levels. These can be found in the ``test`` folder under the root directory of
+your installation.
 
 Class level
 ^^^^^^^^^^^
 
-The script called *testRoute.py* will try to import the objects used in the
+The script called ``testRoute.py`` will try to import the objects used in the
 Routing Service in order to test their functionality. The data will not be
 provided by the web service, but from the classes inside the package. In this
-way, the logic of the package and teh coherence of the information can be
+way, the logic of the package and the coherence of the information can be
 tested, excluding other factors related to the configuration of other pieces
 of software (f.i. web server, firewall, etc.). ::
 
@@ -227,12 +228,21 @@ of software (f.i. web server, firewall, etc.). ::
     Checking Dataselect GE.APE.*.*... [OK]
     Checking Dataselect RO.BZS.*.BHZ... [OK]
 
+A set of test cases have been implemented and the expected responses are
+compared with the ones returned by the service.
+
+.. note:: The test cases are related to the EIDA internal configuration and
+          could make no sense if the service is configured to route other set
+          of networks. In that case, the operator of the service should modify
+          scripts in order to test the coherence of the information provided
+          by the service.
+
 Service level
 ^^^^^^^^^^^^^
 
-The script called *testService.py* will try to connect a Routing Service at
-a particular URL, which can be passed as a parameter. The default value will
-test the service at: http://localhost/eidaws/routing/1/query, what can be
+The script called ``testService.py`` will try to connect to a Routing Service
+at a particular URL, which can be passed as a parameter. The default value
+will test the service at: http://localhost/eidaws/routing/1/query, what can be
 used to check the local installation. ::
 
     ./testService.py -u http://server/path/query
@@ -244,9 +254,7 @@ used to check the local installation. ::
     Checking Dataselect GE.APE.*.*... [OK]
     Checking Dataselect RO.BZS.*.BHZ... [OK]
     
-A set of test cases have been implemented and the expected responses are
-compared with the ones returned by the service.
-
+The set of test cases provided are the same as in the ``testRoute.py`` script.
 
 Maintenance
 -----------
@@ -279,13 +287,14 @@ Using the Service
 Default configuration
 ---------------------
 
-The RoutingCache class includes a method called *configArclink*, that retrieves
-the routing information for EIDA from an Arclink Server. The address and port
-of the server are the ones specified in the configuration file.
+The `RoutingCache` class includes a method called ``configArclink``, that
+retrieves the routing information for EIDA from an Arclink Server. The address
+and port of the server are specified in the configuration file
+(``routing.cfg``).
 
-When the service starts, it checks if there is a file called *routing.xml* in
-the *data* directory. This file is expected to contain all the information
-needed to feed the routing table. The file must be in an Arclink-XML format.
+When the service starts, checks if there is a file called ``routing.xml`` in
+the ``data`` directory. This file is expected to contain all the information
+needed to feed the routing table. The file format must be Arclink-XML.
 
 The following is an example of an Arclink-XML file. ::
 
@@ -302,26 +311,35 @@ The following is an example of an Arclink-XML file. ::
         </ns0:route>
     </ns0:routing>
 
-If the file is not present, *configArclink* is called and the file is created
-with the information provided by the Arclink server. With this information and the metadata
-downloaded by ``update_metadata.sh`` the service can be provided.
+If the file is not present, ``configArclink`` is called and the file is created
+with the information provided by the Arclink server. With this information and
+the metadata downloaded by ``update_metadata.sh`` the service can be started.
 
 Manual configuration
 --------------------
 
-A better option would be to create the file manually, taking the one obtained
-from Arclink as a base. The number of routes could be reduced drastically by
-means of a clever use of the wildcards.
+A better option would be to take the file from Arclink as a base and make some
+adjustments to it manually. The number of routes could be reduced drastically
+by means of a clever use of the wildcards.
 
 If some extra information not available within EIDA would like to be also
-routed, there is a *masterTable* that can be used. If the service finds a file
-called *masterTable.xml* in the *data* folder when it starts, these routes are
-loaded in a separate table and are given the maximum priority. Only the
-network level will be used when a request is processed. This could be perfect
-to route request to other networks, whose internal structure is not well known.
+routed, there is a *masterTable* that can be used. When the service starts, it
+checks if a file called ``masterTable.xml`` in the ``data`` folder exists. If
+this is the case, the file is read, the routes inside are loaded in a separate
+table and are given the maximum priority.
+This could be perfect to route requests to other datacenters, whose internal
+structure is not well known.
+
+.. warning:: Only the network level is used to calculate the
+             routing for the routes in the master table. This makes sense if
+             we consider that the main purpose of this *extra* information is
+             to be able to route requests to other datacenters who do **not**
+             synchronize their routing information with you. Therefore, the
+             internal and more specific structure of the distribution of data
+             to levels deeper than the network are usually not known.
 
 In the following example, we show how to point to the service in IRIS, when
-the *II* network is requested. ::
+the ``II`` network is requested. ::
 
     <?xml version="1.0" encoding="utf-8"?>
     <ns0:routing xmlns:ns0="http://geofon.gfz-potsdam.de/ns/Routing/1.0/">
@@ -331,16 +349,16 @@ the *II* network is requested. ::
         </ns0:route>
     </ns0:routing>
 
-.. warning:: The *priority* attribute will be valid only in the context of the
-             masterTable. There is no relation with the priority for a similar
-             route that could be in the normal routing table.
+.. warning:: The `priority` attribute will be valid only in the context of the
+             `masterTable`. There is no relation with the priority for a
+             similar route that could be in the normal routing table.
 
-The routes that are part of the *masterTable.xml* will not be sent when the
-*localconfig* method of the service is called, only the ones in the normal
+The routes that are part of the ``masterTable.xml`` will not be sent when the
+``localconfig`` method of the service is called, only the ones in the normal
 routing table.
 
-The aim is that the routes in the normal routing table are the ones that should
-be synchronized with other Routing Services.
+The idea is that the routes in the normal routing table is the local
+information that should be probably synchronized with other Routing Services.
 
 .. todo:: Test the method to synchronize among the nodes!
 
