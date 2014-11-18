@@ -102,6 +102,8 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
 
       cp routing.cfg.sample routing.cfg
 
+ #. Edit `routing.wsgi` and check that the paths there reflect the ones selected for your installation.
+
  #. Edit `routing.cfg` and be sure to configure everything corectly. This is discussed under "`Configuration Options`_" below.
 
  #. Start/restart the web server e.g. as root. In **OpenSUSE** ::
