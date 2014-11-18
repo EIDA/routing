@@ -87,6 +87,18 @@ everything is added.
                                         is not None else ''}]})
 
     def index(self, service, url):
+        """Check for the presence of the datacenter and service specified in
+the parameters. This overrides the *index* method of the inherited list.
+
+:param service: Requests from (posibly) different datacenters to be added
+:type service: str
+:param url: Address of the service provided by a datacenter
+:type url: str
+:returns: int - position in the list where the service and url specified can
+          be found
+:raises: ValueError
+        """
+
         for ind, r in enumerate(self):
             if ((r['name'] == service) and (r['url'] == url)):
                 return ind
@@ -94,6 +106,18 @@ everything is added.
         raise ValueError()
 
     def extend(self, listReqM):
+        """Append all the items in the list of RequestMerge without repeating
+the datacenter.
+
+Overrides the *extend* method of the inherited list. If another route for the
+datacenter was already added, the remaining attributes are appended in
+*params* for the datacenter. If this is the first Route for the datacenter,
+everything is added.
+
+:param listReqM: Requests from (posibly) different datacenters to be added
+:type listReqM: list of RequestMerge
+        """
+
         for r in listReqM:
             try:
                 pos = self.index(r['name'], r['url'])
@@ -133,6 +157,7 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
 
         :param other: Stream which should checked for overlapping
         :type other: Stream
+        :returns: Stream
         """
 
         res = list()
@@ -147,8 +172,9 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
     def overlap(self, other):
         """Checks if there is an overlap between this stream and other one
 
-        :param other: Stream which should checked for overlapping
+        :param other: Stream which should be checked for overlapping
         :type other: Stream
+        :returns: Bool
         """
 
         for i in range(len(other)):
@@ -167,9 +193,22 @@ class TW(namedtuple('TW', ['start', 'end'])):
 
     __slots__ = ()
 
+    # FIXME Should we rename this method to "overlap"?
     def __contains__(self, otherTW):
+        """Check if other TW is contained in this TW.
 
-        # Trivial case
+        :param otherTW: timewindow which should be checked for overlapping
+        :type otherTW: TW
+        :returns: Bool
+
+        .. example:: If a < b < c < d:
+                     TW(b, c) in TW(a, d) ==> True
+                     TW(a, c) in TW(b, d) ==> True
+                     TW(a, d) in TW(b, c) ==> True
+                     TW(a, b) in TW(c, d) ==> False
+        """
+
+        # Trivial case. otherTW goes from the beginning of time till the end
         if otherTW.start is None and otherTW.end is None:
             return True
 
@@ -196,6 +235,15 @@ class TW(namedtuple('TW', ['start', 'end'])):
         return False
 
     def difference(self, otherTW):
+        """Substract the timewindow specified in otherTW from this one and
+        return the result in a list of TW. This does not modify the data in
+        the current timewindow.
+
+        :param otherTW: timewindow which should be substracted from this one
+        :type otherTW: TW
+        :returns: list of TW
+        """
+
         result = []
 
         if otherTW.start is not None:
@@ -213,6 +261,14 @@ class TW(namedtuple('TW', ['start', 'end'])):
         return result
 
     def intersection(self, otherTW):
+        """Calculate the intersection between this TW and the one in the
+        parameter. This does not modify the data in the current timewindow.
+
+        :param otherTW: timewindow which should be intersected with this one
+        :type otherTW: TW
+        :returns: TW
+        """
+
         resSt = None
         resEn = None
 
