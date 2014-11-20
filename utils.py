@@ -47,11 +47,11 @@ class RequestMerge(list):
 
     def append(self, service, url, priority, stream, start=None,
                end=None):
-        """Append a new Route to the list without repeating the datacenter.
+        """Append a new :class:`~Route` to the list without repeating the datacenter.
 
 Overrides the *append* method of the inherited list. If another route for the
 datacenter was already added, the remaining attributes are appended in
-*params* for the datacenter. If this is the first Route for the datacenter,
+*params* for the datacenter. If this is the first :class:`~Route` for the datacenter,
 everything is added.
 
 :param service: Service name (f.i., 'dataselect')
@@ -61,7 +61,7 @@ everything is added.
 :param priority: Priority of the Route (1: highest priority)
 :type priority: int
 :param stream: Stream(s) associated with the Route
-:type stream: Stream
+:type stream: :class:`~Stream`
 :param start: Start date for the Route
 :type start: datetime or None
 :param end: End date for the Route
@@ -106,16 +106,16 @@ the parameters. This overrides the *index* method of the inherited list.
         raise ValueError()
 
     def extend(self, listReqM):
-        """Append all the items in the list of RequestMerge without repeating
+        """Append all the items in the list of :class:`~RequestMerge` without repeating
 the datacenter.
 
 Overrides the *extend* method of the inherited list. If another route for the
 datacenter was already added, the remaining attributes are appended in
-*params* for the datacenter. If this is the first Route for the datacenter,
+*params* for the datacenter. If this is the first :class:`~Route` for the datacenter,
 everything is added.
 
 :param listReqM: Requests from (posibly) different datacenters to be added
-:type listReqM: list of RequestMerge
+:type listReqM: list of :class:`~RequestMerge`
         """
 
         for r in listReqM:
@@ -139,7 +139,7 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
         """Check if one Stream is contained in this Stream.
 
         :param st: Stream which should checked for overlapping
-        :type st: Stream
+        :type st: :class:`~Stream`
         :returns: Bool
         """
 
@@ -155,9 +155,9 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
         """Returns a new Stream with a "reduction" of this one to force the
         matching of the specification received as an input.
 
-        :param other: Stream which should checked for overlapping
-        :type other: Stream
-        :returns: Stream
+        :param other: :class:`~Stream` which should checked for overlapping
+        :type other: :class:`~Stream`
+        :returns: :class:`~Stream`
         """
 
         res = list()
@@ -172,8 +172,8 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
     def overlap(self, other):
         """Checks if there is an overlap between this stream and other one
 
-        :param other: Stream which should be checked for overlapping
-        :type other: Stream
+        :param other: :class:`~Stream` which should be checked for overlapping
+        :type other: :class:`~Stream`
         :returns: Bool
         """
 
@@ -198,7 +198,7 @@ class TW(namedtuple('TW', ['start', 'end'])):
         """Check if other TW is contained in this TW.
 
         :param otherTW: timewindow which should be checked for overlapping
-        :type otherTW: TW
+        :type otherTW: :class:`~TW`
         :returns: Bool
 
         .. example:: If a < b < c < d:
@@ -240,8 +240,8 @@ class TW(namedtuple('TW', ['start', 'end'])):
         the current timewindow.
 
         :param otherTW: timewindow which should be substracted from this one
-        :type otherTW: TW
-        :returns: list of TW
+        :type otherTW: :class:`~TW`
+        :returns: list of :class:`~TW`
         """
 
         result = []
@@ -265,8 +265,8 @@ class TW(namedtuple('TW', ['start', 'end'])):
         parameter. This does not modify the data in the current timewindow.
 
         :param otherTW: timewindow which should be intersected with this one
-        :type otherTW: TW
-        :returns: TW
+        :type otherTW: :class:`~TW`
+        :returns: :class:`~TW`
         """
 
         resSt = None
@@ -293,7 +293,7 @@ class TW(namedtuple('TW', ['start', 'end'])):
 
 class Route(namedtuple('Route', ['address', 'tw', 'priority'])):
     """
-:synopsis: Namedtuple including the information to define a route (a URL, a
+:synopsis: Namedtuple including the information to define a :class:`~Route` (a URL, a
            timewindow and a priority)
 :platform: Any
     """
@@ -372,7 +372,7 @@ class RoutingCache(object):
         :param masterFile: XML file with high priority routes at network level
         :type masterFile: str
         :param logs: Class providing the methods: error/warning/info/debug
-        :type logs: for instance, wsgicomm.Logs
+        :type logs: for instance, :class:`~wsgicomm.Logs`
 
         """
 
@@ -601,7 +601,7 @@ information (URLs and parameters) to do the requests to different datacenters
 :type service: str
 :param alternative: Specifies whether alternative routes should be included
 :type alternative: bool
-:returns: RequestMerge -- URLs and parameters to request the data
+:returns: :class:`~RequestMerge` -- URLs and parameters to request the data
 :raises: RoutingException
 
         """
@@ -680,19 +680,20 @@ information (URLs and parameters) to do the requests to different datacenters
         return result
 
     def getRouteST(self, stream, tw, alternative=False):
-        """Based on a stream(s) and a timewindow returns all the neccessary
+        """Based on a :class:`~Stream` and a timewindow (:class:`~TW`) returns
+all the neccessary
 information (URLs and parameters) to request station data from different
 datacenters (if needed) and be able to merge it avoiding duplication.
 The getRouteDS (Dataselect) method is used and the URL is changed to the FDSN
 station service style.
 
-:param stream: Stream definition including wildcards
-:type stream: Stream
+:param stream: :class:`~Stream` definition including wildcards
+:type stream: :class:`~Stream`
 :param tw: Timewindow
-:type tw: TW
+:type tw: :class:`~TW`
 :param alternative: Specifies whether alternative routes should be included
 :type alternative: bool
-:returns: RequestMerge -- URLs and parameters to request the data
+:returns: :class:`~RequestMerge` -- URLs and parameters to request the data
 :raises: RoutingException
 
         """
@@ -705,19 +706,20 @@ station service style.
         return result
 
     def getRouteDS(self, stream, tw, alternative=False):
-        """Based on a stream(s) and a timewindow returns all the neccessary
+        """Based on a :class:`~Stream` and a timewindow (:class:`~TW`) returns
+all the neccessary
 information (URLs and parameters) to request waveforms from different
 datacenters (if needed) and be able to merge it avoiding duplication.
 The Arclink routing table is used to select the datacenters and a mapping is
 used to translate the Arclink address to Dataselect address (see __arc2DS).
 
-:param stream: Stream definition including wildcards
-:type stream: Stream
+:param stream: :class:`~Stream` definition including wildcards
+:type stream: :class:`~Stream`
 :param tw: Timewindow
-:type tw: TW
+:type tw: :class:`~TW`
 :param alternative: Specifies whether alternative routes should be included
 :type alternative: bool
-:returns: RequestMerge -- URLs and parameters to request the data
+:returns: :class:`~RequestMerge` -- URLs and parameters to request the data
 :raises: RoutingException
 
         """
@@ -844,17 +846,17 @@ used to translate the Arclink address to Dataselect address (see __arc2DS).
         return result
 
     def getRouteMaster(self, n, tw, service='dataselect', alternative=False):
-        """Looks for a high priority route for a particular network This would
+        """Looks for a high priority :class:`~Route` for a particular network This would
 provide the flexibility to incorporate new networks and override the normal
 configuration.
 
 :param n: Network code
 :type n: str
 :param tw: Timewindow
-:type tw: TW
+:type tw: :class:`~TW`
 :param alternative: Specifies whether alternative routes should be included
-:type alternative: bool
-:returns: RequestMerge -- URLs and parameters to request the data
+:type alternative: Bool
+:returns: :class:`~RequestMerge` -- URLs and parameters to request the data
 :raises: RoutingException
 
         """
@@ -891,8 +893,8 @@ configuration.
         return result2
 
     def getRouteSL(self, stream, alternative):
-        """Based on a stream(s) returns all the neccessary information (URLs
-and parameters) to connect to a Seedlink server shiping real-time information
+        """Based on a :class:`~Stream` returns all the neccessary information (URLs
+and parameters) to connect to a Seedlink server shipping real-time information
 of the specified streams. This method implements the following table lookup
 for the Seedlink service::
 
@@ -913,11 +915,11 @@ for the Seedlink service::
                 14 --- --- --- LOC
                 15 --- --- --- ---
 
-:param stream: Stream definition including wildcards
-:type stream: Stream
+:param stream: :class:`~Stream` definition including wildcards
+:type stream: :class:`~Stream`
 :param alternative: Specifies whether alternative routes should be included
 :type alternative: bool
-:returns: RequestMerge -- URLs and parameters to request the data
+:returns: :class:`~RequestMerge` -- URLs and parameters to request the data
 :raises: RoutingException
 
         """
@@ -1001,7 +1003,7 @@ for the Seedlink service::
         return result
 
     def getRouteArc(self, stream, tw, alternative=False):
-        """Based on a stream(s) and a timewindow returns all the neccessary
+        """Based on a :class:`~Stream` and a timewindow (:class:`~TW`)returns all the neccessary
 information (URLs and parameters) split by hosting datacenter.
 This is not too useful because Arclink can already do automatically the
 splitting of the request. However, this is used by the others methods in order
@@ -1027,13 +1029,13 @@ The following table lookup is implemented for the Arclink service::
                 14 --- --- --- LOC
                 15 --- --- --- ---
 
-:param stream: Stream definition including wildcards
-:type stream: Stream
+:param stream: :class:`~Stream` definition including wildcards
+:type stream: :class:`~Stream`
 :param tw: Timewindow
-:type tw: TW
+:type tw: :class:`~TW`
 :param alternative: Specifies whether alternative routes should be included
 :type alternative: bool
-:returns: RequestMerge -- URLs and parameters to request the data
+:returns: :class:`~RequestMerge` -- URLs and parameters to request the data
 :raises: RoutingException
 
         """
@@ -1143,7 +1145,7 @@ The following table lookup is implemented for the Arclink service::
         return result
 
     def updateAll(self):
-        """Call the three sources of routing and inventory information"""
+        """Read the three sources of routing and inventory information"""
 
         self.update()
         if self.masterFile is not None:
@@ -1152,7 +1154,7 @@ The following table lookup is implemented for the Arclink service::
         self.ic = InventoryCache(self.invFile)
 
     def updateMT(self):
-        """Read the routes with highest priority and store it in memory.
+        """Read the routes with highest priority and store them in memory.
 
         All the routing information is read into a dictionary. Only the
         necessary attributes are stored. This relies on the idea
