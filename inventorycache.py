@@ -2,25 +2,18 @@
 #
 # InventoryCache for the Arclink web interface
 #
-# Begun by Javier Quinteros, GEOFON team, June 2013
+# (c) 2014 Javier Quinteros, GEOFON team
 # <javier@gfz-potsdam.de>
 #
 # ----------------------------------------------------------------------
 
+"""
+.. module:: inventorycache
+   :platform: Linux
+   :synopsis: Module providing the functionality to have a reduced version
+              of the inventory cached in memory (or disk)
 
-"""InventoryCache for the Arclink web interface
-
-(c) 2013 GEOFON, GFZ Potsdam
-
-Encapsulate and manage the information of networks,
-stations, locations and streams read from an Arclink XML file inventory.
-
-
-This program is free software; you can redistribute it and/or modify it
-under the terms of the GNU General Public License as published by the
-Free Software Foundation; either version 2, or (at your option) any later
-version. For more information, see http://www.gnu.org/
-
+.. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
 """
 
 ##################################################################
@@ -42,12 +35,26 @@ import wsgicomm
 
 
 class InventoryCache(object):
-    """Encapsulate and manage the information of networks,
-    stations, locations and streams read from an Arclink XML file inventory.
-
+    """
+:synopsis: Encapsulate and manage the information of networks, stations,
+           locations and streams read from an Arclink XML file inventory
+:platform: Any
     """
 
+
     def __init__(self, inventory, logs=wsgicomm.Logs(2)):
+        """InventoryCache constructor
+        
+        :param inventory: file name containing inventory information in
+                          Arclink-XML format
+        :type inventory: str       
+        :param logs: Logging class supporting methods to write dependeing on
+                     the verbosity level.
+        :type logs: :class:`~wsgicomm.logs` (or other class implementing the
+                    expected methods)
+    
+        """ 
+
         # Arclink inventory file in XML format
         self.inventory = inventory
 
@@ -97,6 +104,10 @@ class InventoryCache(object):
         self.update()
 
     def __indexStreams(self):
+        """Read all the streams in the inventory and index them
+        
+        """ 
+
         self.streamidx = {}
 
         for stream in self.streams:
@@ -124,7 +135,7 @@ class InventoryCache(object):
         necessary attributes are stored. This relies on the idea
         that some other agent should update the inventory file at
         a regular period of time.
-        If the XML file have been already processed by other instance of
+        If the XML file has been already processed by other instance of
         this class, we could look for a temporary file containing a memory
         dump of the generated structures, avoiding the time invested in
         the construction.
@@ -505,8 +516,26 @@ class InventoryCache(object):
     def expand(self, n='*', s='*', l='*', c='*',
                start=None, end=None, restricted=False):
         """Expand to a list of networks, stations, locations and channels
-        The result is a list of (N, S, L, C) without wildcards.
-        If restricted is True, restricted streams will be included."""
+        The result is a list of (N, S, L, C) **without** wildcards.
+        If *restricted* is True, restricted streams will be included.
+
+:param n: Network
+:type n: str
+:param s: Station
+:type s: str
+:param l: Location
+:type l: str
+:param c: Channel
+:type c: str
+:param start: Start time of the timewindow
+:type start: datetime
+:param end: End time of the timewindow
+:type end: datetime
+:param restricted: Specify whether the restricted streams should be included
+:type restricted: Bool
+:returns: list -- List of tuples with (N, S, L, C)
+
+"""
 
         # If there are no wildcards, return exactly the stream received.
         if ('*' not in n + s + l + c) and ('?' not in n + s + l + c):
@@ -565,8 +594,10 @@ class InventoryCache(object):
     def __selectNetworks(self, params):
         """Select networks filtered by the input parameters.
 
-        A list of indexes is returned. These indexes indicate the networks that
-        satisfy the constraints indicated by the input parameters.
+:param params: Parameters to filter/select the networks
+:type params: dictionary
+:returns: list of int - The values are actually the indexes, that indicate the
+          networks that satisfy the constraints from the input parameters
 
         """
 
@@ -699,9 +730,10 @@ class InventoryCache(object):
     def __selectStations(self, params):
         """Select stations filtered by the input parameters.
 
-        Returns a set of indexes. These indexes indicate the
-        stations that satisfy the constraints indicated by the
-        input parameters.
+:param params: Parameters to filter/select the stations
+:type params: dictionary
+:returns: list of int - The values are actually the indexes, that indicate the
+          stations that satisfy the constraints from the input parameters
 
         """
 
@@ -809,19 +841,23 @@ class InventoryCache(object):
                            preferredsps=None, start=None, end=None):
         """Build a list of streams based on a station index
 
-        Inputs:
-          statidx: Station index on self.stations
-          streamFilter: a list of tuples with two
-                        components. The first one is the location code, while
-                        the second one is the two first letters of the
-                        channel. For instance, ('00', 'BH')
-          sensortype:   as received in parameters
-          preferredsps: the preferred sample rate. At least one stream is
-                        selected from each station.
-          start:        start year in datetime format from parameters sent by
-                        the web client
-          end:          end year in datetime format from parameters sent by
-                        the web client
+:param statidx: Station index on self.stations
+:type statidx: int
+:param streamFilter: A list of tuples with two components. The first one has
+                     the location code and the two first letters of the
+                     channel. For instance, ('00', 'BH'). The second indicates
+                     if the stream is restricted.
+:type streamFilter: list of tuples with two str
+:param sensortype: Sensor type used to filter the streams
+:type sensortype: str
+:param preferredsps: the preferred sample rate. At least one stream is selected
+                     from each station.
+:type preferredsps: int/float
+:param start: start year of the timewindow
+:type start: datetime
+:param end: end year of the timewindow
+:type end: datetime
+:returns: list of tuples
 
         """
 
@@ -906,7 +942,10 @@ class InventoryCache(object):
         This method is public and appends the necessary
         information to the networks actually selected by
         __selectNetworks. It contains only a couple of columns
-        because it is used in the menus.
+        because it was designed to be used in the menus of WebDC3.
+
+:param params: Parameters to filter/select the networks
+:type params: dictionary
 
         """
 
@@ -935,7 +974,10 @@ class InventoryCache(object):
         This method is public and appends the necessary
         information to the stations actually selected by
         __selectStations. It contains only a couple of columns
-        because it is used in the menus.
+        because it was designed to be used in the menus of WebDC3.
+
+:param params: Parameters to filter/select the stations
+:type params: dictionary
 
         """
 
@@ -964,7 +1006,11 @@ class InventoryCache(object):
         This method is public and appends the necessary
         information to the streams that belong to the stations
         actually selected by __selectStations. It contains only a
-        couple of columns because it is used in the menus.
+        couple of columns
+        because it was designed to be used in the menus of WebDC3.
+
+:param params: Parameters to filter/select the streams
+:type params: dictionary
 
         """
 
@@ -1002,8 +1048,11 @@ class InventoryCache(object):
         This method is public and appends the necessary
         information to the streams that belong to the stations
         actually selected by __selectStations. It contains many
-        columns, as it is the list to show in the construction of
-        the request package.
+        columns, because it was designed to be used in the list to construct
+        the request package in WebDC3.
+
+:param params: Parameters to filter/select the streams
+:type params: dictionary
 
         """
 
@@ -1233,6 +1282,24 @@ class InventoryCache(object):
         return stats
 
     def getStreamInfo(self, start_time, end_time, net, sta, cha, loc):
+        """Retrieve information for a stream in a particular timewindow. The
+returned data includes latitude, longitude, elevation and estimated size.
+
+:param start_time: Start time of the timewindow
+:type start_time: datetime
+:param end_time: End time of the timewindow
+:type end_time: datetime
+:param net: Network code
+:type net: str
+:param sta: Station code
+:type sta: str
+:param cha: Channel code
+:type cha: str
+:param loc: Location code
+:type loc: str
+:returns: dict
+
+"""
         try:
             stream_epochs = self.streamidx[(net, sta, cha, loc)]
         except KeyError:
