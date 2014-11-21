@@ -9,8 +9,10 @@
 
 """
 .. module:: utils
-   :platform: Linux
    :synopsis: Classes to be used by the Routing WS for EIDA
+   :copyright: GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
+   :license: To be decided!
+   :platform: Linux
 
 .. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
 """
@@ -66,7 +68,6 @@ everything is added.
 :type start: datetime or None
 :param end: End date for the Route
 :type end: datetime or None
-:returns: Bool
         """
 
         try:
@@ -94,8 +95,9 @@ the parameters. This overrides the *index* method of the inherited list.
 :type service: str
 :param url: Address of the service provided by a datacenter
 :type url: str
-:returns: int - position in the list where the service and url specified can
+:returns: position in the list where the service and url specified can
           be found
+:rtype: int
 :raises: ValueError
         """
 
@@ -140,7 +142,8 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
 
         :param st: Stream which should checked for overlapping
         :type st: :class:`~Stream`
-        :returns: Bool
+        :returns: Value specifying whether the given stream is contained in this one
+        :rtype: Bool
         """
 
         if (fnmatch.fnmatch(st.n, self.n) and
@@ -157,7 +160,9 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
 
         :param other: :class:`~Stream` which should checked for overlapping
         :type other: :class:`~Stream`
-        :returns: :class:`~Stream`
+        :returns: "reduced" version of this stream to match the one passed in
+                  the parameter
+        :rtype: :class:`~Stream`
         """
 
         res = list()
@@ -174,7 +179,9 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
 
         :param other: :class:`~Stream` which should be checked for overlapping
         :type other: :class:`~Stream`
-        :returns: Bool
+        :returns: Value specifying whether there is an overlap between this
+                  stream and the one in the parameter
+        :rtype: Bool
         """
 
         for i in range(len(other)):
@@ -199,7 +206,9 @@ class TW(namedtuple('TW', ['start', 'end'])):
 
         :param otherTW: timewindow which should be checked for overlapping
         :type otherTW: :class:`~TW`
-        :returns: Bool
+        :returns: Value specifying whether there is an overlap between this
+                  timewindow and the one in the parameter
+        :rtype: Bool
 
         .. example:: If a < b < c < d:
                      TW(b, c) in TW(a, d) ==> True
@@ -241,7 +250,9 @@ class TW(namedtuple('TW', ['start', 'end'])):
 
         :param otherTW: timewindow which should be substracted from this one
         :type otherTW: :class:`~TW`
-        :returns: list of :class:`~TW`
+        :returns: Difference between this timewindow and the one in the
+                  parameter
+        :rtype: list of :class:`~TW`
         """
 
         result = []
@@ -266,7 +277,9 @@ class TW(namedtuple('TW', ['start', 'end'])):
 
         :param otherTW: timewindow which should be intersected with this one
         :type otherTW: :class:`~TW`
-        :returns: :class:`~TW`
+        :returns: Intersection between this timewindow and the one in the
+                  parameter
+        :rtype: :class:`~TW`
         """
 
         resSt = None
@@ -443,7 +456,8 @@ class RoutingCache(object):
     def localConfig(self):
         """Returns the local routing configuration
 
-        :returns: str -- local routing information in Arclink-XML format
+        :returns: Local routing information in Arclink-XML format
+        :rtype: str
 
         """
 
@@ -541,7 +555,8 @@ with an EIDA default configuration.
 
 :param route: Arclink route
 :type route: str
-:returns: str -- Dataselect equivalent of the given Arclink route
+:returns: Dataselect URL equivalent of the given Arclink route
+:rtype: str
 :raises: Exception -- if no translation is possible
         """
 
@@ -601,7 +616,8 @@ information (URLs and parameters) to do the requests to different datacenters
 :type service: str
 :param alternative: Specifies whether alternative routes should be included
 :type alternative: bool
-:returns: :class:`~RequestMerge` -- URLs and parameters to request the data
+:returns: URLs and parameters to request the data
+:rtype: :class:`~RequestMerge`
 :raises: RoutingException
 
         """
@@ -693,7 +709,8 @@ station service style.
 :type tw: :class:`~TW`
 :param alternative: Specifies whether alternative routes should be included
 :type alternative: bool
-:returns: :class:`~RequestMerge` -- URLs and parameters to request the data
+:returns: URLs and parameters to request the data
+:rtype: :class:`~RequestMerge`
 :raises: RoutingException
 
         """
@@ -719,7 +736,8 @@ used to translate the Arclink address to Dataselect address (see __arc2DS).
 :type tw: :class:`~TW`
 :param alternative: Specifies whether alternative routes should be included
 :type alternative: bool
-:returns: :class:`~RequestMerge` -- URLs and parameters to request the data
+:returns: URLs and parameters to request the data
+:rtype: :class:`~RequestMerge`
 :raises: RoutingException
 
         """
@@ -856,7 +874,8 @@ configuration.
 :type tw: :class:`~TW`
 :param alternative: Specifies whether alternative routes should be included
 :type alternative: Bool
-:returns: :class:`~RequestMerge` -- URLs and parameters to request the data
+:returns: URLs and parameters to request the data
+:rtype: :class:`~RequestMerge`
 :raises: RoutingException
 
         """
@@ -919,7 +938,8 @@ for the Seedlink service::
 :type stream: :class:`~Stream`
 :param alternative: Specifies whether alternative routes should be included
 :type alternative: bool
-:returns: :class:`~RequestMerge` -- URLs and parameters to request the data
+:returns: URLs and parameters to request the data
+:rtype: :class:`~RequestMerge`
 :raises: RoutingException
 
         """
@@ -1035,7 +1055,8 @@ The following table lookup is implemented for the Arclink service::
 :type tw: :class:`~TW`
 :param alternative: Specifies whether alternative routes should be included
 :type alternative: bool
-:returns: :class:`~RequestMerge` -- URLs and parameters to request the data
+:returns: URLs and parameters to request the data
+:rtype: :class:`~RequestMerge`
 :raises: RoutingException
 
         """

@@ -9,9 +9,11 @@
 
 """
 .. module:: inventorycache
-   :platform: Linux
    :synopsis: Module providing the functionality to have a reduced version
               of the inventory cached in memory (or disk)
+   :copyright: GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
+   :license: To be decided!
+   :platform: Linux
 
 .. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
 """
@@ -533,7 +535,8 @@ class InventoryCache(object):
 :type end: datetime
 :param restricted: Specify whether the restricted streams should be included
 :type restricted: Bool
-:returns: list -- List of tuples with (N, S, L, C)
+:returns: List of tuples with (N, S, L, C)
+:rtype: list
 
 """
 
@@ -596,8 +599,9 @@ class InventoryCache(object):
 
 :param params: Parameters to filter/select the networks
 :type params: dictionary
-:returns: list of int - The values are actually the indexes, that indicate the
+:returns: The values are actually the indexes, that indicate the
           networks that satisfy the constraints from the input parameters
+:rtype: list
 
         """
 
@@ -732,8 +736,9 @@ class InventoryCache(object):
 
 :param params: Parameters to filter/select the stations
 :type params: dictionary
-:returns: list of int - The values are actually the indexes, that indicate the
+:returns: The values are actually the indexes, that indicate the
           stations that satisfy the constraints from the input parameters
+:rtype: list
 
         """
 
@@ -857,7 +862,8 @@ class InventoryCache(object):
 :type start: datetime
 :param end: end year of the timewindow
 :type end: datetime
-:returns: list of tuples
+:returns: A list of tuples with the streams that fulfill the filter criteria
+:rtype: list
 
         """
 
@@ -946,6 +952,8 @@ class InventoryCache(object):
 
 :param params: Parameters to filter/select the networks
 :type params: dictionary
+:rtype: list
+:returns: A list of networks that satisfy the filter criteria
 
         """
 
@@ -978,6 +986,8 @@ class InventoryCache(object):
 
 :param params: Parameters to filter/select the stations
 :type params: dictionary
+:rtype: list
+:returns: A list of stations that satisfy the filter criteria
 
         """
 
@@ -1011,6 +1021,8 @@ class InventoryCache(object):
 
 :param params: Parameters to filter/select the streams
 :type params: dictionary
+:rtype: list
+:returns: A list of streams that satisfy the filter criteria
 
         """
 
@@ -1053,6 +1065,8 @@ class InventoryCache(object):
 
 :param params: Parameters to filter/select the streams
 :type params: dictionary
+:rtype: list
+:returns: A list of streams that satisfy the filter criteria
 
         """
 
@@ -1297,7 +1311,8 @@ returned data includes latitude, longitude, elevation and estimated size.
 :type cha: str
 :param loc: Location code
 :type loc: str
-:returns: dict
+:returns: Information for the stream in the specified timewindow
+:rtype: dict
 
 """
         try:
