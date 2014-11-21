@@ -828,6 +828,8 @@ used to translate the Arclink address to Dataselect address
                 st = finalset.pop()
                 resArc = self.getRouteArc(st, tw, alternative)
 
+                # The cycle is done backwards because I could need to delete
+                # the current route
                 for i in range(len(resArc) - 1, -1, -1):
                     resArc[i]['name'] = 'dataselect'
                     try:
@@ -1139,7 +1141,6 @@ The following table lookup is implemented for the Arclink service::
         # We don't need to loop as routes are already ordered by
         # priority. Take the first one!
         while setTW:
-            #sleep(1)
             toProc = setTW.pop()
             self.logs.debug('Processing %s' % str(toProc))
             for ro in realRoute:
@@ -1166,6 +1167,11 @@ The following table lookup is implemented for the Arclink service::
                     # Unless alternative routes are needed I can stop here
                     if not alternative:
                         break
+                    # To look for alternative routes do not look in the whole
+                    # period once we found a principal route. Try only to look
+                    # for alternative routes for THIS timewindow
+                    else:
+                        toProc = TW(auxSt, auxEn)
 
         return result
 
