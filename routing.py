@@ -9,8 +9,10 @@
 
 """
 .. module:: routing
-   :platform: Linux
    :synopsis: Routing Webservice for EIDA
+   :copyright: GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
+   :license: To be decided!
+   :platform: Linux
 
 .. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
 """
@@ -263,7 +265,9 @@ def makeQueryPOST(postText):
 
 def applyFormat(resultRM, outFormat='xml'):
     """Apply the format specified to the RequestMerge object received.
-    Returns a STRING with the result
+
+    :rtype: str
+    :returns: Transformed version of the input in the desired format
     """
 
     if not isinstance(resultRM, RequestMerge):
@@ -305,9 +309,6 @@ routes = None
 def application(environ, start_response):
     """Main WSGI handler that processes client requests and calls
     the proper functions.
-
-    Begun by Javier Quinteros <javier@gfz-potsdam.de>,
-    GEOFON team, February 2014
 
     """
 

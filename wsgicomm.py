@@ -10,8 +10,10 @@
 
 """
 .. module:: wsgicomm
-   :platform: Linux
    :synopsis: Functions and resources to communicate via a WSGI module
+   :copyright: GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
+   :license: To be decided!
+   :platform: Linux
 
 .. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
 
@@ -29,10 +31,10 @@ class Logs(object):
         self.setLevel(level)
 
     def setLevel(self, level):
-        """Constructor
+        """Set the level of the log
 
 :param level: Log level (1: Error, 2: Warning, 3: Info, 4: Debug)
-:type level: str
+:type level: int
 
         """
 
