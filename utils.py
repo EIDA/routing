@@ -91,7 +91,7 @@ everything is added.
         """Check for the presence of the datacenter and service specified in
 the parameters. This overrides the *index* method of the inherited list.
 
-:param service: Requests from (posibly) different datacenters to be added
+:param service: Requests from (possibly) different datacenters to be added
 :type service: str
 :param url: Address of the service provided by a datacenter
 :type url: str
@@ -155,12 +155,12 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
         return False
 
     def strictMatch(self, other):
-        """Returns a new Stream with a "reduction" of this one to force the
+        """Returns a new Stream with a *reduction* of this one to force the
         matching of the specification received as an input.
 
         :param other: :class:`~Stream` which should checked for overlapping
         :type other: :class:`~Stream`
-        :returns: "reduced" version of this stream to match the one passed in
+        :returns: *reduced* version of this stream to match the one passed in
                   the parameter
         :rtype: :class:`~Stream`
         """
@@ -466,14 +466,14 @@ class RoutingCache(object):
 
     def configArclink(self):
         """Connects via telnet to an Arclink server to get routing information.
-The address and port of the server are read from *routing.cfg*.
-The data is saved in the file *routing.xml*. Generally used to start operating
+The address and port of the server are read from ``routing.cfg``.
+The data is saved in the file ``routing.xml``. Generally used to start operating
 with an EIDA default configuration.
 
 .. note::
 
     In the future this method should not be used and the configuration should
-    be independent from Arclink. Namely, the *routing.xml* file must exist in
+    be independent from Arclink. Namely, the ``routing.xml`` file must exist in
     advance.
 
         """
@@ -557,7 +557,7 @@ with an EIDA default configuration.
 :type route: str
 :returns: Dataselect URL equivalent of the given Arclink route
 :rtype: str
-:raises: Exception -- if no translation is possible
+:raises: Exception
         """
 
         gfz = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
@@ -596,7 +596,7 @@ with an EIDA default configuration.
 
     def getRoute(self, n='*', s='*', l='*', c='*', startD=None, endD=None,
                  service='dataselect', alternative=False):
-        """Based on a stream(s) and a timewindow returns all the neccessary
+        """Based on a stream(s) and a timewindow returns all the needed
 information (URLs and parameters) to do the requests to different datacenters
 (if needed) and be able to merge the returned data avoiding duplication.
 
@@ -697,11 +697,11 @@ information (URLs and parameters) to do the requests to different datacenters
 
     def getRouteST(self, stream, tw, alternative=False):
         """Based on a :class:`~Stream` and a timewindow (:class:`~TW`) returns
-all the neccessary
+all the needed
 information (URLs and parameters) to request station data from different
 datacenters (if needed) and be able to merge it avoiding duplication.
-The getRouteDS (Dataselect) method is used and the URL is changed to the FDSN
-station service style.
+The :func:`~RoutingCache.getRouteDS` (Dataselect) method is used and the
+URL is changed to the FDSN station service style.
 
 :param stream: :class:`~Stream` definition including wildcards
 :type stream: :class:`~Stream`
@@ -724,11 +724,11 @@ station service style.
 
     def getRouteDS(self, stream, tw, alternative=False):
         """Based on a :class:`~Stream` and a timewindow (:class:`~TW`) returns
-all the neccessary
-information (URLs and parameters) to request waveforms from different
-datacenters (if needed) and be able to merge it avoiding duplication.
+all the needed information (URLs and parameters) to request waveforms from
+different datacenters (if needed) and be able to merge it avoiding duplication.
 The Arclink routing table is used to select the datacenters and a mapping is
-used to translate the Arclink address to Dataselect address (see __arc2DS).
+used to translate the Arclink address to Dataselect address
+(see :func:`~RoutingCache.__arc2DS`).
 
 :param stream: :class:`~Stream` definition including wildcards
 :type stream: :class:`~Stream`
@@ -1023,13 +1023,17 @@ for the Seedlink service::
         return result
 
     def getRouteArc(self, stream, tw, alternative=False):
-        """Based on a :class:`~Stream` and a timewindow (:class:`~TW`)returns all the neccessary
-information (URLs and parameters) split by hosting datacenter.
-This is not too useful because Arclink can already do automatically the
-splitting of the request. However, this is used by the others methods in order
-to see where the waveforms are being hosted and give the location of the
-other services under the assumption that the one providing the waveforms
-through Arclink will be also providing the data for Dataselect and Station.
+        """Based on a :class:`~Stream` and a timewindow (:class:`~TW`)returns
+all the needed information (URLs and parameters) split by hosting datacenter.
+
+.. warning:
+    This is not too useful because Arclink can already do automatically the
+    splitting of the request. However, this is used by the others methods in
+    order to see where the waveforms are being hosted and give the location of
+    the other services under the assumption that the one providing the
+    waveforms through Arclink will be also providing the data for Dataselect
+    and Station.
+
 The following table lookup is implemented for the Arclink service::
 
                 01 NET STA CHA LOC
@@ -1054,7 +1058,7 @@ The following table lookup is implemented for the Arclink service::
 :param tw: Timewindow
 :type tw: :class:`~TW`
 :param alternative: Specifies whether alternative routes should be included
-:type alternative: bool
+:type alternative: Bool
 :returns: URLs and parameters to request the data
 :rtype: :class:`~RequestMerge`
 :raises: RoutingException
