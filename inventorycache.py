@@ -7,13 +7,11 @@
 #
 # ----------------------------------------------------------------------
 
-"""
-.. module:: inventorycache
-   :synopsis: Module providing the functionality to have a reduced version
-              of the inventory cached in memory (or disk)
-   :copyright: GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
-   :license: To be decided!
-   :platform: Linux
+"""Provides a reduced version of the inventory cached in memory (or disk)
+   
+   :Copyright: GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
+   :License: To be decided!
+   :Platform: Linux
 
 .. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
 """

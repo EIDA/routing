@@ -7,12 +7,14 @@
 #
 # ----------------------------------------------------------------------
 
-"""
-.. module:: utils
-   :synopsis: Classes to be used by the Routing WS for EIDA
-   :copyright: GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
-   :license: To be decided!
-   :platform: Linux
+"""Classes to be used by the Routing WS for EIDA
+
+   :Platform:
+       Linux
+   :Copyright:
+       GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
+   :License:
+       To be decided!
 
 .. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
 """

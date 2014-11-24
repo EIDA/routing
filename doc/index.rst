@@ -365,12 +365,316 @@ information that should be probably synchronized with other Routing Services.
 .. todo:: Test the method to synchronize among the nodes!
 
 
+Methods available
+-----------------
+
+Description of the service
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``application.wadl`` method returns a WADL (web application description
+layer) conformant description of the interface using the MIME type
+`application/xml`. Any parameters submitted to the method will be ignored. The
+WADL describes all parameters supported by this implementation and can be used
+as an automatic way to determine methods and parameters supported by this
+service.
+
+Version of the software
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``version`` method returns the implementation version as a simple text
+string using the MIME type `text/plain`. Any parameters submitted to the method
+will be ignored. This scheme follows the FDSN webservices approach.
+
+The service is versioned according the following three-digit (x.y.z) pattern: ::
+
+   SpecMajor.SpecMinor.Implementation
+
+
+where the fields have the following meaning:
+
+ #. `SpecMajor`: The major specification version, all implementations sharing
+    this `SpecMajor` value will be backwards compatible with all prior releases.
+    Values are integers starting at 1.
+ #. `SpecMinor`: The minor specification version, incremented when optional
+    parameters or behavior is added to the previous specification but backwards
+    compatibility is maintained with the previous major versions, i.e. all
+    1.y.z service versions will be compatible with version 1.0. Values are
+    integers starting at 0.
+ #. `Implementation`: The implementation version, an integer identifier
+    specific to the data center implementation. Useful to track service updates
+    for bug fixes, etc. but with no implication on conformance to the
+    specification.
+
+Together the `SpecMajor` and `SpecMinor` versions imply a minimum expected
+behavior of a given service. This versioning scheme allows clients to expect
+specific behavior based on the `SpecMajor` version, while allowing the extension
+of the service with optional parameters and maintaining backwards compatibility.
+Each version number is service specific, there is no implication that
+`SpecMajor` version numbers across services (from EIDA or FDSN) are related.
+
+Querying information
+^^^^^^^^^^^^^^^^^^^^
+
+The ``query`` method is how the users access the main functionality of the
+service. Both ``GET`` and ``POST`` methods must be supported.
+
+Input parameters
+""""""""""""""""
+
+The complete list of input parameters can be seen in :ref:`Table 2.1`. Parameter
+names must be in lowercase, and may be abbreviated as shown, following the FDSN
+style. Valid input values must have the format shown in the “Format” column.
+All the values passed as parameters will be case-insensitive strings composed
+of numbers and letters. No other symbols will be allowed with the exception of:
+
+* wildcards ("``*``" and "``?``"), which may be used to select the streams (for
+  parameters `network`, `station`, `location` and `channel` only), and
+* the symbols specified in the ISO 8601 format for dates, namely ‘:’, "``-``"
+  (minus) and "``.``" may be used for the `starttime` and `endtime` parameters,
+* the string "``--``"  (two minus symbols) may appear for the location
+  parameter only.
+
+Wildcards are accepted in the case of `network`, `station`, `location` and
+`channel`. The character ``*`` matches any value, while ``?`` matches any
+character. For any of these parameters, if no value is given it will be set to
+a star (``*``).
+
+Blank or empty `location` identifiers may be specified as "``--``" (two dashes)
+if needed, which the service must translate to an empty string.
+
+.. _Table 2.1:
+
+.. tabularcolumns:: |l|l|l|p{8cm}|c|
+.. table:: Input parameters description
+
+ ================= ======== ======== ============================ ==========
+ Parameter         Support  Format   Description                  Default
+ ================= ======== ======== ============================ ==========
+ starttime (start) Required ISO 8601 Limit results to time series
+                                     samples on or
+                                     after the specified start
+                                     time.                          Any
+ endtime (end)     Required ISO 8601 Limit results to time series 
+                                     samples on or before the
+                                     specified end time.            Any
+ network (net)     Required char     Select one network code.
+                                     This can be either SEED
+                                     network codes or data center 
+                                     defined codes.                  ``*``
+ station (sta)     Required char     Select one station code.        ``*``
+ location (loc)    Required char     Select one location
+                                     identifier. As a special
+                                     case “--” (two dashes) will
+                                     be translated to an empty
+                                     string to match blank
+                                     location IDs.                   ``*``
+ channel (cha)     Required char     Select one channel code.        ``*``
+ service           Required char     Specify which service will
+                                     be queried (arclink,
+                                     seedlink, station,
+                                     dataselect).                 dataselect
+ format            Required char     Select the output format.
+                                     Valid values are: xml, json, 
+                                     get, post                      xml
+ alternative       Optional boolean  Specify if the alternative
+                                     routes should be also
+                                     included in the answer.
+                                     Accepted values are “true”
+                                     and “false”.                   false
+ ================= ======== ======== ============================ ==========
+
+
+Output description and format
+"""""""""""""""""""""""""""""
+
+There are four different output formats supported by this service. The
+structure of the information returned is different with each format type. In
+case of a successful request the HTTP status code will be 200, and the response
+will be as described below for each format.
+
+XML format
+""""""""""
+
+This is the default selection if the parameter `format` is not specified or if
+it is given with the value ``xml``. The MIME type must be set to `text/xml`.
+The following is an example of the expected XML structure. Each datacenter
+element must contain exactly one url element, specifying the URL of the
+service at a given data centre, exactly one name element, which gives the name
+of the service a list of params elements, each describing a stream, or set of
+streams by using appropriate wildcarding, available using the service at that
+URL. The params element may be repeated as many times as necessary inside the
+datacenter element. ::
+
+ <service>
+    <datacenter>
+        <url>http://ws.resif.fr/fdsnws/dataselect/1/query</url>
+        <params>
+            <loc>*</loc>
+            <end/>
+            <sta>KES28</sta>
+            <cha>*</cha>
+            <start/>
+            <net>4C</net>
+        </params>
+        <name>dataselect</name>
+    </datacenter>
+ </service>
+
+JSON format
+"""""""""""
+
+if the format parameter is ``json``, the information will be returned with
+MIME type `text/plain`. The content will be a JSON (JavaScript Object
+notation) array, in which each element is a JSON object corresponding to a
+``<datacenter>`` element in the XML format shown above. For the example
+response above, this would appear as: ::
+
+ [{"url": "http://ws.resif.fr/fdsnws/dataselect/1/query",
+ "params": [{"loc": "*", "end": "", "sta": "KES28", "cha": "*", "start": "",
+             "net": "4C"}], "name": "dataselect"}]
+
+It should be noted that the value associated with params is an array of
+objects and that there will be as many objects as needed for the same
+datacenter.
+
+GET format
+""""""""""
+
+When the `format` parameter is set to ``get``, the output will be declared as
+`text/plain` and will consist of one URL per line. The URLs will be constructed
+in a way that they can be used directly by the client to request the necessary
+information without the need to parse them. ::
+
+ http://ws.resif.fr/fdsnws/dataselect/1/query?sta=KES28&net=4C
+
+
+POST format
+"""""""""""
+
+If `format` is ``post``, the output will be also declared as `text/plain` and
+the structure will consist of:
+* a line with a URL where the request must be made,
+* a list of lines with the format declared in the FDSN Web Services
+  specification to do a POST request.
+
+If the request should be split in more than one datacenter, the blocks for
+every datacenter will be separated by a blank line and the structure will be
+repeated (URL and POST body). ::
+
+ http://ws.resif.fr/fdsnws/dataselect/1/query
+ 4C KES28 * * 
+
+In case that the service is ``arclink`` or ``seedlink``, the implemented
+routing algorithm is exactly the same as in the Arclink protocol. See the
+`SeisComP3 documentation for Arclink <http://www.seiscomp3.org/doc/seattle/2013.046/apps/arclink.html>`_
+under the section `"How routing is resolved"`. It is not expected that the
+Routing Service expands the wildcards given in the input parameters. Only the
+algorithm to find the route will be exactly as Arclink, and that means that
+the output will have only one route (unless the alternative parameter is set).
+
+Alternative routes
+""""""""""""""""""
+
+If the `alternative` parameter is set, the service will return all the routes
+that match the requested criteria without paying attention to the priority.
+The client will be required to interpret the priority of the routes and to
+select the combination of routes that best fits their needs to request the
+information. The client needs also to take care of checking the information to
+detect overlapping routes, which will definitely occur when a primary and an
+alternative route are being reported for the same stream.
+
+.. note:: It should be noted that the benefits of the "get" and "post" format
+          outputs are almost nonexistent if alternative routes are included in
+          the output, since the result should be parsed in order to operate on
+          the different routes.
+
+.. warning:: As a rule of a thumb and in a normal case, the alternative
+             addresses should only be used if there is no response from the
+             authoritative data center.
+
+How to pass the parameters
+""""""""""""""""""""""""""
+
+In the case of performing a request via the ``GET`` method, the parameters
+must be given in the usual way. Namely, ::
+
+ http://server_url?key1=value1&key2=value2
+
+But in the case that the parameters should be passed via a ``POST`` method,
+the following format is expected. The first lines can be used to pass the
+parameters not related to streams or timewindows (service, format, alternative)
+with one key=value clause per line. For instance, ::
+
+ service=station
+
+For the six parameters used to select streams and timewindows, one stream/
+timewindow pair is expected per line and the format must be: ::
+
+ net sta loc cha start end
+
+If there is no defined timewindow, an empty string should be given as '' or "".
+
+.. warning:: The separation of a request in more than one URL/parameters can be
+             avoided by a client who performs an expansion of the wildcards
+             before contacting this service. However, in some complex cases it
+             could also happen that a stream is stored in two different data
+             centers depending on the timewindow. In this case, it is
+             unavoidable to split the request in more than one data center.
+
+Abnormal responses
+""""""""""""""""""
+
+In addition to a ``200 OK`` status code for a successful request, other
+responses are possible, as shown in the :ref:`Table 2.2`. These are essentially
+the same as for FDSN web services. Under error, maintenance or other unusual
+conditions a client may receive other HTTP codes generated by web service
+containers, and other intermediate web technology.
+
+.. _Table 2.2:
+
+.. table:: HTTP status codes returned by the Routing service
+
+ ===== =======================================================================
+ Code  Description
+ ===== =======================================================================
+ 200   OK, Successful request, results follow.
+ 204   Request was properly formatted and submitted but no data matches the
+       selection.
+ 400   Bad request due to improper specification, unrecognized parameter,
+       parameter value out of range, etc.
+ 413   Request would result in too much data being returned or the request
+       itself is too large, returned error message should include the service
+       limitations in the detailed description. Service limits should also be
+       documented in the service WADL.
+ 414   Request URI too large
+ 500   Internal server error
+ 503   Service temporarily unavailable, used in maintenance and error
+       conditions
+ ===== =======================================================================
+
+Information about the content of service
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When the method `info` is invoked a description about the information handled
+by the Routing Service should be returned. The answer must be of MIME type
+`text/plain` and actually is a text-free output. However, in the first lines
+it is expected to be specified which information can we find by querying the
+service. For instance, ::
+
+ All Networks from XYZ institution
+ Stations in Indonesia
+ Stations in San Francisco
+
+ Other comments and descriptions that could be of interest of the user.
+
+Any parameter passed to this method will be ignored.
+
 
 Documentation for developers
 ============================
 
-Definition of the classes
--------------------------
+Utils module
+------------
 
 .. automodule:: utils
 
@@ -416,12 +720,22 @@ RequestMerge class
    :members:
    :undoc-members:
 
+InventoryCache module
+---------------------
+
+.. automodule:: inventorycache
+
 InventoryCache class
 --------------------
 
 .. autoclass:: inventorycache.InventoryCache
    :members:
    :undoc-members:
+
+Wsgicomm module
+---------------
+
+.. automodule:: wsgicomm
 
 .. Indices and tables
    ==================

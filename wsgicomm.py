@@ -8,12 +8,14 @@
 # ----------------------------------------------------------------------
 
 
-"""
-.. module:: wsgicomm
-   :synopsis: Functions and resources to communicate via a WSGI module
-   :copyright: GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
-   :license: To be decided!
-   :platform: Linux
+"""Functions and resources to communicate via a WSGI module
+
+   :Copyright:
+       GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
+   :License:
+       To be decided!
+   :Platform:
+       Linux
 
 .. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
 
