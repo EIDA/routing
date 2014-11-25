@@ -527,7 +527,7 @@ with an EIDA default configuration.
         tn.write('download %s\n' % reqID)
         routTable = tn.read_until('END', 5)
         start = routTable.find('<')
-        self.logs.info('Length:', routTable[:start])
+        self.logs.info('Length: %s' % routTable[:start])
 
         here = os.path.dirname(__file__)
         try:
