@@ -332,6 +332,14 @@ table and are given the maximum priority.
 This could be perfect to route requests to other datacenters, whose internal
 structure is not well known.
 
+
+.. note:: There are two main differences between the information provided in
+          `routing.xml` and the one provided in `masterTable.xml`. The former
+          will be used to synchronized with other data centers if requested.
+          On the other hand, the information added in `masterTable.xml` will
+          be kept private and not take part in any synchronization process.
+
+
 .. warning:: Only the network level is used to calculate the
              routing for the routes in the master table. This makes sense if
              we consider that the main purpose of this *extra* information is
