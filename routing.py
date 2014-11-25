@@ -91,7 +91,8 @@ def makeQueryGET(parameters):
 
     for param in parameters:
         if param not in allowedParams:
-            return 'Unknown parameter: %s' % param
+            msg = 'Unknown parameter: %s' % param
+            raise WIClientError(msg)
 
     try:
         if 'network' in parameters:
@@ -145,8 +146,8 @@ def makeQueryGET(parameters):
         else:
             start = None
     except:
-        raise WIError('400 Bad Request',
-                      'Error while converting starttime parameter.')
+        msg = 'Error while converting starttime parameter.'
+        raise WIClientError(msg)
 
     try:
         if 'endtime' in parameters:
@@ -160,8 +161,8 @@ def makeQueryGET(parameters):
         else:
             endt = None
     except:
-        raise WIError('400 Bad Request',
-                      'Error while converting endtime parameter.')
+        msg = 'Error while converting endtime parameter.'
+        raise WIClientError(msg)
 
     try:
         if 'service' in parameters:
@@ -215,13 +216,12 @@ def makeQueryPOST(postText):
                 key = key.strip()
                 value = value.strip()
             except:
-                raise WIError('400 Bad Request',
-                              'Wrong format detected while processing: %s' %
-                              line)
+                msg = 'Wrong format detected while processing: %s' % line
+                raise WIClientError(msg)
 
             if key not in extraParams:
-                raise WIError('400 Bad Request',
-                              'Unknown parameter "%s"' % key)
+                msg = 'Unknown parameter "%s"' % key
+                raise WIClientError(msg)
 
             if key == 'service':
                 ser = value
@@ -241,16 +241,16 @@ def makeQueryPOST(postText):
                 datetime.datetime.strptime(start[:19].upper(),
                                            '%Y-%m-%dT%H:%M:%S')
         except:
-            raise WIError('400 Bad Request',
-                          'Error while converting %s to datetime' % start)
+            msg = 'Error while converting %s to datetime' % start
+            raise WIClientError(msg)
 
         try:
             endt = None if endt in ("''", '""') else \
                 datetime.datetime.strptime(endt[:19].upper(),
                                            '%Y-%m-%dT%H:%M:%S')
         except:
-            raise WIError('400 Bad Request',
-                          'Error while converting %s to datetime' % endt)
+            msg = 'Error while converting %s to datetime' % endt
+            raise WIError(msg)
 
         try:
             result.extend(routes.getRoute(net, sta, loc, cha,
