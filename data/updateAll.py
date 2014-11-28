@@ -47,9 +47,8 @@ class Logs(object):
         pass
 
 
-def configArclink():
+def getArcRoutes(arcServ='eida.gfz-potsdam.de', arcPort=18001):
     """Connects via telnet to an Arclink server to get routing information.
-The address and port of the server are read from ``routing.cfg``.
 The data is saved in the file ``routing.xml``. Generally used to start operating
 with an EIDA default configuration.
 
@@ -63,14 +62,6 @@ with an EIDA default configuration.
 
     logs = Logs(4)
     
-    # Check Arclink server that must be contacted to get a routing table
-    config = ConfigParser.RawConfigParser()
-
-    here = os.path.dirname(__file__)
-    config.read(os.path.join(here, '../routing.cfg'))
-    arcServ = config.get('Arclink', 'server')
-    arcPort = config.getint('Arclink', 'port')
-
     tn = telnetlib.Telnet(arcServ, arcPort)
     tn.write('HELLO\n')
     # FIXME The institution should be detected here. Shouldn't it?
@@ -133,12 +124,11 @@ with an EIDA default configuration.
     except:
         pass
 
-    logs.info('Configuration read from Arclink!\n')
+    logs.info('Routing information succesfully read from Arclink!\n')
 
 
-def configArclinkInv():
+def getArcInv(arcServ, arcPort):
     """Connects via telnet to an Arclink server to get inventory information.
-The address and port of the server are read from ``routing.cfg``.
 The data is saved in the file ``Arclink-inventory.xml``. Generally used to
 start operating with an EIDA default configuration.
 
@@ -151,14 +141,6 @@ start operating with an EIDA default configuration.
     """
 
     logs = Logs(4)
-    
-    # Check Arclink server that must be contacted to get a routing table
-    config = ConfigParser.RawConfigParser()
-
-    here = os.path.dirname(__file__)
-    config.read(os.path.join(here, '../routing.cfg'))
-    arcServ = config.get('Arclink', 'server')
-    arcPort = config.getint('Arclink', 'port')
 
     tn = telnetlib.Telnet(arcServ, arcPort)
     tn.write('HELLO\n')
@@ -247,6 +229,18 @@ start operating with an EIDA default configuration.
     logs.info('\nInventory read from Arclink!\n')
 
 
-configArclink()
-configArclinkInv()
+def main():
+    # Check Arclink server that must be contacted to get a routing table
+    config = ConfigParser.RawConfigParser()
 
+    here = os.path.dirname(__file__)
+    config.read(os.path.join(here, '../routing.cfg'))
+    arcServ = config.get('Arclink', 'server')
+    arcPort = config.getint('Arclink', 'port')
+
+    getArcRoutes(arcServ, arcPort)
+    getArcInv(arcServ, arcPort)
+
+
+if __name__ == '__main__':
+    main()
