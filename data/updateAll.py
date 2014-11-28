@@ -65,11 +65,11 @@ with an EIDA default configuration.
     tn = telnetlib.Telnet(arcServ, arcPort)
     tn.write('HELLO\n')
     # FIXME The institution should be detected here. Shouldn't it?
-    logs.info(tn.read_until('GFZ', 5) + '\n')
+    logs.info(tn.read_until('GFZ', 5))
     tn.write('user routing@eida\n')
-    logs.debug(tn.read_until('OK', 5) + '\n')
+    logs.debug(tn.read_until('OK', 5))
     tn.write('request routing\n')
-    logs.debug(tn.read_until('OK', 5) + '\n')
+    logs.debug(tn.read_until('OK', 5))
     tn.write('1920,1,1,0,0,0 2030,1,1,0,0,0 * * * *\nEND\n')
 
     reqID = 0
@@ -84,15 +84,20 @@ with an EIDA default configuration.
                 reqID = testReqID
 
     myStatus = 'UNSET'
+    logs.debug('\n' + myStatus)
     while (myStatus in ('UNSET', 'PROCESSING')):
         sleep(1)
         tn.write('status %s\n' % reqID)
         stText = tn.read_until('END', 15)
 
         stStr = 'status='
+        oldStatus = myStatus
         myStatus = stText[stText.find(stStr) + len(stStr):].split()[0]
         myStatus = myStatus.replace('"', '').replace("'", "")
-        logs.debug(myStatus + '\n')
+        if myStatus == oldStatus:
+            logs.debug('.')
+        else:
+            logs.debug('\n' + myStatus)
 
     if myStatus != 'OK':
         logs.error('Error! Request status is not OK.\n')
@@ -101,7 +106,7 @@ with an EIDA default configuration.
     tn.write('download %s\n' % reqID)
     routTable = tn.read_until('END', 180)
     start = routTable.find('<')
-    logs.info('Length: %s\n' % routTable[:start])
+    logs.info('\nLength: %s\n' % routTable[:start])
 
     here = os.path.dirname(__file__)
     try:
@@ -203,8 +208,8 @@ start operating with an EIDA default configuration.
         while bytesRead < length:
             buf = fd.read(min(4096, length - bytesRead))
             bytesRead += len(buf)
-            bar = '|' + '=' * int(bytesRead * 100 / length) + \
-                    ' ' * int((length - bytesRead) * 100 / length) + '|'
+            bar = '|' + '=' * int(bytesRead * 100 / (2 * length)) + \
+                ' ' * int((length - bytesRead) * 100 / (2 * length)) + '|'
             logs.debug('\r%s' % bar)
             fout.write(buf)
 
