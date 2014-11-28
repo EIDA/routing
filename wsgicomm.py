@@ -42,11 +42,13 @@ class Logs(object):
 
         # Remap the functions in agreement with the output level
         # Default values are the following
-        self.error = self.__write
-        self.warning = self.__write
+        self.error = self.__pass
+        self.warning = self.__pass
         self.info = self.__pass
         self.debug = self.__pass
 
+        if level >= 1:
+            self.error = self.__write
         if level >= 2:
             self.warning = self.__write
         if level >= 3:

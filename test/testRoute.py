@@ -10,6 +10,7 @@ import unittest
 from unittestTools import WITestRunner
 from routing import RoutingCache
 from routing import RequestMerge
+from wsgicomm import Logs
 
 
 class RouteCacheTests(unittest.TestCase):
@@ -24,7 +25,7 @@ class RouteCacheTests(unittest.TestCase):
             return
         cls.rc = RoutingCache('../data/routing.xml',
                               '../data/Arclink-inventory.xml',
-                              '../data/masterTable.xml')
+                              '../data/masterTable.xml', Logs(1))
 
     def testDS_GE(self):
         "Dataselect GE.*.*.*"
