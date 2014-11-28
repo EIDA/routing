@@ -97,9 +97,10 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
 
     Change `/var/www/eidaws/routing/1` to suit your own web server's needs.
 
- #. Copy `routing.cfg.sample` to `routing.cfg`,
+ #. Change into the root directory of your installation and copy `routing.cfg.sample` to `routing.cfg`,
     or make a symbolic link ::
 
+      cd /var/www/eidaws/routing/1
       cp routing.cfg.sample routing.cfg
 
  #. Edit `routing.wsgi` and check that the paths there reflect the ones selected for your installation.
@@ -121,7 +122,7 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
  #. Get initial metadata in the `data` directory by running the ``update-metadata.sh`` script in that directory. ::
 
       # cd /var/www/eidaws/routing/1/data
-      # ./update-metadata.sh
+      # ./updateAll.py
 
  #. It is important to check the permissions of the working directory
     and the files in it, as some data needs to be saved there.
@@ -140,7 +141,7 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
     instance, `sysop`), who will run the crontab update, with the working directory writable by the group of
     the user running Apache (`www-data` in **Ubuntu/Mint**). ::
 
-    # cd {top directory}
+    # cd /var/www/eidaws/routing/1
     # sudo chown -R sysop.www-data .
     # cd data
     # sudo chmod -R g+w .
@@ -150,6 +151,18 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
 
     # Daily metadata update for routing service
     52 03 * * * /var/www/eidaws/routing/1/data/update-metadata.sh
+
+ #. Restart the web server to apply all teh changes, e.g. as root. In **OpenSUSE** ::
+
+      # /etc/init.d/apache2 configtest
+      # /etc/init.d/apache2 restart
+
+    or in **Ubuntu/Mint** ::
+
+      # sudo service apache2 reload
+      # sudo service apache2 stop
+      # sudo service apache2 start
+
 
 .. _configuration-options-extra:
 

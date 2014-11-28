@@ -152,10 +152,13 @@ start operating with an EIDA default configuration.
     # FIXME The institution should be detected here. Shouldn't it?
     logs.info(tn.read_until('GFZ', 5))
     tn.write('user routing@eida\n')
+    logs.debug('\nuser routing@eida')
     logs.debug(tn.read_until('OK', 5))
     tn.write('request inventory\n')
+    logs.debug('\nrequest inventory')
     logs.debug(tn.read_until('OK', 5))
     tn.write('1920,1,1,0,0,0 2030,1,1,0,0,0 * * * *\nEND\n')
+    logs.debug('\n1920,1,1,0,0,0 2030,1,1,0,0,0 * * * *\nEND')
 
     reqID = 0
     while not reqID:
@@ -168,6 +171,7 @@ start operating with an EIDA default configuration.
             if testReqID:
                 reqID = testReqID
 
+    logs.debug('status %s\n' % reqID)
     myStatus = 'UNSET'
     logs.debug('\n' + myStatus)
     while (myStatus in ('UNSET', 'PROCESSING')):
@@ -189,6 +193,7 @@ start operating with an EIDA default configuration.
         return
 
     tn.write('download %s\n' % reqID)
+    logs.debug('download %s\n' % reqID)
     here = os.path.dirname(__file__)
     try:
         os.remove(os.path.join(here, 'Arclink-inventory.xml.download'))
