@@ -418,6 +418,7 @@ class RoutingCache(object):
             self.update()
 
         # Add inventory cache here, to be able to expand request if necessary
+        self.invFile = invFile
         self.ic = InventoryCache(invFile)
 
         # Read the configuration file and checks when do we need to update
@@ -430,7 +431,8 @@ class RoutingCache(object):
 
         auxL = list()
         for auxT in updTime.split():
-            auxL.append(datetime.datetime.strptime(auxT, '%H:%M'))
+            toAdd = datetime.datetime.strptime(auxT, '%H:%M')
+            auxL.append(toAdd)
 
         # Configure the expected update moment of the day
         now = datetime.datetime.now()
@@ -628,33 +630,43 @@ information (URLs and parameters) to do the requests to different datacenters
         lU = self.lastUpd
         # First check whether the information should be updated or not
         if self.nextUpd is not None:
-            try:
-                now = datetime.datetime.now()
-                if len(self.updTimes) == 1:
-                    now2lastUpd = (now - lU).seconds % secsDay \
-                        if lU else secsDay
-                    upd2lastUpd = (self.updTimes[0] - lU).seconds % secsDay \
-                        if lU else secsDay
+            #try:
+            now = datetime.datetime.now()
+            if len(self.updTimes) == 1:
+                now2lastUpd = (now - lU).seconds % secsDay \
+                    if lU else secsDay
+                upd2lastUpd = (self.updTimes[0] - lU).seconds % secsDay \
+                    if lU else secsDay
 
-                    # Check for more than one day or updateTime in the past
-                    if (((now - self.lastUpd) > datetime.timedelta(days=1)) or
-                            (now2lastUpd > upd2lastUpd)):
-                        self.logs.info('Updating at %s!' % now.isoformat())
-                        self.updateAll()
-                        self.lastUpd = now
-                else:
-                    auxU = min(enumerate([(x - now).total_seconds() % secsDay
-                                          for x in self.updTimes]),
-                               key=itemgetter(1))[0]
-                    if ((auxU != self.nextUpd) or
-                            ((now - lU) > datetime.timedelta(days=1))):
-                        self.logs.info('Updating at %s!' % now.isoformat())
-                        self.updateAll()
-                        # and move to the next time
-                        self.nextUpd = auxU
-                        self.lastUpd = now
-            except:
-                pass
+                # Check for more than one day or updateTime in the past
+                if (((now - self.lastUpd) > datetime.timedelta(days=1)) or
+                        (now2lastUpd > upd2lastUpd)):
+                    self.logs.debug('now2lastUpd > upd2lastUpd : %s > %s'
+                            % (now2lastUpd, upd2lastUpd))
+                    self.logs.info('Updating at %s!' % now)
+                    self.updateAll()
+                    self.lastUpd = now
+                    self.logs.debug('Update successful at: %s\n' % self.lastUpd)
+                    #self.nextUpd = self.nextUpd + datetime.timedelta(days=1)
+                    #self.logs.info('Next update at %s!' % self.nextUpdate.isoformat())
+            else:
+                self.logs.debug('next update: %s\n' %
+                        self.updTimes[self.nextUpd])
+                self.logs.debug('last update: %s\n' % lU)
+                self.logs.debug('updTime: %s\n' % self.updTimes[0])
+
+                auxU = min(enumerate([(x - now).total_seconds() % secsDay
+                                      for x in self.updTimes]),
+                           key=itemgetter(1))[0]
+                if ((auxU != self.nextUpd) or
+                        ((now - lU) > datetime.timedelta(days=1))):
+                    self.logs.info('Updating at %s!' % now.isoformat())
+                    self.updateAll()
+                    # and move to the next time
+                    self.nextUpd = auxU
+                    self.lastUpd = now
+            #except:
+            #    pass
 
         stream = Stream(n, s, l, c)
         tw = TW(startD, endD)
@@ -826,6 +838,8 @@ used to translate the Arclink address to Dataselect address
             # In finalset I have all the streams (including expanded and
             # the ones with wildcards), that I need to request.
             # Now I need the URLs
+            self.logs.debug(str(finalset) + '\n')
+
             while finalset:
                 st = finalset.pop()
                 resArc = self.getRouteArc(st, tw, alternative)
@@ -1180,6 +1194,7 @@ The following table lookup is implemented for the Arclink service::
     def updateAll(self):
         """Read the three sources of routing and inventory information"""
 
+        self.logs.debug('updateAll\n')
         self.update()
         if self.masterFile is not None:
             self.updateMT()
@@ -1196,6 +1211,7 @@ The following table lookup is implemented for the Arclink service::
 
         """
 
+        self.logs.debug('updateMT\n')
         # Just to shorten notation
         ptMT = self.masterTable
 
@@ -1223,6 +1239,8 @@ The following table lookup is implemented for the Arclink service::
 
         # Extract the namespace from the root node
         namesp = root.tag[:-len('routing')]
+
+        ptMT.clear()
 
         for event, route in context:
             # The tag of this node should be "route".
@@ -1356,6 +1374,7 @@ The following table lookup is implemented for the Arclink service::
 
         """
 
+        self.logs.debug('update\n')
         # Just to shorten notation
         ptRT = self.routingTable
         ptSL = self.slTable
@@ -1383,6 +1402,10 @@ The following table lookup is implemented for the Arclink service::
 
         # Extract the namespace from the root node
         namesp = root.tag[:-len('routing')]
+
+        ptRT.clear()
+        ptSL.clear()
+        ptST.clear()
 
         for event, route in context:
             # The tag of this node should be "route".
