@@ -181,7 +181,10 @@ def makeQueryGET(parameters):
     except:
         alt = False
 
-    route = routes.getRoute(net, sta, loc, cha, start, endt, ser, alt)
+    try:
+        route = routes.getRoute(net, sta, loc, cha, start, endt, ser, alt)
+    except RoutingException:
+        raise WIContentError('No routes have been found!')
 
     if len(route) == 0:
         raise WIContentError('No routes have been found!')
