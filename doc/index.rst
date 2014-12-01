@@ -19,27 +19,26 @@ Requirements
    
  * mod_wsgi (if using Apache). Also Python libraries for libxslt and libxml.
 
- * The ``update-metadata.sh`` script uses `wget`.
-
 .. _download:
 
 Download
 --------
 
 Download the tar file / source from the GEOFON web page at http://geofon.gfz-potsdam.de/software.
-[Eventually it may be included in the SeisComP distribution.]
+[Eventually it may be included in the SeisComP3 distribution.]
 
 .. note ::
-    Nightly builds can be downloaded from Bitbucket (https://javiquinte@bitbucket.org/javiquinte/routing.git). You can request access at geofon_dc@gfz-potsdam.de.
+    Nightly builds can be downloaded from Bitbucket (https://javiquinte@bitbucket.org/javiquinte/routing.git).
+    You can request access at geofon_dc@gfz-potsdam.de.
 
 Untar into a suitable directory visible to the web server,
 such as `/var/www/eidaws/routing/1/` ::
 
-  cd /var/www/eidaws/routing/1
-  tar xvzf /path/to/tarfile.tgz
+  $ cd /var/www/eidaws/routing/1
+  $ tar xvzf /path/to/tarfile.tgz
 
 This location will depend on the location of the root (in the file system)
- for your web server.
+for your web server.
 
 .. _oper_installation-on-apache:
 
@@ -48,7 +47,7 @@ Installation on Apache
 
 To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
 
-0. Unpack the files into the chosen directory.
+1. Unpack the files into the chosen directory.
    (See Download_ above.)
    In these instructions we assume this directory is `/var/www/eidaws/routing/1/`.
 
@@ -90,11 +89,11 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
 #. Add the following lines to a new file, `conf.d/routing.conf`, or in
    `default-server.conf`, or in the configuration for your virtual host. ::
 
-     WSGIScriptAlias /eidaws/routing/1 /var/www/eidaws/routing/1/routing.wsgi
-        <Directory /var/www/eidaws/routing/1/>
-            Order allow,deny
-            Allow from all
-        </Directory>
+      WSGIScriptAlias /eidaws/routing/1 /var/www/eidaws/routing/1/routing.wsgi
+      <Directory /var/www/eidaws/routing/1/>
+          Order allow,deny
+          Allow from all
+      </Directory>
 
    Change `/var/www/eidaws/routing/1` to suit your own web server's needs.
 
@@ -120,7 +119,7 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
       $ sudo service apache2 start
 
 
-#. Get initial metadata in the `data` directory by running the ``update-metadata.sh`` script in that directory. ::
+#. Get initial metadata in the `data` directory by running the ``updateAll.py`` script in that directory. ::
 
       $ cd /var/www/eidaws/routing/1/data
       $ ./updateAll.py
@@ -151,7 +150,7 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
    Something like the following lines will be needed in your crontab::
 
     $ Daily metadata update for routing service
-    52 03 * * * /var/www/eidaws/routing/1/data/update-metadata.sh
+    52 03 * * * /var/www/eidaws/routing/1/data/updateAll.py
 
 #. Restart the web server to apply all the changes, e.g. as root. In **OpenSUSE**::
 
@@ -217,7 +216,7 @@ Always check your web server log files (e.g. for Apache: ``access_log`` and
 If you visit http://localhost/eidaws/routing/1/version on your machine
 you should see the version information of the deployed service ::
 
-    1.0.0
+    1.0.1
 
 If this information cannot be retrieved, the installation was not successfull.
 If this **do** show up, check that the information there looks correct.
@@ -239,7 +238,7 @@ way, the logic of the package and the coherence of the information can be
 tested, excluding other factors related to the configuration of other pieces
 of software (f.i. web server, firewall, etc.). ::
 
-    ./testRoute.py
+    $ ./testRoute.py
     Running test...
     Checking Dataselect CH.LIENZ.*.BHZ... [OK]
     Checking Dataselect CH.LIENZ.*.HHZ... [OK]
@@ -265,7 +264,7 @@ at a particular URL, which can be passed as a parameter. The default value
 will test the service at: http://localhost/eidaws/routing/1/query, what can be
 used to check the local installation. ::
 
-    ./testService.py -u http://server/path/query
+    $ ./testService.py -u http://server/path/query
     Running test...
     Checking Dataselect CH.LIENZ.*.BHZ... [OK]
     Checking Dataselect CH.LIENZ.*.HHZ... [OK]
@@ -280,7 +279,7 @@ Maintenance
 -----------
 
 Metadata needs to be updated regularly due to the small but constant changes in
-the Arclink inventory. You can always run safely the ``update-metadata.sh``
+the Arclink inventory. You can always run safely the ``updateAll.py``
 script at any time you want.
 The Routing Service creates a processed version of the Arclink XML, but this
 will be automatically updated each time a new inventory XML file is detected.
@@ -335,7 +334,7 @@ The following is an example of an Arclink-XML file.
 
 If the file is not present, ``configArclink`` is called and the file is created
 with the information provided by the Arclink server. With this information and
-the metadata downloaded by ``update_metadata.sh`` the service can be started.
+the metadata downloaded by ``updateAll.py`` the service can be started.
 
 Manual configuration
 --------------------
@@ -519,8 +518,8 @@ Output description and format
 
 There are four different output formats supported by this service. The
 structure of the information returned is different with each format type. In
-case of a successful request the HTTP status code will be 200, and the response
-will be as described below for each format.
+case of a successful request the HTTP status code will be ``200``, and the
+response will be as described below for each format.
 
 XML format
 """"""""""
@@ -610,6 +609,10 @@ the output will have only one route (unless the alternative parameter is set).
 Alternative routes
 """"""""""""""""""
 
+.. warning:: As a rule of a thumb and in a normal case, the alternative
+             addresses should only be used if there is no response from the
+             authoritative data center.
+
 If the `alternative` parameter is set, the service will return all the routes
 that match the requested criteria without paying attention to the priority.
 The client will be required to interpret the priority of the routes and to
@@ -622,10 +625,6 @@ alternative route are being reported for the same stream.
           outputs are almost nonexistent if alternative routes are included in
           the output, since the result should be parsed in order to operate on
           the different routes.
-
-.. warning:: As a rule of a thumb and in a normal case, the alternative
-             addresses should only be used if there is no response from the
-             authoritative data center.
 
 How to pass the parameters
 """"""""""""""""""""""""""

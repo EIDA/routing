@@ -239,9 +239,8 @@ def send_file_response(status, body, start_response):
 
 def send_dynamicfile_response(status, body, start_response):
     """
-:synopsis:
-    Sends a file or similar object. Caller must set the filename, size and
-    content_type attributes of body.
+:synopsis: Sends a file or similar object. Caller must set the filename, size \
+           and content_type attributes of body.
 
     """
 
