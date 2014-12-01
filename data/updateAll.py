@@ -61,7 +61,7 @@ with an EIDA default configuration.
     """
 
     logs = Logs(4)
-    
+
     tn = telnetlib.Telnet(arcServ, arcPort)
     tn.write('HELLO\n')
     # FIXME The institution should be detected here. Shouldn't it?
@@ -207,7 +207,19 @@ start operating with an EIDA default configuration.
         #try:
         fd = tn.get_socket().makefile('rb+')
         # Read the size of the inventory
-        length = int(fd.readline(100).strip())
+        length = fd.readline(100).strip()
+        # Max number of retries
+        maxRet = 8
+        while not isinstance(length, int) and maxRet:
+            try:
+                length = int(length)
+            except:
+                sleep(1)
+                tn.write('download %s\n' % reqID)
+                logs.debug('Retrying! download %s\n' % reqID)
+                length = fd.readline(100).strip()
+                maxRet -= 1
+
         logs.info('\nExpected size: %s\n' % length)
         bytesRead = 0
         while bytesRead < length:
@@ -223,7 +235,7 @@ start operating with an EIDA default configuration.
             raise Exception('Wrong length!')
         #finally:
         #    tn.write('PURGE %d\n' % reqID)
-                         
+
     try:
         os.rename(os.path.join(here, './Arclink-inventory.xml'),
                   os.path.join(here, './Arclink-inventory.xml.bck'))
