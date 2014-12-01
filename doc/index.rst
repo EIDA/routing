@@ -30,7 +30,7 @@ Download the tar file / source from the GEOFON web page at http://geofon.gfz-pot
 [Eventually it may be included in the SeisComP distribution.]
 
 .. note ::
-    Nightly builds can be downloaded from Bitbucket (git@bitbucket.org:javiquinte/routing.git). You can request access at geofon_dc@gfz-potsdam.de.
+    Nightly builds can be downloaded from Bitbucket (https://javiquinte@bitbucket.org/javiquinte/routing.git). You can request access at geofon_dc@gfz-potsdam.de.
 
 Untar into a suitable directory visible to the web server,
 such as `/var/www/eidaws/routing/1/` ::
@@ -147,17 +147,17 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
     # sudo chmod -R g+w .
 
  #. Arrange for regular updates of the metadata in the working directory.
-    Something like the following lines will be needed in your crontab ::
+    Something like the following lines will be needed in your crontab::
 
     # Daily metadata update for routing service
     52 03 * * * /var/www/eidaws/routing/1/data/update-metadata.sh
 
- #. Restart the web server to apply all teh changes, e.g. as root. In **OpenSUSE** ::
+ #. Restart the web server to apply all the changes, e.g. as root. In **OpenSUSE**::
 
       # /etc/init.d/apache2 configtest
       # /etc/init.d/apache2 restart
 
-    or in **Ubuntu/Mint** ::
+    or in **Ubuntu/Mint**::
 
       # sudo service apache2 reload
       # sudo service apache2 stop
@@ -200,7 +200,7 @@ Info and 4) Debug. ::
 
     [Service]
     info = Routing information from the Arclink Server at GEOFON
-    updateTime = 23:01 22:05 21:58
+    updateTime = 01:01 16:58
     verbosity = 3
 
 Installation problems
@@ -576,7 +576,7 @@ If `format` is ``post``, the output will be also declared as `text/plain` and
 the structure will consist of:
 * a line with a URL where the request must be made,
 * a list of lines with the format declared in the FDSN Web Services
-  specification to do a POST request.
+specification to do a POST request.
 
 If the request should be split in more than one datacenter, the blocks for
 every datacenter will be separated by a blank line and the structure will be
@@ -700,42 +700,42 @@ Utils module
 .. automodule:: utils
 
 RoutingCache class
-------------------
+^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: utils.RoutingCache
    :members:
    :undoc-members:
 
 Route class
------------
+^^^^^^^^^^^
 
 .. autoclass:: utils.Route
    :members:
    :undoc-members:
 
 Stream class
-------------
+^^^^^^^^^^^^
 
 .. autoclass:: utils.Stream
    :members:
    :undoc-members:
 
 TW (timewindow)  class
-----------------------
+^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: utils.TW
    :members:
    :undoc-members:
 
 RouteMT class
--------------
+^^^^^^^^^^^^^
 
 .. autoclass:: utils.RouteMT
    :members:
    :undoc-members:
 
 RequestMerge class
-------------------
+^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: utils.RequestMerge
    :members:
@@ -747,7 +747,7 @@ InventoryCache module
 .. automodule:: inventorycache
 
 InventoryCache class
---------------------
+^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: inventorycache.InventoryCache
    :members:

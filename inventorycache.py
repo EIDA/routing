@@ -8,7 +8,7 @@
 # ----------------------------------------------------------------------
 
 """Provides a reduced version of the inventory cached in memory (or disk)
-   
+
    :Copyright: GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
    :License: To be decided!
    :Platform: Linux
@@ -44,16 +44,16 @@ class InventoryCache(object):
 
     def __init__(self, inventory, logs=wsgicomm.Logs(2)):
         """InventoryCache constructor
-        
+
         :param inventory: file name containing inventory information in
                           Arclink-XML format
-        :type inventory: str       
+        :type inventory: str
         :param logs: Logging class supporting methods to write dependeing on
                      the verbosity level.
         :type logs: :class:`~wsgicomm.logs` (or other class implementing the
                     expected methods)
-    
-        """ 
+
+        """
 
         # Arclink inventory file in XML format
         self.inventory = inventory
@@ -105,8 +105,8 @@ class InventoryCache(object):
 
     def __indexStreams(self):
         """Read all the streams in the inventory and index them
-        
-        """ 
+
+        """
 
         self.streamidx = {}
 
@@ -516,8 +516,8 @@ class InventoryCache(object):
     def expand(self, n='*', s='*', l='*', c='*',
                start=None, end=None, restricted=False):
         """Expand to a list of networks, stations, locations and channels
-        The result is a list of (N, S, L, C) **without** wildcards.
-        If *restricted* is True, restricted streams will be included.
+The result is a list of (N, S, L, C) **without** wildcards.
+If *restricted* is True, restricted streams will be included.
 
 :param n: Network
 :type n: str
