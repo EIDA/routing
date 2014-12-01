@@ -650,10 +650,9 @@ information (URLs and parameters) to do the requests to different datacenters
                     #self.nextUpd = self.nextUpd + datetime.timedelta(days=1)
                     #self.logs.info('Next update at %s!' % self.nextUpdate.isoformat())
             else:
-                self.logs.debug('next update: %s\n' %
+                self.logs.debug('next update: %s' %
                         self.updTimes[self.nextUpd])
-                self.logs.debug('last update: %s\n' % lU)
-                self.logs.debug('updTime: %s\n' % self.updTimes[0])
+                self.logs.debug('last update: %s' % lU)
 
                 auxU = min(enumerate([(x - now).total_seconds() % secsDay
                                       for x in self.updTimes]),
@@ -838,7 +837,7 @@ used to translate the Arclink address to Dataselect address
             # In finalset I have all the streams (including expanded and
             # the ones with wildcards), that I need to request.
             # Now I need the URLs
-            self.logs.debug(str(finalset) + '\n')
+            self.logs.debug(str(finalset))
 
             while finalset:
                 st = finalset.pop()
@@ -1194,7 +1193,7 @@ The following table lookup is implemented for the Arclink service::
     def updateAll(self):
         """Read the three sources of routing and inventory information"""
 
-        self.logs.debug('updateAll\n')
+        self.logs.debug('Entering updateAll')
         self.update()
         if self.masterFile is not None:
             self.updateMT()
@@ -1211,7 +1210,7 @@ The following table lookup is implemented for the Arclink service::
 
         """
 
-        self.logs.debug('updateMT\n')
+        self.logs.debug('Entering updateMT')
         # Just to shorten notation
         ptMT = self.masterTable
 
@@ -1374,7 +1373,7 @@ The following table lookup is implemented for the Arclink service::
 
         """
 
-        self.logs.debug('update\n')
+        self.logs.debug('Entering update')
         # Just to shorten notation
         ptRT = self.routingTable
         ptSL = self.slTable
