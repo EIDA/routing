@@ -48,46 +48,47 @@ Installation on Apache
 
 To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
 
- 0. Unpack the files into the chosen directory.
-    (See Download_ above.)
-    In these instructions we assume this directory is `/var/www/eidaws/routing/1/`.
+0. Unpack the files into the chosen directory.
+   (See Download_ above.)
+   In these instructions we assume this directory is `/var/www/eidaws/routing/1/`.
 
- #. Enable `mod_wsgi`. For openSUSE, add 'wsgi' to the list of modules in the APACHE_MODULES variable in `/etc/sysconfig/apache2` ::
+#. Enable `mod_wsgi`. For openSUSE, add 'wsgi' to the list of modules in the APACHE_MODULES variable in `/etc/sysconfig/apache2` ::
 
        APACHE_MODULES+=" python wsgi"
 
-    and restart Apache. You should now see the following line in your
-    configuration (in `/etc/apache2/sysconfig.d/loadmodule.conf` for **openSUSE**) ::
+   and restart Apache. You should now see the following line in your
+   configuration (in `/etc/apache2/sysconfig.d/loadmodule.conf` for **openSUSE**) ::
 
-        LoadModule wsgi_module   /usr/lib64/apache2/mod_wsgi.so
+       LoadModule wsgi_module   /usr/lib64/apache2/mod_wsgi.so
 
-    You can also look at the output from ``a2enmod -l`` - you should see wsgi listed.
+   You can also look at the output from ``a2enmod -l`` - you should see wsgi listed.
 
-    For **Ubuntu/Mint**, you can enable the module with the command ::
+   For **Ubuntu/Mint**, you can enable the module with the command ::
 
-        sudo a2enmod wsgi
+       $ sudo a2enmod wsgi
 
-    and you can restart apache with::
+   and you can restart apache with::
 
-        sudo service apache2 stop
-        sudo service apache2 start
+       $ sudo service apache2 stop
+       $ sudo service apache2 start
 
-    If the module was added succesfully you should see the following two links in
-    ``/etc/apache2/mods-enable`` ::
+
+   If the module was added succesfully you should see the following two links in
+   ``/etc/apache2/mods-enable`` ::
 
         wsgi.conf -> ../mods-available/wsgi.conf
         wsgi.load -> ../mods-available/wsgi.load
 
-    For any distribution there may be a message like this in Apache's `error_log` file, showing
-    that `mod_wsgi` was loaded ::
+   For any distribution there may be a message like this in Apache's `error_log` file, showing
+   that `mod_wsgi` was loaded ::
 
         [Tue Jul 16 14:24:32 2013] [notice] Apache/2.2.17 (Linux/SUSE)
         PHP/5.3.5 mod_python/3.3.1 Python/2.7 mod_wsgi/3.3 configured
          -- resuming normal operations
 
 
- #. Add the following lines to a new file, `conf.d/routing.conf`, or in
-    `default-server.conf`, or in the configuration for your virtual host ::
+#. Add the following lines to a new file, `conf.d/routing.conf`, or in
+   `default-server.conf`, or in the configuration for your virtual host. ::
 
      WSGIScriptAlias /eidaws/routing/1 /var/www/eidaws/routing/1/routing.wsgi
         <Directory /var/www/eidaws/routing/1/>
@@ -95,73 +96,73 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
             Allow from all
         </Directory>
 
-    Change `/var/www/eidaws/routing/1` to suit your own web server's needs.
+   Change `/var/www/eidaws/routing/1` to suit your own web server's needs.
 
- #. Change into the root directory of your installation and copy `routing.cfg.sample` to `routing.cfg`,
-    or make a symbolic link ::
+#. Change into the root directory of your installation and copy `routing.cfg.sample` to `routing.cfg`,
+   or make a symbolic link ::
 
-      cd /var/www/eidaws/routing/1
-      cp routing.cfg.sample routing.cfg
+      $ cd /var/www/eidaws/routing/1
+      $ cp routing.cfg.sample routing.cfg
 
- #. Edit `routing.wsgi` and check that the paths there reflect the ones selected for your installation.
+#. Edit `routing.wsgi` and check that the paths there reflect the ones selected for your installation.
 
- #. Edit `routing.cfg` and be sure to configure everything corectly. This is discussed under "`Configuration Options`_" below.
+#. Edit `routing.cfg` and be sure to configure everything corectly. This is discussed under "`Configuration Options`_" below.
 
- #. Start/restart the web server e.g. as root. In **OpenSUSE** ::
+#. Start/restart the web server e.g. as root. In **OpenSUSE** ::
 
-      # /etc/init.d/apache2 configtest
-      # /etc/init.d/apache2 restart
+      $ /etc/init.d/apache2 configtest
+      $ /etc/init.d/apache2 restart
 
-    or in **Ubuntu/Mint** ::
+   or in **Ubuntu/Mint** ::
 
-      # sudo service apache2 reload
-      # sudo service apache2 stop
-      # sudo service apache2 start
+      $ sudo service apache2 reload
+      $ sudo service apache2 stop
+      $ sudo service apache2 start
 
 
- #. Get initial metadata in the `data` directory by running the ``update-metadata.sh`` script in that directory. ::
+#. Get initial metadata in the `data` directory by running the ``update-metadata.sh`` script in that directory. ::
 
-      # cd /var/www/eidaws/routing/1/data
-      # ./updateAll.py
+      $ cd /var/www/eidaws/routing/1/data
+      $ ./updateAll.py
 
- #. It is important to check the permissions of the working directory
-    and the files in it, as some data needs to be saved there.
-    For instance, in some distributions Apache is run
-    by the ``www-data`` user, which belongs to a group with the same name
-    (``www-data``).
-    The working directory should have read-write permission
-    for the user running Apache **and** the user who will do the regular metadata updates
-    (see crontab configuration in the last point of this instruction list).
-    The system will also try to create and
-    write temporary information in this directory.
+#. It is important to check the permissions of the working directory
+   and the files in it, as some data needs to be saved there.
+   For instance, in some distributions Apache is run
+   by the ``www-data`` user, which belongs to a group with the same name
+   (``www-data``).
+   The working directory should have read-write permission
+   for the user running Apache **and** the user who will do the regular metadata updates
+   (see crontab configuration in the last point of this instruction list).
+   The system will also try to create and
+   write temporary information in this directory.
    
-    .. warning :: Wrong configuration in the permissions of the working directory could diminish the performance of the system.
+   .. warning :: Wrong configuration in the permissions of the working directory could diminish the performance of the system.
 
-    One possible configuration would be to install the system as a user (for
-    instance, `sysop`), who will run the crontab update, with the working directory writable by the group of
-    the user running Apache (`www-data` in **Ubuntu/Mint**). ::
+   One possible configuration would be to install the system as a user (for
+   instance, `sysop`), who will run the crontab update, with the working directory writable by the group of
+   the user running Apache (`www-data` in **Ubuntu/Mint**). ::
 
-    # cd /var/www/eidaws/routing/1
-    # sudo chown -R sysop.www-data .
-    # cd data
-    # sudo chmod -R g+w .
+    $ cd /var/www/eidaws/routing/1
+    $ sudo chown -R sysop.www-data .
+    $ cd data
+    $ sudo chmod -R g+w .
 
- #. Arrange for regular updates of the metadata in the working directory.
-    Something like the following lines will be needed in your crontab::
+#. Arrange for regular updates of the metadata in the working directory.
+   Something like the following lines will be needed in your crontab::
 
-    # Daily metadata update for routing service
+    $ Daily metadata update for routing service
     52 03 * * * /var/www/eidaws/routing/1/data/update-metadata.sh
 
- #. Restart the web server to apply all the changes, e.g. as root. In **OpenSUSE**::
+#. Restart the web server to apply all the changes, e.g. as root. In **OpenSUSE**::
 
-      # /etc/init.d/apache2 configtest
-      # /etc/init.d/apache2 restart
+    $ /etc/init.d/apache2 configtest
+    $ /etc/init.d/apache2 restart
 
-    or in **Ubuntu/Mint**::
+   or in **Ubuntu/Mint**::
 
-      # sudo service apache2 reload
-      # sudo service apache2 stop
-      # sudo service apache2 start
+    $ sudo service apache2 reload
+    $ sudo service apache2 stop
+    $ sudo service apache2 start
 
 
 .. _configuration-options-extra:
@@ -177,7 +178,9 @@ Arclink
 In the Arclink section an arclink server must be defined, from which the
 default routing table should be retrieved.
 The default value is the Arclink server running at GEOFON, but this can be
-configured with the address of any Arclink server. ::
+configured with the address of any Arclink server.
+
+.. code-block:: ini
 
     [Arclink]
     server = eida.gfz-potsdam.de
@@ -196,7 +199,9 @@ required, there should be nothing at the right side of the ``=`` character.
 
 `verbosity` controls the amount of output send to the logging system depending
 of the importance of the messages. The levels are: 1) Error, 2) Warning, 3)
-Info and 4) Debug. ::
+Info and 4) Debug.
+
+.. code-block:: ini
 
     [Service]
     info = Routing information from the Arclink Server at GEOFON
@@ -286,14 +291,14 @@ Upgrade
 At this stage, it's best to back up and then remove the old installation
 first. ::
 
-    cd /var/www/eidaws/routing/ ; mv 1 1.old
+    $ cd /var/www/eidaws/routing/ ; mv 1 1.old
 
 Then reinstall from scratch, as in the :ref:`installation instructions <oper_installation-on-apache>`.
 Your web server configuration should need no modification.
 At Steps 4-6, re-use your previous versions of ``routing.wsgi`` and ``routing.cfg`` ::
 
-    cp ../1.old/routing.wsgi routing.wsgi
-    cp ../1.old/routing.cfg routing.cfg
+    $ cp ../1.old/routing.wsgi routing.wsgi
+    $ cp ../1.old/routing.cfg routing.cfg
 
 
 Using the Service
@@ -311,7 +316,9 @@ When the service starts, checks if there is a file called ``routing.xml`` in
 the ``data`` directory. This file is expected to contain all the information
 needed to feed the routing table. The file format must be Arclink-XML.
 
-The following is an example of an Arclink-XML file. ::
+The following is an example of an Arclink-XML file.
+
+.. code-block:: xml
 
     <?xml version="1.0" encoding="utf-8"?>
     <ns0:routing xmlns:ns0="http://server/ns/Routing/1.0/">
@@ -362,7 +369,9 @@ structure is not well known.
              to levels deeper than the network are usually not known.
 
 In the following example, we show how to point to the service in IRIS, when
-the ``II`` network is requested. ::
+the ``II`` network is requested.
+
+.. code-block:: xml
 
     <?xml version="1.0" encoding="utf-8"?>
     <ns0:routing xmlns:ns0="http://geofon.gfz-potsdam.de/ns/Routing/1.0/">
@@ -442,7 +451,7 @@ service. Both ``GET`` and ``POST`` methods must be supported.
 Input parameters
 """"""""""""""""
 
-The complete list of input parameters can be seen in :ref:`Table 2.1`. Parameter
+The complete list of input parameters can be seen in :ref:`Table 2.1<Table_2.1>`. Parameter
 names must be in lowercase, and may be abbreviated as shown, following the FDSN
 style. Valid input values must have the format shown in the “Format” column.
 All the values passed as parameters will be case-insensitive strings composed
@@ -463,7 +472,7 @@ a star (``*``).
 Blank or empty `location` identifiers may be specified as "``--``" (two dashes)
 if needed, which the service must translate to an empty string.
 
-.. _Table 2.1:
+.. _Table_2.1:
 
 .. tabularcolumns:: |l|l|l|p{8cm}|c|
 .. table:: Input parameters description
@@ -524,7 +533,9 @@ service at a given data centre, exactly one name element, which gives the name
 of the service a list of params elements, each describing a stream, or set of
 streams by using appropriate wildcarding, available using the service at that
 URL. The params element may be repeated as many times as necessary inside the
-datacenter element. ::
+datacenter element.
+
+.. code-block:: xml
 
  <service>
     <datacenter>
@@ -548,7 +559,9 @@ if the format parameter is ``json``, the information will be returned with
 MIME type `text/plain`. The content will be a JSON (JavaScript Object
 notation) array, in which each element is a JSON object corresponding to a
 ``<datacenter>`` element in the XML format shown above. For the example
-response above, this would appear as: ::
+response above, this would appear as:
+
+.. code-block:: json
 
  [{"url": "http://ws.resif.fr/fdsnws/dataselect/1/query",
  "params": [{"loc": "*", "end": "", "sta": "KES28", "cha": "*", "start": "",
@@ -566,7 +579,8 @@ When the `format` parameter is set to ``get``, the output will be declared as
 in a way that they can be used directly by the client to request the necessary
 information without the need to parse them. ::
 
- http://ws.resif.fr/fdsnws/dataselect/1/query?sta=KES28&net=4C
+ http://ws.resif.fr/fdsnws/dataselect/1/query?sta=KES28&net=4C&
+     start=2010-01-01T00:00:00&end=2010-01-01T00:10:00
 
 
 POST format
@@ -583,7 +597,7 @@ every datacenter will be separated by a blank line and the structure will be
 repeated (URL and POST body). ::
 
  http://ws.resif.fr/fdsnws/dataselect/1/query
- 4C KES28 * * 
+ 4C KES28 * * 2010-01-01T00:00:00 2010-01-01T00:10:00
 
 In case that the service is ``arclink`` or ``seedlink``, the implemented
 routing algorithm is exactly the same as in the Arclink protocol. See the
