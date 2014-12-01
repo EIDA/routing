@@ -1,0 +1,5 @@
+*.xml
+*.bin
+doc/.build/
+*.pyc
+*.cfg
