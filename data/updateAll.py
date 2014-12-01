@@ -49,8 +49,8 @@ class Logs(object):
 
 def getArcRoutes(arcServ='eida.gfz-potsdam.de', arcPort=18001):
     """Connects via telnet to an Arclink server to get routing information.
-The data is saved in the file ``routing.xml``. Generally used to start operating
-with an EIDA default configuration.
+The data is saved in the file ``routing.xml``. Generally used to start
+operating with an EIDA default configuration.
 
 .. note::
 
@@ -260,7 +260,12 @@ def main():
     arcServ = config.get('Arclink', 'server')
     arcPort = config.getint('Arclink', 'port')
 
-    getArcRoutes(arcServ, arcPort)
+    if config.getboolean('Service', 'updateRoutes'):
+        getArcRoutes(arcServ, arcPort)
+    else:
+        print 'Skipping routing information. Config file does not allow to ' \
+            + 'overwrite the information. (../routing.cfg)'
+
     getArcInv(arcServ, arcPort)
 
 

@@ -188,13 +188,20 @@ configured with the address of any Arclink server.
 Service
 """""""
 
-This section contains three variables. The variable `info` specifies the string
+This section contains four variables. The variable `info` specifies the string
 that the ``config`` method from the service should return.
 The variable `updateTime` determines at which moment of the day should be
 updated all the routing information.
 The format for the update time should be ``HH:MM`` separated by a space. It is
 not necessary that the different time entries are in order. If no update is
 required, there should be nothing at the right side of the ``=`` character.
+
+`updateRoutes` determines whether the routing information should be updated by
+the `updateAll.py` script. Usually, you want to set it to ``True`` if the
+automatic configuration is the selected one (all the data is read from an
+Arclink server). But if you selected to configure your own set of routes, then
+you should set it to ``False``, so that the update procedure will not delete
+your manual configuration.
 
 `verbosity` controls the amount of output send to the logging system depending
 of the importance of the messages. The levels are: 1) Error, 2) Warning, 3)
@@ -205,6 +212,7 @@ Info and 4) Debug.
     [Service]
     info = Routing information from the Arclink Server at GEOFON
     updateTime = 01:01 16:58
+    updateRoutes = true
     verbosity = 3
 
 Installation problems
