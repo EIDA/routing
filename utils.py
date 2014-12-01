@@ -520,16 +520,16 @@ with an EIDA default configuration.
             stStr = 'status='
             myStatus = stText[stText.find(stStr) + len(stStr):].split()[0]
             myStatus = myStatus.replace('"', '').replace("'", "")
-            self.logs.debug(myStatus)
+            self.logs.debug(myStatus + '\n')
 
         if myStatus != 'OK':
-            self.logs.error('Error! Request status is not OK.')
+            self.logs.error('Error! Request status is not OK.\n')
             return
 
         tn.write('download %s\n' % reqID)
         routTable = tn.read_until('END', 5)
         start = routTable.find('<')
-        self.logs.info('Length: %s' % routTable[:start])
+        self.logs.info('Length: %s\n' % routTable[:start])
 
         here = os.path.dirname(__file__)
         try:
@@ -552,7 +552,7 @@ with an EIDA default configuration.
         except:
             pass
 
-        self.logs.info('Configuration read from Arclink!')
+        self.logs.info('Configuration read from Arclink!\n')
 
     def __arc2DS(self, route):
         """Map from an Arclink address to a Dataselect one
@@ -641,25 +641,23 @@ information (URLs and parameters) to do the requests to different datacenters
                 # Check for more than one day or updateTime in the past
                 if (((now - self.lastUpd) > datetime.timedelta(days=1)) or
                         (now2lastUpd > upd2lastUpd)):
-                    self.logs.debug('now2lastUpd > upd2lastUpd : %s > %s'
+                    self.logs.debug('now2lastUpd > upd2lastUpd : %s > %s\n'
                             % (now2lastUpd, upd2lastUpd))
-                    self.logs.info('Updating at %s!' % now)
+                    self.logs.info('Updating at %s!\n' % now)
                     self.updateAll()
                     self.lastUpd = now
                     self.logs.debug('Update successful at: %s\n' % self.lastUpd)
-                    #self.nextUpd = self.nextUpd + datetime.timedelta(days=1)
-                    #self.logs.info('Next update at %s!' % self.nextUpdate.isoformat())
             else:
-                self.logs.debug('next update: %s' %
+                self.logs.debug('Next update: %s\n' %
                         self.updTimes[self.nextUpd])
-                self.logs.debug('last update: %s' % lU)
+                self.logs.debug('Last update: %s\n' % lU)
 
                 auxU = min(enumerate([(x - now).total_seconds() % secsDay
                                       for x in self.updTimes]),
                            key=itemgetter(1))[0]
                 if ((auxU != self.nextUpd) or
                         ((now - lU) > datetime.timedelta(days=1))):
-                    self.logs.info('Updating at %s!' % now.isoformat())
+                    self.logs.info('Updating at %s!\n' % now.isoformat())
                     self.updateAll()
                     # and move to the next time
                     self.nextUpd = auxU
@@ -807,7 +805,7 @@ used to translate the Arclink address to Dataselect address
             for r1 in orderedSubs:
                 for r2 in finalset:
                     if r1.overlap(r2):
-                        self.logs.warning('Overlap between %s and %s' %
+                        self.logs.warning('Overlap between %s and %s\n' %
                                           (r1, r2))
                         break
                 else:
@@ -823,12 +821,12 @@ used to translate the Arclink address to Dataselect address
                     rExp = Stream(*rExp)
                     for r3 in finalset:
                         if rExp.overlap(r3):
-                            msg = 'Stream %s discarded! Overlap with %s' % \
+                            msg = 'Stream %s discarded! Overlap with %s\n' % \
                                 (rExp, r3)
                             self.logs.warning(msg)
                             break
                     else:
-                        self.logs.debug('Adding expanded %s' % str(rExp))
+                        self.logs.warning('Adding expanded %s\n' % str(rExp))
                         if (rExp in stream):
                             finalset.add(rExp)
 
@@ -837,7 +835,7 @@ used to translate the Arclink address to Dataselect address
             # In finalset I have all the streams (including expanded and
             # the ones with wildcards), that I need to request.
             # Now I need the URLs
-            self.logs.debug(str(finalset))
+            self.logs.debug(str(finalset) + '\n')
 
             while finalset:
                 st = finalset.pop()
@@ -1157,10 +1155,10 @@ The following table lookup is implemented for the Arclink service::
         # priority. Take the first one!
         while setTW:
             toProc = setTW.pop()
-            self.logs.debug('Processing %s' % str(toProc))
+            self.logs.debug('Processing %s\n' % str(toProc))
             for ro in realRoute:
                 # Check if the timewindow is encompassed in the returned dates
-                self.logs.debug('%s in %s = %s' % (str(toProc),
+                self.logs.debug('%s in %s = %s\n' % (str(toProc),
                                                    str(TW(ro.tw.start,
                                                           ro.tw.end)),
                                                    (toProc in TW(ro.tw.start,
@@ -1170,7 +1168,7 @@ The following table lookup is implemented for the Arclink service::
                     # If the timewindow is not complete then add the missing
                     # ranges to the tw set.
                     for auxTW in toProc.difference(ro.tw):
-                        self.logs.debug('Adding %s' % str(auxTW))
+                        self.logs.debug('Adding %s\n' % str(auxTW))
                         setTW.add(auxTW)
 
                     auxSt, auxEn = toProc.intersection(ro.tw)
@@ -1193,7 +1191,7 @@ The following table lookup is implemented for the Arclink service::
     def updateAll(self):
         """Read the three sources of routing and inventory information"""
 
-        self.logs.debug('Entering updateAll')
+        self.logs.debug('Entering updateAll()\n')
         self.update()
         if self.masterFile is not None:
             self.updateMT()
@@ -1210,7 +1208,7 @@ The following table lookup is implemented for the Arclink service::
 
         """
 
-        self.logs.debug('Entering updateMT')
+        self.logs.debug('Entering updateMT()\n')
         # Just to shorten notation
         ptMT = self.masterTable
 
@@ -1220,7 +1218,7 @@ The following table lookup is implemented for the Arclink service::
         try:
             context = ET.iterparse(self.masterFile, events=("start", "end"))
         except IOError:
-            msg = 'Error: masterTable.xml could not be opened.'
+            msg = 'Error: masterTable.xml could not be opened.\n'
             self.logs.warning(msg)
             return
 
@@ -1232,7 +1230,7 @@ The following table lookup is implemented for the Arclink service::
 
         # Check that it is really an inventory
         if root.tag[-len('routing'):] != 'routing':
-            msg = 'The file parsed seems not to be a routing file (XML).'
+            msg = 'The file parsed seems not to be a routing file (XML).\n'
             self.logs.error(msg)
             return
 
@@ -1315,7 +1313,7 @@ The following table lookup is implemented for the Arclink service::
                                 startD = None
                         except:
                             startD = None
-                            msg = 'Error while converting START attribute.'
+                            msg = 'Error while converting START attribute.\n'
                             self.logs.error(msg)
 
                         # Extract the end datetime
@@ -1339,7 +1337,7 @@ The following table lookup is implemented for the Arclink service::
                                 endD = None
                         except:
                             endD = None
-                            msg = 'Error while converting END attribute.'
+                            msg = 'Error while converting END attribute.\n'
                             self.logs.error(msg)
 
                         # Append the network to the list of networks
@@ -1373,7 +1371,7 @@ The following table lookup is implemented for the Arclink service::
 
         """
 
-        self.logs.debug('Entering update')
+        self.logs.debug('Entering update()\n')
         # Just to shorten notation
         ptRT = self.routingTable
         ptSL = self.slTable
@@ -1504,7 +1502,7 @@ The following table lookup is implemented for the Arclink service::
                                 startD = None
                         except:
                             startD = None
-                            msg = 'Error while converting START attribute.'
+                            msg = 'Error while converting START attribute.\n'
                             self.logs.error(msg)
 
                         # Extract the end datetime
@@ -1521,7 +1519,7 @@ The following table lookup is implemented for the Arclink service::
                                 endD = None
                         except:
                             endD = None
-                            msg = 'Error while converting END attribute.'
+                            msg = 'Error while converting END attribute.\n'
                             self.logs.error(msg)
 
                         # Extract the priority
@@ -1570,7 +1568,7 @@ The following table lookup is implemented for the Arclink service::
                                 startD = None
                         except:
                             startD = None
-                            msg = 'Error while converting START attribute.'
+                            msg = 'Error while converting START attribute.\n'
                             self.logs.error(msg)
 
                         # Extract the end datetime
@@ -1587,7 +1585,7 @@ The following table lookup is implemented for the Arclink service::
                                 endD = None
                         except:
                             endD = None
-                            msg = 'Error while converting END attribute.'
+                            msg = 'Error while converting END attribute.\n'
                             self.logs.error(msg)
 
                         # Extract the priority

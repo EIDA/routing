@@ -757,6 +757,8 @@ Wsgicomm module
 ---------------
 
 .. automodule:: wsgicomm
+   :members:
+   :undoc-members:
 
 .. Indices and tables
    ==================

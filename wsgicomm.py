@@ -21,16 +21,19 @@
 
 """
 
+import sys
 
 class Logs(object):
     """
-:synopsis: Given the log level redirects the output to the proper destination
+:synopsis: Given a log level and a stream, it redirects the output to the
+           proper destination
 :platform: Linux
 
 """
 
-    def __init__(self, level=2):
+    def __init__(self, level=2, outstr=sys.stdout):
         self.setLevel(level)
+        self.outstr = outstr
 
     def setLevel(self, level):
         """Set the level of the log
@@ -57,7 +60,8 @@ class Logs(object):
             self.debug = self.__write
 
     def __write(self, msg):
-        print msg
+        self.outstr.write(msg)
+        self.outstr.flush()
 
     def __pass(self, msg):
         pass
@@ -117,7 +121,7 @@ class WIError(Exception):
 class WIContentError(WIError):
     """
 :synopsis: Exception to signal that no content has been found for the
-           parameters in the request.
+           parameters in the request. (204)
 :platform: Linux
 
 """
@@ -128,7 +132,7 @@ class WIContentError(WIError):
 
 class WIClientError(WIError):
     """
-:synopsis: Exception to signal that an invalid request from client was received
+:synopsis: Exception to signal that an invalid request was received (400)
 :platform: Linux
 
 """
@@ -139,7 +143,7 @@ class WIClientError(WIError):
 
 class WIInternalError(WIError):
     """
-:synopsis: Exception to signal that an internal server error occurred
+:synopsis: Exception to signal that an internal server error occurred (500)
 :platform: Linux
 
 """
@@ -150,7 +154,7 @@ class WIInternalError(WIError):
 
 class WIServiceError(WIError):
     """
-:synopsis: Exception to signal that the service is unavailable
+:synopsis: Exception to signal that the service is unavailable (503)
 :platform: Linux
 
 """
