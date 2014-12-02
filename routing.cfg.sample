@@ -5,7 +5,8 @@ port = 18002
 
 [Service]
 # String that must be returned when the method "config" is called
-info = Routing information from the Arclink Server at GEOFON
+info = Routing information from the Arclink Server at GEOFON.
+   All the routes related to the data in EIDA are supposed to be available here.
 # Time at which the routing and inventory information must be updated
 # updateTime = 01:00 02:00 03:00
 updateTime = 03:00
