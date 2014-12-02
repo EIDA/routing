@@ -715,6 +715,13 @@ Any parameter passed to this method will be ignored.
 Documentation for developers
 ============================
 
+Routing module
+--------------
+
+.. automodule:: routing
+   :members:
+   :undoc-members:
+
 Utils module
 ------------
 

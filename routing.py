@@ -7,12 +7,14 @@
 #
 # ----------------------------------------------------------------------
 
-"""
-.. module:: routing
-   :synopsis: Routing Webservice for EIDA
-   :copyright: GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
-   :license: To be decided!
-   :platform: Linux
+"""Routing Webservice for EIDA
+
+   :Platform:
+       Linux
+   :Copyright:
+       GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
+   :License:
+       To be decided!
 
 .. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
 """
