@@ -1372,6 +1372,44 @@ The following table lookup is implemented for the Arclink service::
         """
 
         self.logs.debug('Entering update()\n')
+
+        # Clear all previous information
+        self.routingTable.clear()
+        self.slTable.clear()
+        self.stTable.clear()
+
+        self.__addRoutes(self.routingFile)
+
+    def addRemote(self, dcid):
+        """Read the routing file from a remote datacenter and add store it in memory.
+
+        All the routing information is read into a dictionary. Only the
+        necessary attributes are stored. This relies on the idea
+        that some other agent should update the routing file at
+        a regular period of time.
+
+        """
+
+        self.logs.debug('Entering update()\n')
+
+        # Clear all previous information
+        self.routingTable.clear()
+        self.slTable.clear()
+        self.stTable.clear()
+
+        self.__addRoutes(self.routingFile)
+
+    def __addRoutes(self, fileName):
+        """Read the routing file in XML format and store it in memory.
+
+        All the routing information is read into a dictionary. Only the
+        necessary attributes are stored. This relies on the idea
+        that some other agent should update the routing file at
+        a regular period of time.
+
+        """
+
+        self.logs.debug('Entering update()\n')
         # Just to shorten notation
         ptRT = self.routingTable
         ptSL = self.slTable
@@ -1381,9 +1419,9 @@ The following table lookup is implemented for the Arclink service::
         # Traverse through the networks
         # get an iterable
         try:
-            context = ET.iterparse(self.routingFile, events=("start", "end"))
+            context = ET.iterparse(fileName, events=("start", "end"))
         except IOError:
-            msg = 'Error: %s could not be opened.' % self.routingFile
+            msg = 'Error: %s could not be opened.' % fileName
             raise Exception(msg)
 
         # turn it into an iterator
@@ -1399,10 +1437,6 @@ The following table lookup is implemented for the Arclink service::
 
         # Extract the namespace from the root node
         namesp = root.tag[:-len('routing')]
-
-        ptRT.clear()
-        ptSL.clear()
-        ptST.clear()
 
         for event, route in context:
             # The tag of this node should be "route".
