@@ -31,6 +31,7 @@ import datetime
 import fnmatch
 import telnetlib
 import xml.etree.cElementTree as ET
+import urllib2
 import ConfigParser
 from time import sleep
 from collections import namedtuple
@@ -411,11 +412,11 @@ class RoutingCache(object):
             self.configArclink()
             self.routingFile = './routing.xml'
 
-        try:
-            self.update()
-        except:
-            self.configArclink()
-            self.update()
+        #try:
+        self.update()
+        #except:
+        #    self.configArclink()
+        #    self.update()
 
         # Add inventory cache here, to be able to expand request if necessary
         self.invFile = invFile
@@ -482,6 +483,8 @@ with an EIDA default configuration.
 
         """
 
+        # Functionality moved away from this module. Check updateAll.py.
+        return
         # Check Arclink server that must be contacted to get a routing table
         config = ConfigParser.RawConfigParser()
 
@@ -1380,24 +1383,94 @@ The following table lookup is implemented for the Arclink service::
 
         self.__addRoutes(self.routingFile)
 
-    def addRemote(self, dcid):
+        # Read the configuration file and checks when do we need to update
+        # the routes
+        config = ConfigParser.RawConfigParser()
+
+        here = os.path.dirname(__file__)
+        config.read(os.path.join(here, 'routing.cfg'))
+        
+        synchroList = ''
+        if 'synchronize' in config.options('Service'):
+            synchroList = config.get('Service', 'synchronize')
+
+        for line in synchroList.splitlines():
+            if not len(line):
+                break
+            self.logs.debug(str(line.split(',')))
+            dcid, url = line.split(',')
+            try:
+                self.__addRemote(dcid.strip(), url.strip())
+            except:
+                msg = 'Failure updating routing information from %s (%s)' % \
+                    (dcid, url)
+                self.logs.error(msg)
+
+    def __addRemote(self, dcid, url):
         """Read the routing file from a remote datacenter and add store it in memory.
 
         All the routing information is read into a dictionary. Only the
         necessary attributes are stored. This relies on the idea
-        that some other agent should update the routing file at
+        that some other agent should update the routing data at
         a regular period of time.
 
         """
 
-        self.logs.debug('Entering update()\n')
+        self.logs.debug('Entering addRemote(%s)\n' % dcid)
 
-        # Clear all previous information
-        self.routingTable.clear()
-        self.slTable.clear()
-        self.stTable.clear()
+        # Prepare Request
+        req = urllib2.Request(url + '/localconfig')
 
-        self.__addRoutes(self.routingFile)
+        blockSize = 4096
+
+        here = os.path.dirname(__file__)
+        fileName = os.path.join(here, 'data', dcid + '.xml.download')
+
+        try:
+            os.remove(fileName)
+        except:
+            pass
+        
+        # Connect to the proper Routing-WS
+        try:
+            u = urllib2.urlopen(req)
+
+            with open(fileName, 'w') as routeExt:
+                # Read the data in blocks of predefined size
+                buf = u.read(blockSize)
+                while len(buf):
+                    self.logs.debug('(%s) %s bytes' % (url, len(buf)))
+                    # Return one block of data
+                    routeExt.write(buf)
+                    buf = u.read(blockSize)
+
+                # Close the connection to avoid overloading the server
+                u.close()
+
+        except urllib2.URLError as e:
+            if hasattr(e, 'reason'):
+                self.logs.error('%s - Reason: %s\n' % (url, e.reason))
+            elif hasattr(e, 'code'):
+                self.logs.error('The server couldn\'t fulfill the')
+                self.logs.error(' request.\nError code: %s\n', e.code)
+
+        name = fileName[:- len('.download')]
+        try:
+            os.remove(name + '.bck')
+        except:
+            pass
+        
+        try:
+            os.rename(name, name + '.bck')
+        except:
+            pass
+        
+        try:
+            os.rename(fileName, name)
+        except:
+            raise Exception('Could not create the final version of %s.xml' % dcid)
+
+        self.__addRoutes(name)
 
     def __addRoutes(self, fileName):
         """Read the routing file in XML format and store it in memory.
@@ -1409,243 +1482,244 @@ The following table lookup is implemented for the Arclink service::
 
         """
 
-        self.logs.debug('Entering update()\n')
+        self.logs.debug('Entering __addRoutes(%s)\n' % fileName)
         # Just to shorten notation
         ptRT = self.routingTable
         ptSL = self.slTable
         ptST = self.stTable
 
-        # Parse the routing file
-        # Traverse through the networks
-        # get an iterable
-        try:
-            context = ET.iterparse(fileName, events=("start", "end"))
-        except IOError:
-            msg = 'Error: %s could not be opened.' % fileName
-            raise Exception(msg)
+        with open(fileName, 'r') as testFile:
+            # Parse the routing file
+            # Traverse through the networks
+            # get an iterable
+            try:
+                context = ET.iterparse(testFile, events=("start", "end"))
+            except IOError:
+                msg = 'Error: %s could not be opened.' % fileName
+                raise Exception(msg)
 
-        # turn it into an iterator
-        context = iter(context)
+            # turn it into an iterator
+            context = iter(context)
 
-        # get the root element
-        event, root = context.next()
+            # get the root element
+            event, root = context.next()
 
-        # Check that it is really an inventory
-        if root.tag[-len('routing'):] != 'routing':
-            msg = 'The file parsed seems not to be an routing file (XML).'
-            raise Exception(msg)
+            # Check that it is really an inventory
+            if root.tag[-len('routing'):] != 'routing':
+                msg = 'The file parsed seems not to be an routing file (XML).'
+                raise Exception(msg)
 
-        # Extract the namespace from the root node
-        namesp = root.tag[:-len('routing')]
+            # Extract the namespace from the root node
+            namesp = root.tag[:-len('routing')]
 
-        for event, route in context:
-            # The tag of this node should be "route".
-            # Now it is not being checked because
-            # we need all the data, but if we need to filter, this
-            # is the place.
-            #
-            if event == "end":
-                if route.tag == namesp + 'route':
+            for event, route in context:
+                # The tag of this node should be "route".
+                # Now it is not being checked because
+                # we need all the data, but if we need to filter, this
+                # is the place.
+                #
+                if event == "end":
+                    if route.tag == namesp + 'route':
 
-                    # Extract the location code
-                    try:
-                        locationCode = route.get('locationCode')
-                        if len(locationCode) == 0:
+                        # Extract the location code
+                        try:
+                            locationCode = route.get('locationCode')
+                            if len(locationCode) == 0:
+                                locationCode = '*'
+                        except:
                             locationCode = '*'
-                    except:
-                        locationCode = '*'
 
-                    # Extract the network code
-                    try:
-                        networkCode = route.get('networkCode')
-                        if len(networkCode) == 0:
+                        # Extract the network code
+                        try:
+                            networkCode = route.get('networkCode')
+                            if len(networkCode) == 0:
+                                networkCode = '*'
+                        except:
                             networkCode = '*'
-                    except:
-                        networkCode = '*'
 
-                    # Extract the station code
-                    try:
-                        stationCode = route.get('stationCode')
-                        if len(stationCode) == 0:
+                        # Extract the station code
+                        try:
+                            stationCode = route.get('stationCode')
+                            if len(stationCode) == 0:
+                                stationCode = '*'
+                        except:
                             stationCode = '*'
-                    except:
-                        stationCode = '*'
 
-                    # Extract the stream code
-                    try:
-                        streamCode = route.get('streamCode')
-                        if len(streamCode) == 0:
+                        # Extract the stream code
+                        try:
+                            streamCode = route.get('streamCode')
+                            if len(streamCode) == 0:
+                                streamCode = '*'
+                        except:
                             streamCode = '*'
-                    except:
-                        streamCode = '*'
 
-                    # Traverse through the sources
-                    for sl in route.findall(namesp + 'seedlink'):
-                        # Extract the address
-                        try:
-                            address = sl.get('address')
-                            if len(address) == 0:
+                        # Traverse through the sources
+                        for sl in route.findall(namesp + 'seedlink'):
+                            # Extract the address
+                            try:
+                                address = sl.get('address')
+                                if len(address) == 0:
+                                    continue
+                            except:
                                 continue
-                        except:
-                            continue
 
-                        # Extract the priority
-                        try:
-                            priority = sl.get('priority')
-                            if len(address) == 0:
+                            # Extract the priority
+                            try:
+                                priority = sl.get('priority')
+                                if len(address) == 0:
+                                    priority = 99
+                                else:
+                                    priority = int(priority)
+                            except:
                                 priority = 99
+
+                            # Append the network to the list of networks
+                            st = Stream(networkCode, stationCode, locationCode,
+                                        streamCode)
+
+                            if st not in ptSL:
+                                ptSL[st] = [Route(address, TW(None, None),
+                                                  priority)]
                             else:
-                                priority = int(priority)
-                        except:
-                            priority = 99
+                                ptSL[st].append(Route(address, TW(None, None),
+                                                      priority))
+                            sl.clear()
 
-                        # Append the network to the list of networks
-                        st = Stream(networkCode, stationCode, locationCode,
-                                    streamCode)
-
-                        if st not in ptSL:
-                            ptSL[st] = [Route(address, TW(None, None),
-                                              priority)]
-                        else:
-                            ptSL[st].append(Route(address, TW(None, None),
-                                                  priority))
-                        sl.clear()
-
-                    # Traverse through the sources
-                    for arcl in route.findall(namesp + 'arclink'):
-                        # Extract the address
-                        try:
-                            address = arcl.get('address')
-                            if len(address) == 0:
+                        # Traverse through the sources
+                        for arcl in route.findall(namesp + 'arclink'):
+                            # Extract the address
+                            try:
+                                address = arcl.get('address')
+                                if len(address) == 0:
+                                    continue
+                            except:
                                 continue
-                        except:
-                            continue
 
-                        try:
-                            startD = arcl.get('start')
-                            if len(startD):
-                                startParts = startD.replace('-', ' ')
-                                startParts = startParts.replace('T', ' ')
-                                startParts = startParts.replace(':', ' ')
-                                startParts = startParts.replace('.', ' ')
-                                startParts = startParts.replace('Z', '')
-                                startParts = startParts.split()
-                                startD = datetime.datetime(*map(int,
-                                                                startParts))
-                            else:
+                            try:
+                                startD = arcl.get('start')
+                                if len(startD):
+                                    startParts = startD.replace('-', ' ')
+                                    startParts = startParts.replace('T', ' ')
+                                    startParts = startParts.replace(':', ' ')
+                                    startParts = startParts.replace('.', ' ')
+                                    startParts = startParts.replace('Z', '')
+                                    startParts = startParts.split()
+                                    startD = datetime.datetime(*map(int,
+                                                                    startParts))
+                                else:
+                                    startD = None
+                            except:
                                 startD = None
-                        except:
-                            startD = None
-                            msg = 'Error while converting START attribute.\n'
-                            self.logs.error(msg)
+                                msg = 'Error while converting START attribute.\n'
+                                self.logs.error(msg)
 
-                        # Extract the end datetime
-                        try:
-                            endD = arcl.get('end')
-                            if len(endD):
-                                endParts = endD.replace('-', ' ')
-                                endParts = endParts.replace('T', ' ')
-                                endParts = endParts.replace(':', ' ')
-                                endParts = endParts.replace('.', ' ')
-                                endParts = endParts.replace('Z', '').split()
-                                endD = datetime.datetime(*map(int, endParts))
-                            else:
+                            # Extract the end datetime
+                            try:
+                                endD = arcl.get('end')
+                                if len(endD):
+                                    endParts = endD.replace('-', ' ')
+                                    endParts = endParts.replace('T', ' ')
+                                    endParts = endParts.replace(':', ' ')
+                                    endParts = endParts.replace('.', ' ')
+                                    endParts = endParts.replace('Z', '').split()
+                                    endD = datetime.datetime(*map(int, endParts))
+                                else:
+                                    endD = None
+                            except:
                                 endD = None
-                        except:
-                            endD = None
-                            msg = 'Error while converting END attribute.\n'
-                            self.logs.error(msg)
+                                msg = 'Error while converting END attribute.\n'
+                                self.logs.error(msg)
 
-                        # Extract the priority
-                        try:
-                            priority = arcl.get('priority')
-                            if len(address) == 0:
+                            # Extract the priority
+                            try:
+                                priority = arcl.get('priority')
+                                if len(address) == 0:
+                                    priority = 99
+                                else:
+                                    priority = int(priority)
+                            except:
                                 priority = 99
+
+                            # Append the network to the list of networks
+                            st = Stream(networkCode, stationCode, locationCode,
+                                        streamCode)
+                            tw = TW(startD, endD)
+
+                            if st not in ptRT:
+                                ptRT[st] = [Route(address, tw, priority)]
                             else:
-                                priority = int(priority)
-                        except:
-                            priority = 99
+                                ptRT[st].append(Route(address, tw, priority))
+                            arcl.clear()
 
-                        # Append the network to the list of networks
-                        st = Stream(networkCode, stationCode, locationCode,
-                                    streamCode)
-                        tw = TW(startD, endD)
-
-                        if st not in ptRT:
-                            ptRT[st] = [Route(address, tw, priority)]
-                        else:
-                            ptRT[st].append(Route(address, tw, priority))
-                        arcl.clear()
-
-                    # Traverse through the sources
-                    for statServ in route.findall(namesp + 'station'):
-                        # Extract the address
-                        try:
-                            address = statServ.get('address')
-                            if len(address) == 0:
+                        # Traverse through the sources
+                        for statServ in route.findall(namesp + 'station'):
+                            # Extract the address
+                            try:
+                                address = statServ.get('address')
+                                if len(address) == 0:
+                                    continue
+                            except:
                                 continue
-                        except:
-                            continue
 
-                        try:
-                            startD = statServ.get('start')
-                            if len(startD):
-                                startParts = startD.replace('-', ' ')
-                                startParts = startParts.replace('T', ' ')
-                                startParts = startParts.replace(':', ' ')
-                                startParts = startParts.replace('.', ' ')
-                                startParts = startParts.replace('Z', '')
-                                startParts = startParts.split()
-                                startD = datetime.datetime(*map(int,
-                                                                startParts))
-                            else:
+                            try:
+                                startD = statServ.get('start')
+                                if len(startD):
+                                    startParts = startD.replace('-', ' ')
+                                    startParts = startParts.replace('T', ' ')
+                                    startParts = startParts.replace(':', ' ')
+                                    startParts = startParts.replace('.', ' ')
+                                    startParts = startParts.replace('Z', '')
+                                    startParts = startParts.split()
+                                    startD = datetime.datetime(*map(int,
+                                                                    startParts))
+                                else:
+                                    startD = None
+                            except:
                                 startD = None
-                        except:
-                            startD = None
-                            msg = 'Error while converting START attribute.\n'
-                            self.logs.error(msg)
+                                msg = 'Error while converting START attribute.\n'
+                                self.logs.error(msg)
 
-                        # Extract the end datetime
-                        try:
-                            endD = statServ.get('end')
-                            if len(endD):
-                                endParts = endD.replace('-', ' ')
-                                endParts = endParts.replace('T', ' ')
-                                endParts = endParts.replace(':', ' ')
-                                endParts = endParts.replace('.', ' ')
-                                endParts = endParts.replace('Z', '').split()
-                                endD = datetime.datetime(*map(int, endParts))
-                            else:
+                            # Extract the end datetime
+                            try:
+                                endD = statServ.get('end')
+                                if len(endD):
+                                    endParts = endD.replace('-', ' ')
+                                    endParts = endParts.replace('T', ' ')
+                                    endParts = endParts.replace(':', ' ')
+                                    endParts = endParts.replace('.', ' ')
+                                    endParts = endParts.replace('Z', '').split()
+                                    endD = datetime.datetime(*map(int, endParts))
+                                else:
+                                    endD = None
+                            except:
                                 endD = None
-                        except:
-                            endD = None
-                            msg = 'Error while converting END attribute.\n'
-                            self.logs.error(msg)
+                                msg = 'Error while converting END attribute.\n'
+                                self.logs.error(msg)
 
-                        # Extract the priority
-                        try:
-                            priority = statServ.get('priority')
-                            if len(address) == 0:
+                            # Extract the priority
+                            try:
+                                priority = statServ.get('priority')
+                                if len(address) == 0:
+                                    priority = 99
+                                else:
+                                    priority = int(priority)
+                            except:
                                 priority = 99
+
+                            # Append the network to the list of networks
+                            st = Stream(networkCode, stationCode, locationCode,
+                                        streamCode)
+                            tw = TW(startD, endD)
+
+                            if st not in ptST:
+                                ptST[st] = [Route(address, tw, priority)]
                             else:
-                                priority = int(priority)
-                        except:
-                            priority = 99
+                                ptST[st].append(Route(address, tw, priority))
+                            statServ.clear()
 
-                        # Append the network to the list of networks
-                        st = Stream(networkCode, stationCode, locationCode,
-                                    streamCode)
-                        tw = TW(startD, endD)
+                        route.clear()
 
-                        if st not in ptST:
-                            ptST[st] = [Route(address, tw, priority)]
-                        else:
-                            ptST[st].append(Route(address, tw, priority))
-                        statServ.clear()
-
-                    route.clear()
-
-                root.clear()
+                    root.clear()
 
         # Order the routes by priority
         for keyDict in ptRT:
