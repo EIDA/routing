@@ -199,13 +199,19 @@ required, there should be nothing at the right side of the ``=`` character.
 `updateRoutes` determines whether the routing information should be updated by
 the `updateAll.py` script. Usually, you want to set it to ``True`` if the
 automatic configuration is the selected one (all the data is read from an
-Arclink server). But if you selected to configure your own set of routes, then
+Arclink server). But if you decided to configure your own set of routes, then
 you should set it to ``False``, so that the update procedure will not delete
 your manual configuration.
 
 `verbosity` controls the amount of output send to the logging system depending
 of the importance of the messages. The levels are: 1) Error, 2) Warning, 3)
 Info and 4) Debug.
+
+`synchronize` specifies the remote servers from which more routes should be
+imported. This is explained in detail in
+:ref:`Importing remote routes<importing_remote_routes>`.
+
+.. _service_configuration:
 
 .. code-block:: ini
 
@@ -214,6 +220,8 @@ Info and 4) Debug.
     updateTime = 01:01 16:58
     updateRoutes = true
     verbosity = 3
+    synchronize = SERVER2, http://server2/eidaws/routing/1
+        SERVER3, http://server3/eidaws/routing/1
 
 Installation problems
 ^^^^^^^^^^^^^^^^^^^^^
@@ -314,10 +322,13 @@ Using the Service
 Default configuration
 ---------------------
 
-The `RoutingCache` class includes a method called ``configArclink``, that
-retrieves the routing information for EIDA from an Arclink Server. The address
-and port of the server are specified in the configuration file
-(``routing.cfg``).
+A script called ``updateAll.py`` is provided in the package, which can be
+found in the ``data`` folder. This script can download the routing and
+inventory information for EIDA from an Arclink Server. All necessary parameters
+will be read from the configuration file (``routing.cfg``). Namely, the
+hostname and port of the Arclink server and also a variable specifying whether
+the routing information should be periodically replaced by the one downloaded
+from Arclink.
 
 When the service starts, checks if there is a file called ``routing.xml`` in
 the ``data`` directory. This file is expected to contain all the information
@@ -340,9 +351,9 @@ The following is an example of an Arclink-XML file.
         </ns0:route>
     </ns0:routing>
 
-If the file is not present, ``configArclink`` is called and the file is created
-with the information provided by the Arclink server. With this information and
-the metadata downloaded by ``updateAll.py`` the service can be started.
+This is exactly one of the two files that the ``updateAll.py`` script creates
+with information from EIDA. With this information and
+the metadata downloaded by the same script the service can be started.
 
 Manual configuration
 --------------------
@@ -402,6 +413,50 @@ information that should be probably synchronized with other Routing Services.
 .. todo:: Test the method to synchronize among the nodes!
 
 
+.. _importing_remote_routes:
+
+Importing remote routes
+-----------------------
+
+In the case case that one datacenter decides to include routes from other
+datacenter, there is no need to define them locally.
+
+A normal use case would be that the datacenter `A` needs to provide routing
+information of datacenters `A` **and** `B` to its users. In order to allow
+datacenter `B` to export its routes, a method called ``localconfig`` is
+defined. This method will return to the caller all the routing information
+locally defined in the ``routing.xml`` file. Every datacenter is free to
+restrict the access to this method to well-known IP addresses or to keep it
+completely open by means of access rules in the web server.
+
+.. todo:: A good idea would be to include these restrictions in the
+          configuration file!
+
+If the datacenter `A` has access to this method, it can import the routes
+automatically by means of the inclusion of the base URL of the service at
+datacenter `B` in the *synchronize* option (under *Service*) of its
+configuration file.
+
+.. code-block:: ini
+
+    [Service]
+    synchronize = DC-B, http://datacenter-b/path/routing/1
+
+When the service in datacenter `A` starts, it will first include all the
+routes defined in ``routing.xml`` and then it will save the routes read from
+http://datacenter-b/path/routing/1/localconfig in a file called ``DC-B.xml``
+under the ``data`` folder. This file will be used for future reference in case
+that all the routes need to be updated and datacenter `B` is not available.
+
+.. todo:: Skip update if datacenter is down and use the old data.
+
+Once the file is saved, all the routes inside it will be added to the routing
+table.
+
+.. todo:: Check for overlap in the routes and decide what to do!
+
+
+
 Methods available
 -----------------
 
@@ -448,6 +503,16 @@ specific behavior based on the `SpecMajor` version, while allowing the extension
 of the service with optional parameters and maintaining backwards compatibility.
 Each version number is service specific, there is no implication that
 `SpecMajor` version numbers across services (from EIDA or FDSN) are related.
+
+Exporting routes
+^^^^^^^^^^^^^^^^
+
+The ``localconfig`` method reads the content of the ``routing.xml`` file and
+returns it when this method is invoked. The MIME type of the returned value is
+`text/xml`.
+
+.. seealso:: :ref:`Importing remote routes <importing_remote_routes>`
+
 
 Querying information
 ^^^^^^^^^^^^^^^^^^^^
