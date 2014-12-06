@@ -149,7 +149,7 @@ class RouteCacheTests(unittest.TestCase):
         except:
             raise Exception('Error retrieving data for RO.BZS.*.BHZ')
 
-        expected = '[{"url": "http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query", "params": [{"loc": "*", "end": "", "sta": "BZS", "cha": "BHZ", "priority": 2, "start": "1980-01-01T00:00:00", "net": "RO"}], "name": "dataselect"}]'
+        expected = '[{"url": "http://eida-sc3.infp.ro/fdsnws/dataselect/1/query", "params": [{"loc": "*", "end": "", "sta": "BZS", "cha": "BHZ", "priority": 1, "start": "1980-01-01T00:00:00", "net": "RO"}], "name": "dataselect"}]'
 
         numErrors = 0
         errors = []

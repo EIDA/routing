@@ -127,7 +127,7 @@ class RouteCacheTests(unittest.TestCase):
     def testDS_RO_BZS_BHZ(self):
         "Dataselect RO.BZS.*.BHZ"
 
-        expURL = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
+        expURL = 'http://eida-sc3.infp.ro/fdsnws/dataselect/1/query'
         result = self.rc.getRoute('RO', 'BZS', '*', 'BHZ')
         self.assertIsInstance(result, RequestMerge,
                               'A RequestMerge object was expected!')
