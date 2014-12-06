@@ -1407,12 +1407,16 @@ The following table lookup is implemented for the Arclink service::
                 self.logs.error(msg)
 
     def __addRemote(self, dcid, url):
-        """Read the routing file from a remote datacenter and add store it in memory.
+        """Read the routing file from a remote datacenter and store it in memory.
 
         All the routing information is read into a dictionary. Only the
-        necessary attributes are stored. This relies on the idea
-        that some other agent should update the routing data at
-        a regular period of time.
+        necessary attributes are stored.
+
+        :param dcid: Datacenter ID
+        :type dcid: str
+        :param url: Base URL from the Routing Service at the remote datacenter
+        :type url: str
+        :raise: Exception
 
         """
 
@@ -1480,6 +1484,8 @@ The following table lookup is implemented for the Arclink service::
         that some other agent should update the routing file at
         a regular period of time.
 
+        :param fileName: File with routes to add the the routing table.
+        :type fileName: str
         """
 
         self.logs.debug('Entering __addRoutes(%s)\n' % fileName)
@@ -1645,10 +1651,10 @@ The following table lookup is implemented for the Arclink service::
                                         streamCode)
                             tw = TW(startD, endD)
 
-                            if st not in ptRT:
-                                ptRT[st] = [Route(address, tw, priority)]
-                            else:
+                            try:
                                 ptRT[st].append(Route(address, tw, priority))
+                            except KeyError:
+                                ptRT[st] = [Route(address, tw, priority)]
                             arcl.clear()
 
                         # Traverse through the sources
