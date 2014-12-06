@@ -1583,12 +1583,12 @@ The following table lookup is implemented for the Arclink service::
                             st = Stream(networkCode, stationCode, locationCode,
                                         streamCode)
 
-                            if st not in ptSL:
-                                ptSL[st] = [Route(address, TW(None, None),
-                                                  priority)]
-                            else:
+                            try:
                                 ptSL[st].append(Route(address, TW(None, None),
                                                       priority))
+                            except KeyError:
+                                ptSL[st] = [Route(address, TW(None, None),
+                                                  priority)]
                             sl.clear()
 
                         # Traverse through the sources
@@ -1717,10 +1717,10 @@ The following table lookup is implemented for the Arclink service::
                                         streamCode)
                             tw = TW(startD, endD)
 
-                            if st not in ptST:
-                                ptST[st] = [Route(address, tw, priority)]
-                            else:
+                            try:
                                 ptST[st].append(Route(address, tw, priority))
+                            except KeyError:
+                                ptST[st] = [Route(address, tw, priority)]
                             statServ.clear()
 
                         route.clear()
