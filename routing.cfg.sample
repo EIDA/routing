@@ -16,3 +16,9 @@ updateRoutes = true
 # Verbosity of the logging system
 # 1: Error, 2: Warning, 3: Info, 4: Debug
 verbosity = 3
+# Servers with routes to be imported (name, url)
+synchronize = SERVER2, http://localhost/eidaws/routing/2
+# Can overlapping routes be saved in the routing table?
+# If yes, the Arclink-inventory.xml must be used to expand the routes and
+# produce a coherent response.
+allowoverlap = true

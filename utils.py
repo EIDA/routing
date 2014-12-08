@@ -1393,6 +1393,9 @@ The following table lookup is implemented for the Arclink service::
         synchroList = ''
         if 'synchronize' in config.options('Service'):
             synchroList = config.get('Service', 'synchronize')
+            # Make a copy of the local data to check overlapping with the
+            # routes imported from remote servers
+            self._localData = self.routingTable.copy()
 
         for line in synchroList.splitlines():
             if not len(line):
@@ -1405,6 +1408,11 @@ The following table lookup is implemented for the Arclink service::
                 msg = 'Failure updating routing information from %s (%s)' % \
                     (dcid, url)
                 self.logs.error(msg)
+
+        try:
+            del self._localData
+        except:
+            pass
 
     def __addRemote(self, dcid, url):
         """Read the routing file from a remote datacenter and store it in memory.
@@ -1493,6 +1501,18 @@ The following table lookup is implemented for the Arclink service::
         ptRT = self.routingTable
         ptSL = self.slTable
         ptST = self.stTable
+
+        # Read the configuration file and checks when do we need to update
+        # the routes
+        config = ConfigParser.RawConfigParser()
+
+        here = os.path.dirname(__file__)
+        config.read(os.path.join(here, 'routing.cfg'))
+        
+        if 'allowoverlap' in config.options('Service'):
+            allowOverlap = config.getboolean('Service', 'allowoverlap')
+        else:
+            allowOverlap = False
 
         with open(fileName, 'r') as testFile:
             # Parse the routing file
@@ -1652,6 +1672,29 @@ The following table lookup is implemented for the Arclink service::
                             tw = TW(startD, endD)
 
                             try:
+                                # Check if there is a copy of the local routing
+                                # table to verify the coherency of the routes
+                                # to import
+                                if hasattr(self, '_localData'):
+                                    msg = 'Checking overlapping with %s local routes' \
+                                        % len(self._localData)
+                                    self.logs.debug(msg)
+                                    # Check overlap between the new route and
+                                    # the local ones
+                                    for testStr in self._localData.keys():
+                                        self.logs.debug('%s vs %s' % (st, testStr))
+                                        # FIXME This should be replace by the
+                                        # overlap function of Stream! (not
+                                        # Route)
+                                        if st.overlap(testStr):
+
+                                            msg = 'Overlap between %s and %s!' \
+                                                % (st, testStr)
+                                            self.logs.error(msg)
+                                            if not allowOverlap:
+                                                msg = 'Overlap detected!'
+                                                raise Exception(msg)
+
                                 ptRT[st].append(Route(address, tw, priority))
                             except KeyError:
                                 ptRT[st] = [Route(address, tw, priority)]
