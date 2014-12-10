@@ -4,47 +4,54 @@ import os
 import sys
 import ConfigParser
 import telnetlib
+import json
 from time import sleep
 
+sys.path.append('..')
 
-class Logs(object):
-    """
-:synopsis: Given the log level redirects the output to the proper destination
-:platform: Linux
+from utils import addRemote
+from utils import addRoutes
+from wsgicomm import Logs
 
-"""
 
-    def __init__(self, level=2):
-        self.setLevel(level)
-
-    def setLevel(self, level):
-        """Set the level of the log
-
-:param level: Log level (1: Error, 2: Warning, 3: Info, 4: Debug)
-:type level: int
-
-        """
-
-        # Remap the functions in agreement with the output level
-        # Default values are the following
-        self.error = self.__write
-        self.warning = self.__write
-        self.info = self.__pass
-        self.debug = self.__pass
-
-        if level >= 2:
-            self.warning = self.__write
-        if level >= 3:
-            self.info = self.__write
-        if level >= 4:
-            self.debug = self.__write
-
-    def __write(self, msg):
-        sys.stdout.write(msg)
-        sys.stdout.flush()
-
-    def __pass(self, msg):
-        pass
+#class Logs(object):
+#    """
+#:synopsis: Given the log level redirects the output to the proper destination
+#:platform: Linux
+#
+#"""
+#
+#    def __init__(self, level=2):
+#        self.setLevel(level)
+#
+#    def setLevel(self, level):
+#        """Set the level of the log
+#
+#:param level: Log level (1: Error, 2: Warning, 3: Info, 4: Debug)
+#:type level: int
+#
+#        """
+#
+#        # Remap the functions in agreement with the output level
+#        # Default values are the following
+#        self.error = self.__write
+#        self.warning = self.__write
+#        self.info = self.__pass
+#        self.debug = self.__pass
+#
+#        if level >= 2:
+#            self.warning = self.__write
+#        if level >= 3:
+#            self.info = self.__write
+#        if level >= 4:
+#            self.debug = self.__write
+#
+#    def __write(self, msg):
+#        sys.stdout.write(msg)
+#        sys.stdout.flush()
+#
+#    def __pass(self, msg):
+#        pass
 
 
 def getArcRoutes(arcServ='eida.gfz-potsdam.de', arcPort=18001):
@@ -251,7 +258,33 @@ start operating with an EIDA default configuration.
     logs.info('\nInventory read from Arclink!\n')
 
 
+def checkOverlap(synchroList, logs=Logs(2)):
+    ptRT, ptSL, ptST = addRoutes('./routing.xml')
+
+    for line in synchroList.splitlines():
+        if not len(line):
+            break
+        logs.debug(str(line.split(',')))
+        dcid, url = line.split(',')
+        try:
+            addRemote('./' + dcid.strip() + '.xml', url.strip(), logs)
+        except:
+            msg = 'Failure updating routing information from %s (%s)' % \
+                (dcid, url)
+            logs.error(msg)
+
+        ptRT, ptSL, ptST = addRoutes('./' + dcid.strip() + '.xml', ptRT, ptSL,
+                                     ptST, logs)
+
+    with open('./routing.bin', 'wb') as finalRoutes:
+        finalRoutes.write(json.dumps(ptRT, ptSL, ptST))
+        logs.info('Routes in main Routing Table: %s\n' % len(ptRT))
+        logs.info('Routes in Station Routing Table: %s\n' % len(ptST))
+        logs.info('Routes in Seedlink Routing Table: %s\n' % len(ptSL))
+
 def main():
+    logs = Logs(4)
+
     # Check Arclink server that must be contacted to get a routing table
     config = ConfigParser.RawConfigParser()
 
@@ -265,6 +298,12 @@ def main():
     else:
         print 'Skipping routing information. Config file does not allow to ' \
             + 'overwrite the information. (../routing.cfg)'
+
+    synchroList = ''
+    if 'synchronize' in config.options('Service'):
+        synchroList = config.get('Service', 'synchronize')
+
+    checkOverlap(synchroList, logs)
 
     getArcInv(arcServ, arcPort)
 

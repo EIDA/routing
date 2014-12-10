@@ -41,6 +41,395 @@ from inventorycache import InventoryCache
 from wsgicomm import Logs
 
 
+def checkOverlap(str1, routeList, str2, route, logs=Logs(2)):
+    if str1.overlap(str2):
+        for auxRoute in routeList:
+            if auxRoute.overlap(route):
+                return True
+
+    return False
+
+
+def addRoutes(fileName, ptRT=dict(), ptSL=dict(), ptST=dict(), logs=Logs(2)):
+    """Read the routing file in XML format and store it in memory.
+
+    All the routing information is read into a dictionary. Only the
+    necessary attributes are stored. This relies on the idea
+    that some other agent should update the routing file at
+    a regular period of time.
+
+    :param fileName: File with routes to add the the routing table.
+    :type fileName: str
+    """
+
+    logs.debug('Entering addRoutes(%s)\n' % fileName)
+
+    # Read the configuration file and checks when do we need to update
+    # the routes
+    config = ConfigParser.RawConfigParser()
+
+    here = os.path.dirname(__file__)
+    config.read(os.path.join(here, 'routing.cfg'))
+
+    if 'allowoverlap' in config.options('Service'):
+        allowOverlap = config.getboolean('Service', 'allowoverlap')
+    else:
+        allowOverlap = False
+
+    with open(fileName, 'r') as testFile:
+        # Parse the routing file
+        # Traverse through the networks
+        # get an iterable
+        try:
+            context = ET.iterparse(testFile, events=("start", "end"))
+        except IOError:
+            msg = 'Error: %s could not be opened.' % fileName
+            raise Exception(msg)
+
+        # turn it into an iterator
+        context = iter(context)
+
+        # get the root element
+        event, root = context.next()
+
+        # Check that it is really an inventory
+        if root.tag[-len('routing'):] != 'routing':
+            msg = 'The file parsed seems not to be an routing file (XML).'
+            raise Exception(msg)
+
+        # Extract the namespace from the root node
+        namesp = root.tag[:-len('routing')]
+
+        for event, route in context:
+            # The tag of this node should be "route".
+            # Now it is not being checked because
+            # we need all the data, but if we need to filter, this
+            # is the place.
+            #
+            if event == "end":
+                if route.tag == namesp + 'route':
+
+                    # Extract the location code
+                    try:
+                        locationCode = route.get('locationCode')
+                        if len(locationCode) == 0:
+                            locationCode = '*'
+                    except:
+                        locationCode = '*'
+
+                    # Extract the network code
+                    try:
+                        networkCode = route.get('networkCode')
+                        if len(networkCode) == 0:
+                            networkCode = '*'
+                    except:
+                        networkCode = '*'
+
+                    # Extract the station code
+                    try:
+                        stationCode = route.get('stationCode')
+                        if len(stationCode) == 0:
+                            stationCode = '*'
+                    except:
+                        stationCode = '*'
+
+                    # Extract the stream code
+                    try:
+                        streamCode = route.get('streamCode')
+                        if len(streamCode) == 0:
+                            streamCode = '*'
+                    except:
+                        streamCode = '*'
+
+                    # Traverse through the sources
+                    for sl in route.findall(namesp + 'seedlink'):
+                        # Extract the address
+                        try:
+                            address = sl.get('address')
+                            if len(address) == 0:
+                                continue
+                        except:
+                            continue
+
+                        # Extract the priority
+                        try:
+                            priority = sl.get('priority')
+                            if len(address) == 0:
+                                priority = 99
+                            else:
+                                priority = int(priority)
+                        except:
+                            priority = 99
+
+                        # Append the network to the list of networks
+                        st = Stream(networkCode, stationCode, locationCode,
+                                    streamCode)
+
+                        try:
+                            ptSL[st].append(Route(address, TW(None, None),
+                                                  priority))
+                        except KeyError:
+                            ptSL[st] = [Route(address, TW(None, None),
+                                              priority)]
+                        sl.clear()
+
+                    # Traverse through the sources
+                    for arcl in route.findall(namesp + 'arclink'):
+                        # Extract the address
+                        try:
+                            address = arcl.get('address')
+                            if len(address) == 0:
+                                continue
+                        except:
+                            continue
+
+                        try:
+                            startD = arcl.get('start')
+                            if len(startD):
+                                startParts = startD.replace('-', ' ')
+                                startParts = startParts.replace('T', ' ')
+                                startParts = startParts.replace(':', ' ')
+                                startParts = startParts.replace('.', ' ')
+                                startParts = startParts.replace('Z', '')
+                                startParts = startParts.split()
+                                startD = datetime.datetime(*map(int,
+                                                                startParts))
+                            else:
+                                startD = None
+                        except:
+                            startD = None
+                            msg = 'Error while converting START attribute\n'
+                            logs.error(msg)
+
+                        # Extract the end datetime
+                        try:
+                            endD = arcl.get('end')
+                            if len(endD):
+                                endParts = endD.replace('-', ' ')
+                                endParts = endParts.replace('T', ' ')
+                                endParts = endParts.replace(':', ' ')
+                                endParts = endParts.replace('.', ' ')
+                                endParts = endParts.replace('Z', '').split()
+                                endD = datetime.datetime(*map(int,
+                                                              endParts))
+                            else:
+                                endD = None
+                        except:
+                            endD = None
+                            msg = 'Error while converting END attribute.\n'
+                            logs.error(msg)
+
+                        # Extract the priority
+                        try:
+                            priority = arcl.get('priority')
+                            if len(address) == 0:
+                                priority = 99
+                            else:
+                                priority = int(priority)
+                        except:
+                            priority = 99
+
+                        # Append the network to the list of networks
+                        st = Stream(networkCode, stationCode, locationCode,
+                                    streamCode)
+                        tw = TW(startD, endD)
+
+                        try:
+                            # Check if there is a copy of the local routing
+                            # table to verify the coherency of the routes
+                            # to import
+                            # Check overlap between the new route and
+                            # the local ones
+                            addIt = True
+                            logs.debug('Checking %s\n' % str(st))
+                            for testStr in ptRT.keys():
+                                # FIXME This should be replace by the
+                                # overlap function of Stream! (not
+                                # Route)
+                                if checkOverlap(testStr, ptRT[testStr], st,
+                                                Route(address, tw, priority)):
+                                    msg = '%s: Overlap between %s and %s!\n'\
+                                        % (fileName, st, testStr)
+                                    logs.error(msg)
+                                    if not allowOverlap:
+                                        logs.error('Skipping %s\n' % str(st))
+                                        addIt = False
+                                    break
+
+                            if addIt:
+                                ptRT[st].append(Route(address, tw, priority))
+                            else:
+                                logs.warning('Skip %s - %s\n' %
+                                             (st, Route(address, tw,
+                                                        priority)))
+
+                        except KeyError:
+                            ptRT[st] = [Route(address, tw, priority)]
+                        arcl.clear()
+
+                    # Traverse through the sources
+                    for statServ in route.findall(namesp + 'station'):
+                        # Extract the address
+                        try:
+                            address = statServ.get('address')
+                            if len(address) == 0:
+                                continue
+                        except:
+                            continue
+
+                        try:
+                            startD = statServ.get('start')
+                            if len(startD):
+                                startParts = startD.replace('-', ' ')
+                                startParts = startParts.replace('T', ' ')
+                                startParts = startParts.replace(':', ' ')
+                                startParts = startParts.replace('.', ' ')
+                                startParts = startParts.replace('Z', '')
+                                startParts = startParts.split()
+                                startD = datetime.datetime(*map(int,
+                                                                startParts))
+                            else:
+                                startD = None
+                        except:
+                            startD = None
+                            msg = 'Error while converting START attribute\n'
+                            logs.error(msg)
+
+                        # Extract the end datetime
+                        try:
+                            endD = statServ.get('end')
+                            if len(endD):
+                                endParts = endD.replace('-', ' ')
+                                endParts = endParts.replace('T', ' ')
+                                endParts = endParts.replace(':', ' ')
+                                endParts = endParts.replace('.', ' ')
+                                endParts = endParts.replace('Z', '').split()
+                                endD = datetime.datetime(*map(int, endParts))
+                            else:
+                                endD = None
+                        except:
+                            endD = None
+                            msg = 'Error while converting END attribute.\n'
+                            logs.error(msg)
+
+                        # Extract the priority
+                        try:
+                            priority = statServ.get('priority')
+                            if len(address) == 0:
+                                priority = 99
+                            else:
+                                priority = int(priority)
+                        except:
+                            priority = 99
+
+                        # Append the network to the list of networks
+                        st = Stream(networkCode, stationCode, locationCode,
+                                    streamCode)
+                        tw = TW(startD, endD)
+
+                        try:
+                            ptST[st].append(Route(address, tw, priority))
+                        except KeyError:
+                            ptST[st] = [Route(address, tw, priority)]
+                        statServ.clear()
+
+                    route.clear()
+
+                root.clear()
+
+    # Order the routes by priority
+    for keyDict in ptRT:
+        ptRT[keyDict] = sorted(ptRT[keyDict])
+
+    # Order the routes by priority
+    for keyDict in ptSL:
+        ptSL[keyDict] = sorted(ptSL[keyDict])
+
+    # Order the routes by priority
+    for keyDict in ptST:
+        ptST[keyDict] = sorted(ptST[keyDict])
+
+    return (ptRT, ptSL, ptST)
+
+
+def addRemote(fileName, url, logs=Logs(2)):
+    """Read the routing file from a remote datacenter and store it in memory.
+
+    All the routing information is read into a dictionary. Only the
+    necessary attributes are stored.
+
+    :param dcid: Datacenter ID
+    :type dcid: str
+    :param url: Base URL from the Routing Service at the remote datacenter
+    :type url: str
+    :raise: Exception
+
+    """
+
+    logs.debug('Entering addRemote(%s)\n' %
+               os.path.basename(fileName))
+
+    # Prepare Request
+    req = urllib2.Request(url + '/localconfig')
+
+    blockSize = 4096
+
+    #here = os.path.dirname(__file__)
+    #fileName = os.path.join(here, 'data', dcid + '.xml.download')
+
+    fileName = fileName + '.download'
+
+    try:
+        os.remove(fileName)
+        logs.debug('Successfully removed %s\n' % fileName)
+    except:
+        pass
+
+    # Connect to the proper Routing-WS
+    try:
+        u = urllib2.urlopen(req)
+
+        with open(fileName, 'w') as routeExt:
+            logs.debug('%s opened\n%s:' % (fileName, url))
+            # Read the data in blocks of predefined size
+            buf = u.read(blockSize)
+            while len(buf):
+                logs.debug('.')
+                # Return one block of data
+                routeExt.write(buf)
+                buf = u.read(blockSize)
+
+            # Close the connection to avoid overloading the server
+            u.close()
+
+    except urllib2.URLError as e:
+        if hasattr(e, 'reason'):
+            logs.error('%s - Reason: %s\n' % (url, e.reason))
+        elif hasattr(e, 'code'):
+            logs.error('The server couldn\'t fulfill the')
+            logs.error(' request.\nError code: %s\n', e.code)
+
+    name = fileName[:- len('.download')]
+    try:
+        os.remove(name + '.bck')
+        logs.debug('Successfully removed %s\n' % (name + '.bck'))
+    except:
+        pass
+
+    try:
+        os.rename(name, name + '.bck')
+        logs.debug('Successfully renamed %s to %s.bck\n' % (name, name))
+    except:
+        pass
+
+    try:
+        os.rename(fileName, name)
+        logs.debug('Successfully renamed %s to %s\n' % (fileName, name))
+    except:
+        raise Exception('Could not create the final version of %s.xml' %
+                        os.path.basename(fileName))
+
+
 class RequestMerge(list):
     """
 :synopsis: Extend a list to group automatically by datacenter the information
@@ -52,12 +441,12 @@ class RequestMerge(list):
 
     def append(self, service, url, priority, stream, start=None,
                end=None):
-        """Append a new :class:`~Route` to the list without repeating the datacenter.
+        """Append a new :class:`~Route` without repeating the datacenter.
 
 Overrides the *append* method of the inherited list. If another route for the
 datacenter was already added, the remaining attributes are appended in
-*params* for the datacenter. If this is the first :class:`~Route` for the datacenter,
-everything is added.
+*params* for the datacenter. If this is the first :class:`~Route` for the
+datacenter, everything is added.
 
 :param service: Service name (f.i., 'dataselect')
 :type service: str
@@ -111,13 +500,13 @@ the parameters. This overrides the *index* method of the inherited list.
         raise ValueError()
 
     def extend(self, listReqM):
-        """Append all the items in the list of :class:`~RequestMerge` without repeating
-the datacenter.
+        """Append all the items in the list of :class:`~RequestMerge` without
+repeating the datacenter.
 
 Overrides the *extend* method of the inherited list. If another route for the
 datacenter was already added, the remaining attributes are appended in
-*params* for the datacenter. If this is the first :class:`~Route` for the datacenter,
-everything is added.
+*params* for the datacenter. If this is the first :class:`~Route` for the
+datacenter, everything is added.
 
 :param listReqM: Requests from (posibly) different datacenters to be added
 :type listReqM: list of :class:`~RequestMerge`
@@ -143,11 +532,11 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
     def __contains__(self, st):
         """Check if one Stream is contained in this Stream.
 
-        :param st: Stream which should checked for overlapping
-        :type st: :class:`~Stream`
-        :returns: Value specifying whether the given stream is contained in this one
-        :rtype: Bool
-        """
+:param st: Stream which should checked for overlapping
+:type st: :class:`~Stream`
+:returns: Value specifying whether the given stream is contained in this one
+:rtype: Bool
+"""
 
         if (fnmatch.fnmatch(st.n, self.n) and
                 fnmatch.fnmatch(st.s, self.s) and
@@ -161,12 +550,12 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
         """Returns a new Stream with a *reduction* of this one to force the
         matching of the specification received as an input.
 
-        :param other: :class:`~Stream` which should checked for overlapping
-        :type other: :class:`~Stream`
-        :returns: *reduced* version of this stream to match the one passed in
-                  the parameter
-        :rtype: :class:`~Stream`
-        """
+:param other: :class:`~Stream` which should checked for overlapping
+:type other: :class:`~Stream`
+:returns: *reduced* version of this stream to match the one passed in
+          the parameter
+:rtype: :class:`~Stream`
+"""
 
         res = list()
         for i in range(len(other)):
@@ -180,12 +569,12 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
     def overlap(self, other):
         """Checks if there is an overlap between this stream and other one
 
-        :param other: :class:`~Stream` which should be checked for overlapping
-        :type other: :class:`~Stream`
-        :returns: Value specifying whether there is an overlap between this
-                  stream and the one in the parameter
-        :rtype: Bool
-        """
+:param other: :class:`~Stream` which should be checked for overlapping
+:type other: :class:`~Stream`
+:returns: Value specifying whether there is an overlap between this
+          stream and the one in the parameter
+:rtype: Bool
+"""
 
         for i in range(len(other)):
             if ((self[i] is not None) and (other[i] is not None) and
@@ -204,21 +593,22 @@ class TW(namedtuple('TW', ['start', 'end'])):
     __slots__ = ()
 
     # FIXME Should we rename this method to "overlap"?
-    def __contains__(self, otherTW):
+    #def __contains__(self, otherTW):
+    def overlap(self, otherTW):
         """Check if other TW is contained in this TW.
 
-        :param otherTW: timewindow which should be checked for overlapping
-        :type otherTW: :class:`~TW`
-        :returns: Value specifying whether there is an overlap between this
-                  timewindow and the one in the parameter
-        :rtype: Bool
+:param otherTW: timewindow which should be checked for overlapping
+:type otherTW: :class:`~TW`
+:returns: Value specifying whether there is an overlap between this
+          timewindow and the one in the parameter
+:rtype: Bool
 
-        .. example:: If a < b < c < d:
-                     TW(b, c) in TW(a, d) ==> True
-                     TW(a, c) in TW(b, d) ==> True
-                     TW(a, d) in TW(b, c) ==> True
-                     TW(a, b) in TW(c, d) ==> False
-        """
+.. example:: If a < b < c < d:
+             TW(b, c) in TW(a, d) ==> True
+             TW(a, c) in TW(b, d) ==> True
+             TW(a, d) in TW(b, c) ==> True
+             TW(a, b) in TW(c, d) ==> False
+"""
 
         # Trivial case. otherTW goes from the beginning of time till the end
         if otherTW.start is None and otherTW.end is None:
@@ -251,12 +641,12 @@ class TW(namedtuple('TW', ['start', 'end'])):
         return the result in a list of TW. This does not modify the data in
         the current timewindow.
 
-        :param otherTW: timewindow which should be substracted from this one
-        :type otherTW: :class:`~TW`
-        :returns: Difference between this timewindow and the one in the
-                  parameter
-        :rtype: list of :class:`~TW`
-        """
+:param otherTW: timewindow which should be substracted from this one
+:type otherTW: :class:`~TW`
+:returns: Difference between this timewindow and the one in the
+          parameter
+:rtype: list of :class:`~TW`
+"""
 
         result = []
 
@@ -278,12 +668,12 @@ class TW(namedtuple('TW', ['start', 'end'])):
         """Calculate the intersection between this TW and the one in the
         parameter. This does not modify the data in the current timewindow.
 
-        :param otherTW: timewindow which should be intersected with this one
-        :type otherTW: :class:`~TW`
-        :returns: Intersection between this timewindow and the one in the
-                  parameter
-        :rtype: :class:`~TW`
-        """
+:param otherTW: timewindow which should be intersected with this one
+:type otherTW: :class:`~TW`
+:returns: Intersection between this timewindow and the one in the
+          parameter
+:rtype: :class:`~TW`
+"""
 
         resSt = None
         resEn = None
@@ -309,12 +699,17 @@ class TW(namedtuple('TW', ['start', 'end'])):
 
 class Route(namedtuple('Route', ['address', 'tw', 'priority'])):
     """
-:synopsis: Namedtuple including the information to define a :class:`~Route` (a URL, a
-           timewindow and a priority)
+:synopsis: Namedtuple including the information to define a :class:`~Route`
+           (a URL, a timewindow and a priority)
 :platform: Any
     """
 
     __slots__ = ()
+
+    def overlap(self, otherRoute):
+        if self.priority == otherRoute.priority:
+            return self.tw.overlap(otherRoute.tw)
+        return False
 
     def __contains__(self, pointTime):
         raise Exception('This should not be used! Switch to the TW method!')
@@ -381,16 +776,16 @@ class RoutingCache(object):
     def __init__(self, routingFile, invFile, masterFile=None, logs=Logs(2)):
         """RoutingCache constructor
 
-        :param routingFile: XML file with routing information
-        :type routingFile: str
-        :param invFile: XML file with full inventory information
-        :type invFile: str
-        :param masterFile: XML file with high priority routes at network level
-        :type masterFile: str
-        :param logs: Class providing the methods: error/warning/info/debug
-        :type logs: for instance, :class:`~wsgicomm.Logs`
+:param routingFile: XML file with routing information
+:type routingFile: str
+:param invFile: XML file with full inventory information
+:type invFile: str
+:param masterFile: XML file with high priority routes at network level
+:type masterFile: str
+:param logs: Class providing the methods: error/warning/info/debug
+:type logs: for instance, :class:`~wsgicomm.Logs`
 
-        """
+"""
 
         # Save the logging object
         self.logs = logs
@@ -461,10 +856,10 @@ class RoutingCache(object):
     def localConfig(self):
         """Returns the local routing configuration
 
-        :returns: Local routing information in Arclink-XML format
-        :rtype: str
+:returns: Local routing information in Arclink-XML format
+:rtype: str
 
-        """
+"""
 
         with open(self.routingFile) as f:
             return f.read()
@@ -472,8 +867,8 @@ class RoutingCache(object):
     def configArclink(self):
         """Connects via telnet to an Arclink server to get routing information.
 The address and port of the server are read from ``routing.cfg``.
-The data is saved in the file ``routing.xml``. Generally used to start operating
-with an EIDA default configuration.
+The data is saved in the file ``routing.xml``. Generally used to start
+operating with an EIDA default configuration.
 
 .. note::
 
@@ -645,14 +1040,15 @@ information (URLs and parameters) to do the requests to different datacenters
                 if (((now - self.lastUpd) > datetime.timedelta(days=1)) or
                         (now2lastUpd > upd2lastUpd)):
                     self.logs.debug('now2lastUpd > upd2lastUpd : %s > %s\n'
-                            % (now2lastUpd, upd2lastUpd))
+                                    % (now2lastUpd, upd2lastUpd))
                     self.logs.info('Updating at %s!\n' % now)
                     self.updateAll()
                     self.lastUpd = now
-                    self.logs.debug('Update successful at: %s\n' % self.lastUpd)
+                    self.logs.debug('Update successful at: %s\n' %
+                                    self.lastUpd)
             else:
                 self.logs.debug('Next update: %s\n' %
-                        self.updTimes[self.nextUpd])
+                                self.updTimes[self.nextUpd])
                 self.logs.debug('Last update: %s\n' % lU)
 
                 auxU = min(enumerate([(x - now).total_seconds() % secsDay
@@ -882,9 +1278,9 @@ used to translate the Arclink address to Dataselect address
         return result
 
     def getRouteMaster(self, n, tw, service='dataselect', alternative=False):
-        """Looks for a high priority :class:`~Route` for a particular network This would
-provide the flexibility to incorporate new networks and override the normal
-configuration.
+        """Looks for a high priority :class:`~Route` for a particular network.
+This would provide the flexibility to incorporate new networks and override
+the normal configuration.
 
 :param n: Network code
 :type n: str
@@ -930,10 +1326,10 @@ configuration.
         return result2
 
     def getRouteSL(self, stream, alternative):
-        """Based on a :class:`~Stream` returns all the neccessary information (URLs
-and parameters) to connect to a Seedlink server shipping real-time information
-of the specified streams. This method implements the following table lookup
-for the Seedlink service::
+        """Based on a :class:`~Stream` returns all the neccessary information
+(URLs and parameters) to connect to a Seedlink server shipping real-time
+information of the specified streams. This method implements the following
+table lookup for the Seedlink service::
 
                 01 NET STA CHA LOC
                 02 NET STA CHA ---
@@ -1162,10 +1558,11 @@ The following table lookup is implemented for the Arclink service::
             for ro in realRoute:
                 # Check if the timewindow is encompassed in the returned dates
                 self.logs.debug('%s in %s = %s\n' % (str(toProc),
-                                                   str(TW(ro.tw.start,
-                                                          ro.tw.end)),
-                                                   (toProc in TW(ro.tw.start,
-                                                                 ro.tw.end))))
+                                                     str(TW(ro.tw.start,
+                                                            ro.tw.end)),
+                                                     (toProc in
+                                                      TW(ro.tw.start,
+                                                         ro.tw.end))))
                 if (toProc in ro.tw):
 
                     # If the timewindow is not complete then add the missing
@@ -1389,7 +1786,7 @@ The following table lookup is implemented for the Arclink service::
 
         here = os.path.dirname(__file__)
         config.read(os.path.join(here, 'routing.cfg'))
-        
+
         synchroList = ''
         if 'synchronize' in config.options('Service'):
             synchroList = config.get('Service', 'synchronize')
@@ -1415,7 +1812,7 @@ The following table lookup is implemented for the Arclink service::
             pass
 
     def __addRemote(self, dcid, url):
-        """Read the routing file from a remote datacenter and store it in memory.
+        """Read the routing file from a remote datacenter and save it in memory
 
         All the routing information is read into a dictionary. Only the
         necessary attributes are stored.
@@ -1442,7 +1839,7 @@ The following table lookup is implemented for the Arclink service::
             os.remove(fileName)
         except:
             pass
-        
+
         # Connect to the proper Routing-WS
         try:
             u = urllib2.urlopen(req)
@@ -1471,16 +1868,17 @@ The following table lookup is implemented for the Arclink service::
             os.remove(name + '.bck')
         except:
             pass
-        
+
         try:
             os.rename(name, name + '.bck')
         except:
             pass
-        
+
         try:
             os.rename(fileName, name)
         except:
-            raise Exception('Could not create the final version of %s.xml' % dcid)
+            msg = 'Could not create the final version of %s.xml' % dcid
+            raise Exception(msg)
 
         self.__addRoutes(name)
 
@@ -1508,7 +1906,7 @@ The following table lookup is implemented for the Arclink service::
 
         here = os.path.dirname(__file__)
         config.read(os.path.join(here, 'routing.cfg'))
-        
+
         if 'allowoverlap' in config.options('Service'):
             allowOverlap = config.getboolean('Service', 'allowoverlap')
         else:
@@ -1636,7 +2034,7 @@ The following table lookup is implemented for the Arclink service::
                                     startD = None
                             except:
                                 startD = None
-                                msg = 'Error while converting START attribute.\n'
+                                msg = 'Error while converting START attribute\n'
                                 self.logs.error(msg)
 
                             # Extract the end datetime
@@ -1648,7 +2046,8 @@ The following table lookup is implemented for the Arclink service::
                                     endParts = endParts.replace(':', ' ')
                                     endParts = endParts.replace('.', ' ')
                                     endParts = endParts.replace('Z', '').split()
-                                    endD = datetime.datetime(*map(int, endParts))
+                                    endD = datetime.datetime(*map(int,
+                                                                  endParts))
                                 else:
                                     endD = None
                             except:
@@ -1688,7 +2087,7 @@ The following table lookup is implemented for the Arclink service::
                                         # Route)
                                         if st.overlap(testStr):
 
-                                            msg = 'Overlap between %s and %s!' \
+                                            msg = 'Overlap between %s and %s!'\
                                                 % (st, testStr)
                                             self.logs.error(msg)
                                             if not allowOverlap:
@@ -1725,7 +2124,7 @@ The following table lookup is implemented for the Arclink service::
                                     startD = None
                             except:
                                 startD = None
-                                msg = 'Error while converting START attribute.\n'
+                                msg = 'Error while converting START attribute\n'
                                 self.logs.error(msg)
 
                             # Extract the end datetime
