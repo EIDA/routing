@@ -172,8 +172,34 @@ a regular period of time.
                                     streamCode)
 
                         try:
-                            ptSL[st].append(Route(address, TW(None, None),
-                                                  priority))
+                            # Check the overlap between the routes to import
+                            # and the ones already present in the Seedlink
+                            # Routing table
+                            addIt = True
+                            logs.debug('[SL] Checking %s\n' % str(st))
+                            for testStr in ptSL.keys():
+                                # This checks the overlap of Streams and also
+                                # of timewindows and priority
+                                if checkOverlap(testStr, ptSL[testStr], st,
+                                                Route(address, TW(None, None),
+                                                      priority)):
+                                    msg = '%s: Overlap between %s and %s!\n'\
+                                        % (fileName, st, testStr)
+                                    logs.error(msg)
+                                    if not allowOverlap:
+                                        logs.error('Skipping %s\n' % str(st))
+                                        addIt = False
+                                    break
+
+                            if addIt:
+                                ptSL[st].append(Route(address, TW(None, None),
+                                                      priority))
+                            else:
+                                logs.warning('Skip %s - %s\n' %
+                                             (st, Route(address,
+                                                        TW(None, None),
+                                                        priority)))
+
                         except KeyError:
                             ptSL[st] = [Route(address, TW(None, None),
                                               priority)]
@@ -241,13 +267,11 @@ a regular period of time.
                         tw = TW(startD, endD)
 
                         try:
-                            # Check if there is a copy of the local routing
-                            # table to verify the coherency of the routes
-                            # to import
-                            # Check overlap between the new route and
-                            # the local ones
+                            # Check the overlap between the routes to import
+                            # and the ones already present in the main Routing
+                            # table
                             addIt = True
-                            logs.debug('Checking %s\n' % str(st))
+                            logs.debug('[RT] Checking %s\n' % str(st))
                             for testStr in ptRT.keys():
                                 # This checks the overlap of Streams and also
                                 # of timewindows and priority
@@ -333,7 +357,31 @@ a regular period of time.
                         tw = TW(startD, endD)
 
                         try:
-                            ptST[st].append(Route(address, tw, priority))
+                            # Check the overlap between the routes to import
+                            # and the ones already present in the Station
+                            # Routing table
+                            addIt = True
+                            logs.debug('[ST] Checking %s\n' % str(st))
+                            for testStr in ptST.keys():
+                                # This checks the overlap of Streams and also
+                                # of timewindows and priority
+                                if checkOverlap(testStr, ptST[testStr], st,
+                                                Route(address, tw, priority)):
+                                    msg = '%s: Overlap between %s and %s!\n'\
+                                        % (fileName, st, testStr)
+                                    logs.error(msg)
+                                    if not allowOverlap:
+                                        logs.error('Skipping %s\n' % str(st))
+                                        addIt = False
+                                    break
+
+                            if addIt:
+                                ptST[st].append(Route(address, tw, priority))
+                            else:
+                                logs.warning('Skip %s - %s\n' %
+                                             (st, Route(address, tw,
+                                                        priority)))
+
                         except KeyError:
                             ptST[st] = [Route(address, tw, priority)]
                         statServ.clear()
