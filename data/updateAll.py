@@ -4,7 +4,7 @@ import os
 import sys
 import ConfigParser
 import telnetlib
-import json
+import cPickle as pickle
 from time import sleep
 
 sys.path.append('..')
@@ -14,52 +14,17 @@ from utils import addRoutes
 from wsgicomm import Logs
 
 
-#class Logs(object):
-#    """
-#:synopsis: Given the log level redirects the output to the proper destination
-#:platform: Linux
-#
-#"""
-#
-#    def __init__(self, level=2):
-#        self.setLevel(level)
-#
-#    def setLevel(self, level):
-#        """Set the level of the log
-#
-#:param level: Log level (1: Error, 2: Warning, 3: Info, 4: Debug)
-#:type level: int
-#
-#        """
-#
-#        # Remap the functions in agreement with the output level
-#        # Default values are the following
-#        self.error = self.__write
-#        self.warning = self.__write
-#        self.info = self.__pass
-#        self.debug = self.__pass
-#
-#        if level >= 2:
-#            self.warning = self.__write
-#        if level >= 3:
-#            self.info = self.__write
-#        if level >= 4:
-#            self.debug = self.__write
-#
-#    def __write(self, msg):
-#        sys.stdout.write(msg)
-#        sys.stdout.flush()
-#
-#    def __pass(self, msg):
-#        pass
-
-
 def getArcRoutes(arcServ='eida.gfz-potsdam.de', arcPort=18001):
     """Connects via telnet to an Arclink server to get routing information.
 The data is saved in the file ``routing.xml``. Generally used to start
 operating with an EIDA default configuration.
 
-.. note::
+:param arcServ: Arclink server address
+:type arcServ: str
+:param arcPort: Arclink server port
+:type arcPort: int
+
+.. warning::
 
     In the future this method should not be used and the configuration should
     be independent from Arclink. Namely, the ``routing.xml`` file must exist in
@@ -139,12 +104,17 @@ operating with an EIDA default configuration.
     logs.info('Routing information succesfully read from Arclink!\n')
 
 
-def getArcInv(arcServ, arcPort):
+def getArcInv(arcServ='eida.gfz-potsdam.de', arcPort=18001):
     """Connects via telnet to an Arclink server to get inventory information.
 The data is saved in the file ``Arclink-inventory.xml``. Generally used to
 start operating with an EIDA default configuration.
 
-.. note::
+:param arcServ: Arclink server address
+:type arcServ: str
+:param arcPort: Arclink server port
+:type arcPort: int
+
+.. warning::
 
     In the future this method should not be used and the configuration should
     be independent from Arclink. Namely, the ``routing.xml`` file must exist in
@@ -258,7 +228,21 @@ start operating with an EIDA default configuration.
     logs.info('\nInventory read from Arclink!\n')
 
 
-def checkOverlap(synchroList, logs=Logs(2)):
+def mergeRoutes(synchroList, logs=Logs(2)):
+    """Retrieve routes from different sources and merge them witht he local
+ones in the three usual routing tables (main, seedlink, station). The
+configuration file is checked to see whether overlapping routes are allowed
+or not. A pickled version of the three routing tables is saved in
+``routing.bin``.
+
+:param synchroList: List of data centres where routes should be imported from
+:type synchroList: str
+:param logs: Logging object supporting the methods :func:`~Logs.error`,
+    :func:`~Logs.warning` and so on.
+:type logs: :class:`~Logs`
+
+"""
+
     ptRT, ptSL, ptST = addRoutes('./routing.xml')
 
     for line in synchroList.splitlines():
@@ -273,17 +257,25 @@ def checkOverlap(synchroList, logs=Logs(2)):
                 (dcid, url)
             logs.error(msg)
 
-        ptRT, ptSL, ptST = addRoutes('./' + dcid.strip() + '.xml', ptRT, ptSL,
-                                     ptST, logs)
+        if os.path.exists('./' + dcid.strip() + '.xml'):
+            # FIXME addRoutes should return no Exception ever and skip a
+            # problematic file returning a coherent version of the routes
+            ptRT, ptSL, ptST = addRoutes('./' + dcid.strip() + '.xml', ptRT,
+                                         ptSL, ptST, logs)
+
+    try:
+        os.remove('./routing.bin')
+    except:
+        pass
 
     with open('./routing.bin', 'wb') as finalRoutes:
-        finalRoutes.write(json.dumps(ptRT, ptSL, ptST))
+        pickle.dump((ptRT, ptSL, ptST), finalRoutes)
         logs.info('Routes in main Routing Table: %s\n' % len(ptRT))
         logs.info('Routes in Station Routing Table: %s\n' % len(ptST))
         logs.info('Routes in Seedlink Routing Table: %s\n' % len(ptSL))
 
-def main():
-    logs = Logs(4)
+def main(logLevel=2):
+    logs = Logs(logLevel)
 
     # Check Arclink server that must be contacted to get a routing table
     config = ConfigParser.RawConfigParser()
@@ -303,10 +295,13 @@ def main():
     if 'synchronize' in config.options('Service'):
         synchroList = config.get('Service', 'synchronize')
 
-    checkOverlap(synchroList, logs)
+    mergeRoutes(synchroList, logs)
 
     getArcInv(arcServ, arcPort)
 
 
 if __name__ == '__main__':
-    main()
+    if len(sys.argv) > 1:
+        main(int(sys.argv[1]))
+    else:
+        main()
