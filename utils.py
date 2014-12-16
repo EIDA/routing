@@ -1051,6 +1051,44 @@ operating with an EIDA default configuration.
             return neis
         raise Exception('No Dataselect equivalent found for %s' % route)
 
+    def __time2Update(self):
+        secsDay = 60 * 60 * 24
+        lU = self.lastUpd
+        # First check whether the information should be updated or not
+        if self.nextUpd is not None:
+            now = datetime.datetime.now()
+            if len(self.updTimes) == 1:
+                now2lastUpd = (now - lU).seconds % secsDay \
+                    if lU else secsDay
+                upd2lastUpd = (self.updTimes[0] - lU).seconds % secsDay \
+                    if lU else secsDay
+
+                # Check for more than one day or updateTime in the past
+                if (((now - self.lastUpd) > datetime.timedelta(days=1)) or
+                        (now2lastUpd > upd2lastUpd)):
+                    self.logs.debug('now2lastUpd > upd2lastUpd : %s > %s\n'
+                                    % (now2lastUpd, upd2lastUpd))
+                    self.logs.info('Updating at %s!\n' % now)
+                    # Return a pointer to the first (and unique) position of
+                    # the updTimes array
+                    return 0
+            else:
+                self.logs.debug('Next update: %s\n' %
+                                self.updTimes[self.nextUpd])
+                self.logs.debug('Last update: %s\n' % lU)
+
+                auxU = min(enumerate([(x - now).total_seconds() % secsDay
+                                      for x in self.updTimes]),
+                           key=itemgetter(1))[0]
+                if ((auxU != self.nextUpd) or
+                        ((now - lU) > datetime.timedelta(days=1))):
+                    self.logs.info('Updating at %s!\n' % now.isoformat())
+                    # Return a pointer to the position of the updTimes array
+                    # which shows when should the next update take place
+                    return auxU
+        # No update should be made
+        return None
+
     def getRoute(self, n='*', s='*', l='*', c='*', startD=None, endD=None,
                  service='dataselect', alternative=False):
         """Based on a stream(s) and a timewindow returns all the needed
@@ -1079,45 +1117,14 @@ information (URLs and parameters) to do the requests to different datacenters
 
         """
 
-        secsDay = 60 * 60 * 24
-        lU = self.lastUpd
-        # First check whether the information should be updated or not
-        if self.nextUpd is not None:
-            #try:
-            now = datetime.datetime.now()
-            if len(self.updTimes) == 1:
-                now2lastUpd = (now - lU).seconds % secsDay \
-                    if lU else secsDay
-                upd2lastUpd = (self.updTimes[0] - lU).seconds % secsDay \
-                    if lU else secsDay
-
-                # Check for more than one day or updateTime in the past
-                if (((now - self.lastUpd) > datetime.timedelta(days=1)) or
-                        (now2lastUpd > upd2lastUpd)):
-                    self.logs.debug('now2lastUpd > upd2lastUpd : %s > %s\n'
-                                    % (now2lastUpd, upd2lastUpd))
-                    self.logs.info('Updating at %s!\n' % now)
-                    self.updateAll()
-                    self.lastUpd = now
-                    self.logs.debug('Update successful at: %s\n' %
-                                    self.lastUpd)
-            else:
-                self.logs.debug('Next update: %s\n' %
-                                self.updTimes[self.nextUpd])
-                self.logs.debug('Last update: %s\n' % lU)
-
-                auxU = min(enumerate([(x - now).total_seconds() % secsDay
-                                      for x in self.updTimes]),
-                           key=itemgetter(1))[0]
-                if ((auxU != self.nextUpd) or
-                        ((now - lU) > datetime.timedelta(days=1))):
-                    self.logs.info('Updating at %s!\n' % now.isoformat())
-                    self.updateAll()
-                    # and move to the next time
-                    self.nextUpd = auxU
-                    self.lastUpd = now
-            #except:
-            #    pass
+        # Is important to check against None because 0 is a valid value with a
+        # total different meaning
+        t2u = self.__time2Update()
+        if t2u is not None:
+            self.updateAll()
+            self.lastUpd = datetime.datetime.now()
+            self.nextUpd = t2u
+            self.logs.debug('Update successful at: %s\n' % self.lastUpd)
 
         stream = Stream(n, s, l, c)
         tw = TW(startD, endD)
@@ -1814,12 +1821,11 @@ The following table lookup is implemented for the Arclink service::
             ptMT[keyDict] = sorted(ptMT[keyDict])
 
     def update(self):
-        """Read the routing file in XML format and store it in memory.
+        """Read the routing data from the file saved by the off-line process.
 
         All the routing information is read into a dictionary. Only the
-        necessary attributes are stored. This relies on the idea
-        that some other agent should update the routing file at
-        a regular period of time.
+        necessary attributes are stored. This relies on the idea that some
+        other agent should update the routing data at a regular period of time.
 
         """
 
