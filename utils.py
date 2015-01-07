@@ -658,38 +658,56 @@ class TW(namedtuple('TW', ['start', 'end'])):
           timewindow and the one in the parameter
 :rtype: Bool
 
-.. example:: If a < b < c < d:
-             TW(b, c) in TW(a, d) ==> True
-             TW(a, c) in TW(b, d) ==> True
-             TW(a, d) in TW(b, c) ==> True
-             TW(a, b) in TW(c, d) ==> False
+.. rubric:: Examples
+
+>>> y2011 = datetime(2011, 1, 1)
+>>> y2012 = datetime(2012, 1, 1)
+>>> y2013 = datetime(2013, 1, 1)
+>>> y2014 = datetime(2014, 1, 1)
+>>> TW(y2011, y2014).overlap(TW(y2012, y2013))
+True
+>>> TW(y2012, y2014).overlap(TW(y2011, y2013))
+True
+>>> TW(y2012, y2013).overlap(TW(y2011, y2014))
+True
+>>> TW(y2011, y2012).overlap(TW(y2013, y2014))
+False
+
 """
 
-        # Trivial case. otherTW goes from the beginning of time till the end
-        if otherTW.start is None and otherTW.end is None:
+        def inOrder(a, b, c):
+            if b is None:
+                return False
+
+            # Here I'm sure that b is not None
+            if (a is None and c is None):
+                return True
+
+            # I also know that a or c are not None
+            if a is None:
+                return b < c
+
+            if c is None:
+                return a < b
+
+            # The three are not None
+            # print a, b, c, a < b, b < c, a < b < c
+            return a < b < c
+
+        # Check if self.start or self.end in otherTW
+        if inOrder(otherTW.start, self.start, otherTW.end) or \
+                inOrder(otherTW.start, self.end, otherTW.end):
             return True
 
-        if otherTW.start is not None:
-            auxStart = self.start if self.start is not None else \
-                otherTW.start - datetime.timedelta(seconds=1)
-            auxEnd = self.end if self.end is not None else \
-                otherTW.start + datetime.timedelta(seconds=1)
-            if (auxStart < otherTW.start < auxEnd):
-                return True
-            if otherTW.end is None and (otherTW.start < auxEnd):
-                return True
+        # Check if this is included in otherTW
+        if inOrder(otherTW.start, self.start, self.end):
+                return inOrder(self.start, self.end, otherTW.end)
 
-        if otherTW.end is not None:
-            auxStart = self.start if self.start is not None else \
-                otherTW.end - datetime.timedelta(seconds=1)
-            auxEnd = self.end if self.end is not None else \
-                otherTW.end + datetime.timedelta(seconds=1)
-            if (auxStart < otherTW.end < auxEnd):
-                return True
-            if otherTW.start is None and (auxStart < otherTW.end):
-                return True
+        # Check if otherTW is included in this one
+        if inOrder(self.start, otherTW.start, otherTW.end):
+                return inOrder(otherTW.start, otherTW.end, self.end)
 
-        return False
+        raise Exception('TW.overlap unresolved %s:%s' % (self, otherTW))
 
     def difference(self, otherTW):
         """Substract the timewindow specified in otherTW from this one and
