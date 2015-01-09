@@ -229,7 +229,7 @@ The format for the update time should be ``HH:MM`` separated by a space. It is
 not necessary that the different time entries are in order. If no update is
 required, there should be nothing at the right side of the ``=`` character.
 
-`updateRoutes` determines whether the routing information should be retrieved
+`ArclinkBased` determines whether the routing information should be retrieved
 from an Arclink server by the `updateAll.py` script. Usually, you want to set
 it to ``true`` if the automatic configuration is the selected one (all the data
 is read from an Arclink server). But if you decided to configure your own set
@@ -259,7 +259,7 @@ centres).
     info = Routing information from the Arclink Server at GEOFON.
        All the routes related to EIDA are supposed to be available here.
     updateTime = 01:01 16:58
-    updateRoutes = true
+    ArclinkBased = true
     verbosity = 3
     synchronize = SERVER2, http://server2/eidaws/routing/1
         SERVER3, http://server3/eidaws/routing/1

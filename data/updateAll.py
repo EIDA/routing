@@ -285,7 +285,7 @@ def main(logLevel=2):
     arcServ = config.get('Arclink', 'server')
     arcPort = config.getint('Arclink', 'port')
 
-    if config.getboolean('Service', 'updateRoutes'):
+    if config.getboolean('Service', 'ArclinkBased'):
         getArcRoutes(arcServ, arcPort)
     else:
         print 'Skipping routing information. Config file does not allow to ' \

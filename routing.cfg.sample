@@ -12,7 +12,8 @@ info = Routing information from the Arclink Server at GEOFON.
 updateTime = 03:00
 # Should the routing information be updated and overwritten by the data from
 # the configured Arclink server when updateAll.py is run?
-updateRoutes = true
+# Also the algorithms for other services will be based on the arclink routes.
+ArclinkBased = true
 # Verbosity of the logging system
 # 1: Error, 2: Warning, 3: Info, 4: Debug
 verbosity = 3
