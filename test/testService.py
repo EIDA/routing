@@ -41,6 +41,30 @@ class RouteCacheTests(unittest.TestCase):
             print '\n', '\n'.join(errors)
             self.assertEqual(0, 1, 'Error in %d lines' % len(errors))
 
+    def testDS_GE_RO(self):
+        "Dataselect GE,RO.*.*.*"
+
+        req = urllib2.Request(self.host + '?net=GE,RO&format=json')
+        try:
+            u = urllib2.urlopen(req)
+            buffer = u.read()
+        except:
+            raise Exception('Error retrieving data for GE,RO.*.*.*')
+
+        expected = '[{"url": "http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query", "params": [{"loc": "*", "end": "", "sta": "*", "cha": "*", "priority": 1, "start": "1993-01-01T00:00:00", "net": "GE"}], "name": "dataselect"}, {"url": "http://eida-sc3.infp.ro/fdsnws/dataselect/1/query", "params": [{"loc": "*", "end": "", "sta": "*", "cha": "*", "priority": 1, "start": "1980-01-01T00:00:00", "net": "RO"}], "name": "dataselect"}]'
+
+        numErrors = 0
+        errors = []
+        d = Differ()
+        for line in d.compare([buffer], [expected]):
+            if line[:2] != '  ':
+                numErrors += 1
+                errors.append(line)
+
+        if numErrors:
+            print '\n', '\n'.join(errors)
+            self.assertEqual(0, 1, 'Error in %d lines' % len(errors))
+
     def testDS_GE_APE(self):
         "Dataselect GE.APE.*.*"
 

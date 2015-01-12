@@ -78,6 +78,14 @@ def ConvertDictToXml(listdict):
     return r
 
 
+def lsNSLC(net, sta, loc, cha):
+    for n in net:
+        for s in sta:
+            for l in loc:
+                for c in cha:
+                    yield (n, s, l, c)
+
+
 def makeQueryGET(parameters):
     global routes
 
@@ -103,8 +111,10 @@ def makeQueryGET(parameters):
             net = parameters['net'].value.upper()
         else:
             net = '*'
+
+        net = net.split(',')
     except:
-        net = '*'
+        net = ['*']
 
     try:
         if 'station' in parameters:
@@ -113,8 +123,10 @@ def makeQueryGET(parameters):
             sta = parameters['sta'].value.upper()
         else:
             sta = '*'
+
+        sta = sta.split(',')
     except:
-        sta = '*'
+        sta = ['*']
 
     try:
         if 'location' in parameters:
@@ -123,8 +135,10 @@ def makeQueryGET(parameters):
             loc = parameters['loc'].value.upper()
         else:
             loc = '*'
+
+        loc = loc.split(',')
     except:
-        loc = '*'
+        loc = ['*']
 
     try:
         if 'channel' in parameters:
@@ -133,8 +147,10 @@ def makeQueryGET(parameters):
             cha = parameters['cha'].value.upper()
         else:
             cha = '*'
+
+        cha = cha.split(',')
     except:
-        cha = '*'
+        cha = ['*']
 
     try:
         if 'starttime' in parameters:
@@ -183,14 +199,18 @@ def makeQueryGET(parameters):
     except:
         alt = False
 
-    try:
-        route = routes.getRoute(net, sta, loc, cha, start, endt, ser, alt)
-    except RoutingException:
-        raise WIContentError('No routes have been found!')
+    result = RequestMerge()
+    # Expand lists in parameters (f.i., cha=BHZ,HHN) and yield all possible
+    # values
+    for (n, s, l, c) in lsNSLC(net, sta, loc, cha):
+        try:
+            result.extend(routes.getRoute(n, s, l, c, start, endt, ser, alt))
+        except RoutingException:
+            pass
 
-    if len(route) == 0:
+    if len(result) == 0:
         raise WIContentError('No routes have been found!')
-    return route
+    return result
 
 
 def makeQueryPOST(postText):

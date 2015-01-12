@@ -41,6 +41,27 @@ class RouteCacheTests(unittest.TestCase):
         self.assertEqual(result[0]['name'], 'dataselect',
                          'Wrong service name!')
 
+    def testDS_GE_RO(self):
+        "Dataselect GE,RO.*.*.*"
+
+        expURL_GE = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
+        expURL_RO = 'http://eida-sc3.infp.ro/fdsnws/dataselect/1/query'
+
+        result = self.rc.getRoute('GE')
+        result.extend(self.rc.getRoute('RO'))
+        self.assertIsInstance(result, RequestMerge,
+                              'A RequestMerge object was expected!')
+        self.assertEqual(len(result), 2,
+                         'Wrong number of data centers for GE,RO.*.*.*!')
+        self.assertEqual(result[0]['url'], expURL_GE,
+                         'Wrong URL for GE.*.*.*')
+        self.assertEqual(result[0]['name'], 'dataselect',
+                         'Wrong service name!')
+        self.assertEqual(result[1]['url'], expURL_RO,
+                         'Wrong URL for RO.*.*.*')
+        self.assertEqual(result[1]['name'], 'dataselect',
+                         'Wrong service name!')
+
     def testDS_GE_APE(self):
         "Dataselect GE.APE.*.*"
 
