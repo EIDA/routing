@@ -583,6 +583,12 @@ Wildcards are accepted in the case of `network`, `station`, `location` and
 character. For any of these parameters, if no value is given it will be set to
 a star (``*``).
 
+Any of these four parameters may also be submitted as comma-separated lists in
+order to select two or more values with a single request. For example, the
+`channel` parameter may be used to specify multiple channels: ::
+
+    channel=LHE,LHN,LHZ,BHZ (the individual values may also include wildcards)
+
 Blank or empty `location` identifiers may be specified as "``--``" (two dashes)
 if needed, which the service must translate to an empty string.
 
