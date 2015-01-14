@@ -79,6 +79,9 @@ a regular period of time.
     else:
         allowOverlap = False
 
+    logs.info('Overlaps between routes will ' +
+              '' if allowOverlap else 'NOT ' + 'be allowed')
+
     with open(fileName, 'r') as testFile:
         # Parse the routing file
         # Traverse through the networks
@@ -706,6 +709,9 @@ False
         # Check if otherTW is included in this one
         if inOrder(self.start, otherTW.start, otherTW.end):
                 return inOrder(otherTW.start, otherTW.end, self.end)
+
+        if self == otherTW:
+            return True
 
         raise Exception('TW.overlap unresolved %s:%s' % (self, otherTW))
 
