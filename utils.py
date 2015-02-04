@@ -1050,7 +1050,9 @@ operating with an EIDA default configuration.
         lmu = 'http://erde.geophysik.uni-muenchen.de/fdsnws/' +\
             'dataselect/1/query'
         ipgp = 'http://eida.ipgp.fr/fdsnws/dataselect/1/query'
-        neis = 'http://eida-sc3.infp.ro/fdsnws/dataselect/1/query'
+        niep = 'http://eida-sc3.infp.ro/fdsnws/dataselect/1/query'
+        koeri = \
+            'http://slink2.koeri.boun.edu.tr:8080/fdsnws/dataselect/1/query'
 
         # Try to identify the hosting institution
         host = route.split(':')[0]
@@ -1072,7 +1074,9 @@ operating with an EIDA default configuration.
         elif host.endswith('ipgp.fr'):
             return ipgp
         elif host.endswith('infp.ro'):
-            return neis
+            return niep
+        elif host.endswith('boun.edu.tr'):
+            return koeri
         raise Exception('No Dataselect equivalent found for %s' % route)
 
     def __time2Update(self):
