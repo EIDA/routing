@@ -1052,7 +1052,7 @@ operating with an EIDA default configuration.
         ipgp = 'http://eida.ipgp.fr/fdsnws/dataselect/1/query'
         niep = 'http://eida-sc3.infp.ro/fdsnws/dataselect/1/query'
         koeri = \
-            'http://slink2.koeri.boun.edu.tr:8080/fdsnws/dataselect/1/query'
+            'http://eida.koeri.boun.edu.tr/fdsnws/dataselect/1/query'
 
         # Try to identify the hosting institution
         host = route.split(':')[0]
