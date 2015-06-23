@@ -1705,14 +1705,21 @@ The following table lookup is implemented for the Arclink service::
         # Just to shorten notation
         ptMT = self.masterTable
 
+        mtHandle = None
+        try:
+            mtHandle = open(self.masterFile, 'r')
+        except:
+            msg = 'Error: masterTable.xml could not be opened.\n'
+            self.logs.error(msg)
+            return
+
         # Parse the routing file
         # Traverse through the networks
         # get an iterable
         try:
-            context = ET.iterparse(self.masterFile, events=("start", "end"))
-        except IOError:
-            msg = 'Error: masterTable.xml could not be opened.\n'
-            self.logs.warning(msg)
+            context = ET.iterparse(mtHandle, events=("start", "end"))
+        except IOError as e:
+            self.logs.error(str(e))
             return
 
         # turn it into an iterator
