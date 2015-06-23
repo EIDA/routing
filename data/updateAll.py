@@ -251,17 +251,17 @@ or not. A pickled version of the three routing tables is saved in
         logs.debug(str(line.split(',')))
         dcid, url = line.split(',')
         try:
-            addRemote('./' + dcid.strip() + '.xml', url.strip(), logs)
+            addRemote('./routing-' + dcid.strip() + '.xml', url.strip(), logs)
         except:
             msg = 'Failure updating routing information from %s (%s)' % \
                 (dcid, url)
             logs.error(msg)
 
-        if os.path.exists('./' + dcid.strip() + '.xml'):
+        if os.path.exists('./routing-' + dcid.strip() + '.xml'):
             # FIXME addRoutes should return no Exception ever and skip a
             # problematic file returning a coherent version of the routes
-            ptRT, ptSL, ptST = addRoutes('./' + dcid.strip() + '.xml', ptRT,
-                                         ptSL, ptST, logs)
+            ptRT, ptSL, ptST = addRoutes('./routing-' + dcid.strip() + '.xml',
+                                         ptRT, ptSL, ptST, logs)
 
     try:
         os.remove('./routing.bin')
@@ -273,6 +273,7 @@ or not. A pickled version of the three routing tables is saved in
         logs.info('Routes in main Routing Table: %s\n' % len(ptRT))
         logs.info('Routes in Station Routing Table: %s\n' % len(ptST))
         logs.info('Routes in Seedlink Routing Table: %s\n' % len(ptSL))
+
 
 def main(logLevel=2):
     logs = Logs(logLevel)
