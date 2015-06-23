@@ -34,6 +34,7 @@ import xml.etree.cElementTree as ET
 import urllib2
 import cPickle as pickle
 import ConfigParser
+import glob
 from time import sleep
 from collections import namedtuple
 from operator import add
@@ -414,8 +415,8 @@ def addRemote(fileName, url, logs=Logs(2)):
     All the routing information is read into a dictionary. Only the
     necessary attributes are stored.
 
-    :param dcid: Datacenter ID
-    :type dcid: str
+    :param fileName: file where the routes should be saved
+    :type fileName: str
     :param url: Base URL from the Routing Service at the remote datacenter
     :type url: str
     :raise: Exception
@@ -528,6 +529,7 @@ datacenter, everything is added.
         except:
             # Take a reference to the inherited *list* and do a normal append
             listPar = super(RequestMerge, self)
+
             listPar.append({'name': service, 'url': url,
                             'params': [{'net': stream.n, 'sta': stream.s,
                                         'loc': stream.l, 'cha': stream.c,
@@ -1388,8 +1390,11 @@ the normal configuration.
         realRoutes = None
 
         # Case 11
-        if (n, None, None, None) in self.masterTable:
+        if Stream(n, None, None, None) in self.masterTable.keys():
             realRoutes = self.masterTable[n, None, None, None]
+
+        if realRoutes is None:
+            raise RoutingException('No routes for this network in masterTable!')
 
         # Check that I found a route
         for r in realRoutes:
@@ -1409,8 +1414,9 @@ the normal configuration.
         result2 = RequestMerge()
         for r in result:
             result2.append(service, r.address, r.priority if r.priority
-                           is not None else '', n, None, None,
-                           None, tw.start if tw.start is not None else '',
+                           is not None else '', Stream(n, None, None,
+                                                       None),
+                           tw.start if tw.start is not None else '',
                            tw.end if tw.end is not None else '')
 
         return result2
@@ -1870,6 +1876,22 @@ The following table lookup is implemented for the Arclink service::
         ptST.clear()
 
         here = os.path.dirname(__file__)
-        with open(os.path.join(here, 'data/routing.bin')) as rMerged:
-            self.routingTable, self.slTable, self.stTable = \
-                pickle.load(rMerged)
+        try:
+            with open(os.path.join(here, 'data/routing.bin')) as rMerged:
+                self.routingTable, self.slTable, self.stTable = \
+                    pickle.load(rMerged)
+        except:
+            ptRT, ptSL, ptST = addRoutes(os.path.join(here,
+                                                      'data/routing.xml'))
+            for routeFile in glob.glob(
+                    os.path.join(here, 'data/routing-*.xml')):
+                ptRT, ptSL, ptST = addRoutes(routeFile, ptRT, ptSL, ptST,
+                                             self.logs)
+
+            with open(os.path.join(here, 'data/routing.bin'), 'wb') \
+                    as finalRoutes:
+                self.logs.debug('Writing routing.bin\n')
+                pickle.dump((ptRT, ptSL, ptST), finalRoutes)
+                self.routingTable = ptRT
+                self.slTable = ptSL
+                self.stTable = ptST
