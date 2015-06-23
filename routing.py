@@ -306,7 +306,10 @@ def applyFormat(resultRM, outFormat='xml'):
         for datacenter in resultRM:
             for item in datacenter['params']:
                 iterObj.append(datacenter['url'] + '?' +
-                               '&'.join([k + '=' + str(item[k]) for k in item
+                               '&'.join([k + '=' + (str(item[k]) if
+                                         type(item[k]) is not
+                                         type(datetime.datetime.now())
+                                         else item[k].isoformat()) for k in item
                                          if item[k] not in ('', '*')
                                          and k != 'priority']))
         iterObj = '\n'.join(iterObj)
