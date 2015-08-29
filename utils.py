@@ -52,7 +52,7 @@ def checkOverlap(str1, routeList, str2, route, logs=Logs(2)):
     return False
 
 
-def addRoutes(fileName, ptRT=dict(), ptSL=dict(), ptST=dict(), logs=Logs(2)):
+def addRoutes(fileName, ptRT=dict(), logs=Logs(2)):
     """Read the routing file in XML format and store it in memory.
 
 All the routing information is read into a dictionary. Only the
@@ -92,7 +92,7 @@ a regular period of time.
         except IOError:
             msg = 'Error: %s could not be opened. Skipping it!\n' % fileName
             logs.error(msg)
-            return (ptRT, ptSL, ptST)
+            return ptRT
 
         # turn it into an iterator
         context = iter(context)
@@ -105,7 +105,7 @@ a regular period of time.
             msg = '%s seems not to be a routing file (XML). Skipping it!\n' \
                 % fileName
             logs.error(msg)
-            return (ptRT, ptSL, ptST)
+            return ptRT
 
         # Extract the namespace from the root node
         namesp = root.tag[:-len('routing')]
@@ -152,75 +152,24 @@ a regular period of time.
                         streamCode = '*'
 
                     # Traverse through the sources
-                    for sl in route.findall(namesp + 'seedlink'):
-                        # Extract the address
+                    for serv in route:
+                        assert serv.tag[:4] == 'ns0:'
+
+                        service = serv.tag[4:]
+                        att = serv.attrib
+
+                        # Extract the address (mandatory)
                         try:
-                            address = sl.get('address')
+                            address = att.get('address')
                             if len(address) == 0:
+                                print 'Could not add %s' %att
                                 continue
                         except:
-                            continue
-
-                        # Extract the priority
-                        try:
-                            priority = sl.get('priority')
-                            if len(address) == 0:
-                                priority = 99
-                            else:
-                                priority = int(priority)
-                        except:
-                            priority = 99
-
-                        # Append the network to the list of networks
-                        st = Stream(networkCode, stationCode, locationCode,
-                                    streamCode)
-
-                        try:
-                            # Check the overlap between the routes to import
-                            # and the ones already present in the Seedlink
-                            # Routing table
-                            addIt = True
-                            logs.debug('[SL] Checking %s\n' % str(st))
-                            for testStr in ptSL.keys():
-                                # This checks the overlap of Streams and also
-                                # of timewindows and priority
-                                if checkOverlap(testStr, ptSL[testStr], st,
-                                                Route(address, TW(None, None),
-                                                      priority)):
-                                    msg = '%s: Overlap between %s and %s!\n'\
-                                        % (fileName, st, testStr)
-                                    logs.error(msg)
-                                    if not allowOverlap:
-                                        logs.error('Skipping %s\n' % str(st))
-                                        addIt = False
-                                    break
-
-                            if addIt:
-                                ptSL[st].append(Route(address, TW(None, None),
-                                                      priority))
-                            else:
-                                logs.warning('Skip %s - %s\n' %
-                                             (st, Route(address,
-                                                        TW(None, None),
-                                                        priority)))
-
-                        except KeyError:
-                            ptSL[st] = [Route(address, TW(None, None),
-                                              priority)]
-                        sl.clear()
-
-                    # Traverse through the sources
-                    for arcl in route.findall(namesp + 'arclink'):
-                        # Extract the address
-                        try:
-                            address = arcl.get('address')
-                            if len(address) == 0:
-                                continue
-                        except:
+                            print 'Could not add %s' %att
                             continue
 
                         try:
-                            startD = arcl.get('start')
+                            startD = att.get('start', None)
                             if len(startD):
                                 startParts = startD.replace('-', ' ')
                                 startParts = startParts.replace('T', ' ')
@@ -234,12 +183,12 @@ a regular period of time.
                                 startD = None
                         except:
                             startD = None
-                            msg = 'Error while converting START attribute\n'
-                            logs.error(msg)
+                            #msg = 'Error while converting START attribute\n'
+                            #logs.error(msg)
 
                         # Extract the end datetime
                         try:
-                            endD = arcl.get('end')
+                            endD = att.get('end', None)
                             if len(endD):
                                 endParts = endD.replace('-', ' ')
                                 endParts = endParts.replace('T', ' ')
@@ -252,13 +201,13 @@ a regular period of time.
                                 endD = None
                         except:
                             endD = None
-                            msg = 'Error while converting END attribute.\n'
-                            logs.error(msg)
+                            #msg = 'Error while converting END attribute.\n'
+                            #logs.error(msg)
 
                         # Extract the priority
                         try:
-                            priority = arcl.get('priority')
-                            if len(address) == 0:
+                            priority = att.get('priority', '99')
+                            if len(priority) == 0:
                                 priority = 99
                             else:
                                 priority = int(priority)
@@ -298,97 +247,7 @@ a regular period of time.
 
                         except KeyError:
                             ptRT[st] = [Route(address, tw, priority)]
-                        arcl.clear()
-
-                    # Traverse through the sources
-                    for statServ in route.findall(namesp + 'station'):
-                        # Extract the address
-                        try:
-                            address = statServ.get('address')
-                            if len(address) == 0:
-                                continue
-                        except:
-                            continue
-
-                        try:
-                            startD = statServ.get('start')
-                            if len(startD):
-                                startParts = startD.replace('-', ' ')
-                                startParts = startParts.replace('T', ' ')
-                                startParts = startParts.replace(':', ' ')
-                                startParts = startParts.replace('.', ' ')
-                                startParts = startParts.replace('Z', '')
-                                startParts = startParts.split()
-                                startD = datetime.datetime(*map(int,
-                                                                startParts))
-                            else:
-                                startD = None
-                        except:
-                            startD = None
-                            msg = 'Error while converting START attribute\n'
-                            logs.error(msg)
-
-                        # Extract the end datetime
-                        try:
-                            endD = statServ.get('end')
-                            if len(endD):
-                                endParts = endD.replace('-', ' ')
-                                endParts = endParts.replace('T', ' ')
-                                endParts = endParts.replace(':', ' ')
-                                endParts = endParts.replace('.', ' ')
-                                endParts = endParts.replace('Z', '').split()
-                                endD = datetime.datetime(*map(int, endParts))
-                            else:
-                                endD = None
-                        except:
-                            endD = None
-                            msg = 'Error while converting END attribute.\n'
-                            logs.error(msg)
-
-                        # Extract the priority
-                        try:
-                            priority = statServ.get('priority')
-                            if len(address) == 0:
-                                priority = 99
-                            else:
-                                priority = int(priority)
-                        except:
-                            priority = 99
-
-                        # Append the network to the list of networks
-                        st = Stream(networkCode, stationCode, locationCode,
-                                    streamCode)
-                        tw = TW(startD, endD)
-
-                        try:
-                            # Check the overlap between the routes to import
-                            # and the ones already present in the Station
-                            # Routing table
-                            addIt = True
-                            logs.debug('[ST] Checking %s\n' % str(st))
-                            for testStr in ptST.keys():
-                                # This checks the overlap of Streams and also
-                                # of timewindows and priority
-                                if checkOverlap(testStr, ptST[testStr], st,
-                                                Route(address, tw, priority)):
-                                    msg = '%s: Overlap between %s and %s!\n'\
-                                        % (fileName, st, testStr)
-                                    logs.error(msg)
-                                    if not allowOverlap:
-                                        logs.error('Skipping %s\n' % str(st))
-                                        addIt = False
-                                    break
-
-                            if addIt:
-                                ptST[st].append(Route(address, tw, priority))
-                            else:
-                                logs.warning('Skip %s - %s\n' %
-                                             (st, Route(address, tw,
-                                                        priority)))
-
-                        except KeyError:
-                            ptST[st] = [Route(address, tw, priority)]
-                        statServ.clear()
+                        serv.clear()
 
                     route.clear()
 
@@ -398,15 +257,7 @@ a regular period of time.
     for keyDict in ptRT:
         ptRT[keyDict] = sorted(ptRT[keyDict])
 
-    # Order the routes by priority
-    for keyDict in ptSL:
-        ptSL[keyDict] = sorted(ptSL[keyDict])
-
-    # Order the routes by priority
-    for keyDict in ptST:
-        ptST[keyDict] = sorted(ptST[keyDict])
-
-    return (ptRT, ptSL, ptST)
+    return ptRT
 
 
 def addRemote(fileName, url, logs=Logs(2)):
@@ -878,15 +729,15 @@ class RoutingCache(object):
         self.routingTable = dict()
 
         # Dictionary with the seedlink routes
-        self.slTable = dict()
+        #self.slTable = dict()
 
         # Dictionary with the FDSN-WS station routes
-        self.stTable = dict()
+        #self.stTable = dict()
 
         # Create/load the cache the first time that we start
-        if routingFile == 'auto':
-            self.configArclink()
-            self.routingFile = './routing.xml'
+        #if routingFile == 'auto':
+        #    self.configArclink()
+        #    self.routingFile = './routing.xml'
 
         #try:
         self.update()
@@ -1172,15 +1023,7 @@ information (URLs and parameters) to do the requests to different datacenters
         except:
             pass
 
-        result = None
-        if service == 'arclink':
-            result = self.getRouteArc(stream, tw, alternative)
-        elif service == 'dataselect':
-            result = self.getRouteDS(stream, tw, alternative)
-        elif service == 'seedlink':
-            result = self.getRouteSL(stream, alternative)
-        elif service == 'station':
-            result = self.getRouteST(stream, tw, alternative)
+        result = self.getRouteDS(stream, tw, alternative)
 
         if result is None:
             # Through an exception if there is an error
@@ -1197,34 +1040,7 @@ information (URLs and parameters) to do the requests to different datacenters
 
         return result
 
-    def getRouteST(self, stream, tw, alternative=False):
-        """Based on a :class:`~Stream` and a timewindow (:class:`~TW`) returns
-all the needed
-information (URLs and parameters) to request station data from different
-datacenters (if needed) and be able to merge it avoiding duplication.
-The :func:`~RoutingCache.getRouteDS` (Dataselect) method is used and the
-URL is changed to the FDSN station service style.
-
-:param stream: :class:`~Stream` definition including wildcards
-:type stream: :class:`~Stream`
-:param tw: Timewindow
-:type tw: :class:`~TW`
-:param alternative: Specifies whether alternative routes should be included
-:type alternative: bool
-:returns: URLs and parameters to request the data
-:rtype: :class:`~RequestMerge`
-:raises: RoutingException
-
-        """
-
-        result = self.getRouteDS(stream, tw, alternative)
-        for item in result:
-            item['name'] = 'station'
-            item['url'] = item['url'].replace('dataselect', 'station')
-
-        return result
-
-    def getRouteDS(self, stream, tw, alternative=False):
+    def getRouteDS(self, service, stream, tw, alternative=False):
         """Based on a :class:`~Stream` and a timewindow (:class:`~TW`) returns
 all the needed information (URLs and parameters) to request waveforms from
 different datacenters (if needed) and be able to merge it avoiding duplication.
@@ -1232,6 +1048,8 @@ The Arclink routing table is used to select the datacenters and a mapping is
 used to translate the Arclink address to Dataselect address
 (see :func:`~RoutingCache.__arc2DS`).
 
+:param service: Specifies the service is being looked for
+:type service: string
 :param stream: :class:`~Stream` definition including wildcards
 :type stream: :class:`~Stream`
 :param tw: Timewindow
@@ -1244,128 +1062,98 @@ used to translate the Arclink address to Dataselect address
 
         """
 
-        # Check if there are wildcards!
-        if (('*' in stream.n + stream.s + stream.l + stream.c) or
-                ('?' in stream.n + stream.s + stream.l + stream.c)):
-            # Filter first by the attributes without wildcards
-            subs = self.routingTable.keys()
+        # Filter first by the attributes without wildcards
+        subs = self.routingTable.keys()
 
-            if (('*' not in stream.s) and ('?' not in stream.s)):
-                subs = [k for k in subs if (k.s is None or k.s == '*' or
-                                            k.s == stream.s)]
+        if (('*' not in stream.s) and ('?' not in stream.s)):
+            subs = [k for k in subs if (k.s is None or k.s == '*' or
+                                        k.s == stream.s)]
 
-            if (('*' not in stream.n) and ('?' not in stream.n)):
-                subs = [k for k in subs if (k.n is None or k.n == '*' or
-                                            k.n == stream.n)]
+        if (('*' not in stream.n) and ('?' not in stream.n)):
+            subs = [k for k in subs if (k.n is None or k.n == '*' or
+                                        k.n == stream.n)]
 
-            if (('*' not in stream.c) and ('?' not in stream.c)):
-                subs = [k for k in subs if (k.c is None or k.c == '*' or
-                                            k.c == stream.c)]
+        if (('*' not in stream.c) and ('?' not in stream.c)):
+            subs = [k for k in subs if (k.c is None or k.c == '*' or
+                                        k.c == stream.c)]
 
-            if (('*' not in stream.l) and ('?' not in stream.l)):
-                subs = [k for k in subs if (k.l is None or k.l == '*' or
-                                            k.l == stream.l)]
+        if (('*' not in stream.l) and ('?' not in stream.l)):
+            subs = [k for k in subs if (k.l is None or k.l == '*' or
+                                        k.l == stream.l)]
 
-            # Filter then by the attributes WITH wildcards
-            if (('*' in stream.s) or ('?' in stream.s)):
-                subs = [k for k in subs if (k.s is None or k.s == '*' or
-                                            fnmatch.fnmatch(k.s, stream.s))]
+        # Filter then by the attributes WITH wildcards
+        if (('*' in stream.s) or ('?' in stream.s)):
+            subs = [k for k in subs if (k.s is None or k.s == '*' or
+                                        fnmatch.fnmatch(k.s, stream.s))]
 
-            if (('*' in stream.n) or ('?' in stream.n)):
-                subs = [k for k in subs if (k.n is None or k.n == '*' or
-                                            fnmatch.fnmatch(k.n, stream.n))]
+        if (('*' in stream.n) or ('?' in stream.n)):
+            subs = [k for k in subs if (k.n is None or k.n == '*' or
+                                        fnmatch.fnmatch(k.n, stream.n))]
 
-            if (('*' in stream.c) or ('?' in stream.c)):
-                subs = [k for k in subs if (k.c is None or k.c == '*' or
-                                            fnmatch.fnmatch(k.c, stream.c))]
+        if (('*' in stream.c) or ('?' in stream.c)):
+            subs = [k for k in subs if (k.c is None or k.c == '*' or
+                                        fnmatch.fnmatch(k.c, stream.c))]
 
-            if (('*' in stream.l) or ('?' in stream.l)):
-                subs = [k for k in subs if (k.l is None or k.l == '*' or
-                                            fnmatch.fnmatch(k.l, stream.l))]
+        if (('*' in stream.l) or ('?' in stream.l)):
+            subs = [k for k in subs if (k.l is None or k.l == '*' or
+                                        fnmatch.fnmatch(k.l, stream.l))]
 
-            # Alternative NEW approach based on number of wildcards
-            orderS = [sum([3 for t in r if '*' in t]) for r in subs]
-            orderQ = [sum([1 for t in r if '?' in t]) for r in subs]
+        # Alternative NEW approach based on number of wildcards
+        orderS = [sum([3 for t in r if '*' in t]) for r in subs]
+        orderQ = [sum([1 for t in r if '?' in t]) for r in subs]
 
-            order = map(add, orderS, orderQ)
+        order = map(add, orderS, orderQ)
 
-            orderedSubs = [x for (y, x) in sorted(zip(order, subs))]
+        orderedSubs = [x for (y, x) in sorted(zip(order, subs))]
 
-            finalset = set()
+        finalset = set()
 
-            for r1 in orderedSubs:
-                for r2 in finalset:
-                    if r1.overlap(r2):
-                        self.logs.warning('Overlap between %s and %s\n' %
-                                          (r1, r2))
+        for r1 in orderedSubs:
+            for r2 in finalset:
+                if r1.overlap(r2):
+                    self.logs.warning('Overlap between %s and %s\n' %
+                                      (r1, r2))
+                    break
+            else:
+                finalset.add(r1.strictMatch(stream))
+                continue
+
+            # The break from 10 lines above jumps until this line in
+            # order to do an expansion and try to add the expanded
+            # streams
+            # r1n, r1s, r1l, r1c = r1
+            for rExp in self.ic.expand(r1.n, r1.s, r1.l, r1.c,
+                                       tw.start, tw.end, True):
+                rExp = Stream(*rExp)
+                for r3 in finalset:
+                    if rExp.overlap(r3):
+                        msg = 'Stream %s discarded! Overlap with %s\n' % \
+                            (rExp, r3)
+                        self.logs.warning(msg)
                         break
                 else:
-                    finalset.add(r1.strictMatch(stream))
-                    continue
+                    self.logs.warning('Adding expanded %s\n' % str(rExp))
+                    if (rExp in stream):
+                        finalset.add(rExp)
 
-                # The break from 10 lines above jumps until this line in
-                # order to do an expansion and try to add the expanded
-                # streams
-                # r1n, r1s, r1l, r1c = r1
-                for rExp in self.ic.expand(r1.n, r1.s, r1.l, r1.c,
-                                           tw.start, tw.end, True):
-                    rExp = Stream(*rExp)
-                    for r3 in finalset:
-                        if rExp.overlap(r3):
-                            msg = 'Stream %s discarded! Overlap with %s\n' % \
-                                (rExp, r3)
-                            self.logs.warning(msg)
-                            break
-                    else:
-                        self.logs.warning('Adding expanded %s\n' % str(rExp))
-                        if (rExp in stream):
-                            finalset.add(rExp)
+        result = RequestMerge()
 
-            result = RequestMerge()
+        # In finalset I have all the streams (including expanded and
+        # the ones with wildcards), that I need to request.
+        # Now I need the URLs
+        self.logs.debug(str(finalset) + '\n')
 
-            # In finalset I have all the streams (including expanded and
-            # the ones with wildcards), that I need to request.
-            # Now I need the URLs
-            self.logs.debug(str(finalset) + '\n')
+        while finalset:
+            st = finalset.pop()
+            # FIXME For sure this call to getRouteArc needs to be replaced
+            # For instance, I must include the service in the search
+            resArc = self.getRouteArc(st, tw, alternative)
 
-            while finalset:
-                st = finalset.pop()
-                resArc = self.getRouteArc(st, tw, alternative)
-
-                # The cycle is done backwards because I could need to delete
-                # the current route
-                for i in range(len(resArc) - 1, -1, -1):
-                    resArc[i]['name'] = 'dataselect'
-                    try:
-                        resArc[i]['url'] = self.__arc2DS(resArc[i]['url'])
-                    except:
-                        # No mapping between Arclink and Dataselect
-                        # We should delete it from the result
-                        del resArc[i]
-
-                result.extend(resArc)
-
-            # Check the coherency of the routes to set the return code
-            if len(result) == 0:
-                raise RoutingException('No routes have been found!')
-                #raise WIContentError('No routes have been found!')
-
-            return result
-
-        # If there are NO wildcards
-        result = self.getRouteArc(stream, tw, alternative)
-
-        for i in range(len(result) - 1, -1, -1):
-            result[i]['name'] = 'dataselect'
-            try:
-                result[i]['url'] = self.__arc2DS(result[i]['url'])
-            except:
-                del result[i]
+            result.extend(resArc)
 
         # Check the coherency of the routes to set the return code
         if len(result) == 0:
             raise RoutingException('No routes have been found!')
-            #raise WIContentError('No routes have been found!')
 
         return result
 
@@ -1420,117 +1208,6 @@ the normal configuration.
                            tw.end if tw.end is not None else '')
 
         return result2
-
-    def getRouteSL(self, stream, alternative):
-        """Based on a :class:`~Stream` returns all the neccessary information
-(URLs and parameters) to connect to a Seedlink server shipping real-time
-information of the specified streams. This method implements the following
-table lookup for the Seedlink service::
-
-                01 NET STA CHA LOC
-                02 NET STA CHA ---
-                03 NET STA --- LOC
-                04 NET --- CHA LOC
-                05 --- STA CHA LOC
-                06 NET STA --- ---
-                07 NET --- CHA ---
-                08 NET --- --- LOC
-                09 --- STA CHA ---
-                09 --- STA --- LOC
-                10 --- --- CHA LOC
-                11 NET --- --- ---
-                12 --- STA --- ---
-                13 --- --- CHA ---
-                14 --- --- --- LOC
-                15 --- --- --- ---
-
-:param stream: :class:`~Stream` definition including wildcards
-:type stream: :class:`~Stream`
-:param alternative: Specifies whether alternative routes should be included
-:type alternative: bool
-:returns: URLs and parameters to request the data
-:rtype: :class:`~RequestMerge`
-:raises: RoutingException
-
-        """
-
-        realRoute = None
-
-        # Case 1
-        if stream in self.slTable:
-            realRoute = self.slTable[stream]
-
-        # Case 2
-        elif (stream.n, stream.s, '*', stream.c) in self.slTable:
-            realRoute = self.slTable[stream.n, stream.s, '*', stream.c]
-
-        # Case 3
-        elif (stream.n, stream.s, stream.l, '*') in self.slTable:
-            realRoute = self.slTable[stream.n, stream.s, stream.l, '*']
-
-        # Case 4
-        elif (stream.n, '*', stream.l, stream.c) in self.slTable:
-            realRoute = self.slTable[stream.n, '*', stream.l, stream.c]
-
-        # Case 5
-        elif ('*', stream.s, stream.l, stream.c) in self.slTable:
-            realRoute = self.slTable['*', stream.s, stream.l, stream.c]
-
-        # Case 6
-        elif (stream.n, stream.s, '*', '*') in self.slTable:
-            realRoute = self.slTable[stream.n, stream.s, '*', '*']
-
-        # Case 7
-        elif (stream.n, '*', '*', stream.c) in self.slTable:
-            realRoute = self.slTable[stream.n, '*', '*', stream.c]
-
-        # Case 8
-        elif (stream.n, '*', stream.l, '*') in self.slTable:
-            realRoute = self.slTable[stream.n, '*', stream.l, '*']
-
-        # Case 9
-        elif ('*', stream.s, '*', stream.c) in self.slTable:
-            realRoute = self.slTable['*', stream.s, '*', stream.c]
-
-        # Case 10
-        elif ('*', '*', stream.l, stream.c) in self.slTable:
-            realRoute = self.slTable['*', '*', stream.l, stream.c]
-
-        # Case 11
-        elif (stream.n, '*', '*', '*') in self.slTable:
-            realRoute = self.slTable[stream.n, '*', '*', '*']
-
-        # Case 12
-        elif ('*', stream.s, '*', '*') in self.slTable:
-            realRoute = self.slTable['*', stream.s, '*', '*']
-
-        # Case 13
-        elif ('*', '*', '*', stream.c) in self.slTable:
-            realRoute = self.slTable['*', '*', '*', stream.c]
-
-        # Case 14
-        elif ('*', '*', stream.l, '*') in self.slTable:
-            realRoute = self.slTable['*', '*', stream.l, '*']
-
-        # Case 15
-        elif ('*', '*', '*', '*') in self.slTable:
-            realRoute = self.slTable['*', '*', '*', '*']
-
-        result = RequestMerge()
-        if realRoute is None:
-            raise RoutingException('No routes have been found!')
-            #raise WIContentError('No routes have been found!')
-
-        for route in realRoute:
-            # Check that I found a route
-            if route is not None:
-                result.append('seedlink', route.address, route.priority,
-                              stream, '', '')
-
-                if not alternative:
-                    break
-
-        return result
 
     def getRouteArc(self, stream, tw, alternative=False):
         """Based on a :class:`~Stream` and a timewindow (:class:`~TW`)returns
@@ -1874,31 +1551,22 @@ The following table lookup is implemented for the Arclink service::
 
         # Just to shorten notation
         ptRT = self.routingTable
-        ptSL = self.slTable
-        ptST = self.stTable
 
         # Clear all previous information
         ptRT.clear()
-        ptSL.clear()
-        ptST.clear()
 
         here = os.path.dirname(__file__)
         try:
             with open(os.path.join(here, 'data/routing.bin')) as rMerged:
-                self.routingTable, self.slTable, self.stTable = \
-                    pickle.load(rMerged)
+                self.routingTable = pickle.load(rMerged)
         except:
-            ptRT, ptSL, ptST = addRoutes(os.path.join(here,
-                                                      'data/routing.xml'))
+            ptRT = addRoutes(os.path.join(here, 'data/routing.xml'))
             for routeFile in glob.glob(
                     os.path.join(here, 'data/routing-*.xml')):
-                ptRT, ptSL, ptST = addRoutes(routeFile, ptRT, ptSL, ptST,
-                                             self.logs)
+                ptRT = addRoutes(routeFile, ptRT, self.logs)
 
             with open(os.path.join(here, 'data/routing.bin'), 'wb') \
                     as finalRoutes:
                 self.logs.debug('Writing routing.bin\n')
-                pickle.dump((ptRT, ptSL, ptST), finalRoutes)
+                pickle.dump(ptRT, finalRoutes)
                 self.routingTable = ptRT
-                self.slTable = ptSL
-                self.stTable = ptST
