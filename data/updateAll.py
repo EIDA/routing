@@ -243,7 +243,7 @@ or not. A pickled version of the three routing tables is saved in
 
 """
 
-    ptRT, ptSL, ptST = addRoutes('./routing.xml')
+    ptRT = addRoutes('./routing.xml')
 
     for line in synchroList.splitlines():
         if not len(line):
@@ -260,8 +260,8 @@ or not. A pickled version of the three routing tables is saved in
         if os.path.exists('./routing-' + dcid.strip() + '.xml'):
             # FIXME addRoutes should return no Exception ever and skip a
             # problematic file returning a coherent version of the routes
-            ptRT, ptSL, ptST = addRoutes('./routing-' + dcid.strip() + '.xml',
-                                         ptRT, ptSL, ptST, logs)
+            ptRT = addRoutes('./routing-' + dcid.strip() + '.xml',
+                                         ptRT, logs)
 
     try:
         os.remove('./routing.bin')
@@ -271,8 +271,6 @@ or not. A pickled version of the three routing tables is saved in
     with open('./routing.bin', 'wb') as finalRoutes:
         pickle.dump((ptRT, ptSL, ptST), finalRoutes)
         logs.info('Routes in main Routing Table: %s\n' % len(ptRT))
-        logs.info('Routes in Station Routing Table: %s\n' % len(ptST))
-        logs.info('Routes in Seedlink Routing Table: %s\n' % len(ptSL))
 
 
 def main(logLevel=2):

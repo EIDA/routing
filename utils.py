@@ -153,9 +153,9 @@ a regular period of time.
 
                     # Traverse through the sources
                     for serv in route:
-                        assert serv.tag[:4] == 'ns0:'
+                        assert serv.tag[:len(namesp)] == namesp
 
-                        service = serv.tag[4:]
+                        service = serv.tag[len(namesp):]
                         att = serv.attrib
 
                         # Extract the address (mandatory)
@@ -229,7 +229,7 @@ a regular period of time.
                                 # This checks the overlap of Streams and also
                                 # of timewindows and priority
                                 if checkOverlap(testStr, ptRT[testStr], st,
-                                                Route(address, tw, priority)):
+                                                Route(service, address, tw, priority)):
                                     msg = '%s: Overlap between %s and %s!\n'\
                                         % (fileName, st, testStr)
                                     logs.error(msg)
@@ -239,14 +239,14 @@ a regular period of time.
                                     break
 
                             if addIt:
-                                ptRT[st].append(Route(address, tw, priority))
+                                ptRT[st].append(Route(service, address, tw, priority))
                             else:
                                 logs.warning('Skip %s - %s\n' %
-                                             (st, Route(address, tw,
+                                             (st, Route(service, address, tw,
                                                         priority)))
 
                         except KeyError:
-                            ptRT[st] = [Route(address, tw, priority)]
+                            ptRT[st] = [Route(service, address, tw, priority)]
                         serv.clear()
 
                     route.clear()
@@ -629,17 +629,18 @@ False
         return TW(resSt, resEn)
 
 
-class Route(namedtuple('Route', ['address', 'tw', 'priority'])):
+class Route(namedtuple('Route', ['service', 'address', 'tw', 'priority'])):
     """
 :synopsis: Namedtuple including the information to define a :class:`~Route`
-           (a URL, a timewindow and a priority)
+           (a service name, a URL, a timewindow and a priority)
 :platform: Any
     """
 
     __slots__ = ()
 
     def overlap(self, otherRoute):
-        if self.priority == otherRoute.priority:
+        if ((self.priority == otherRoute.priority) and
+                (self.service == otherRoute.service)):
             return self.tw.overlap(otherRoute.tw)
         return False
 
@@ -1023,7 +1024,7 @@ information (URLs and parameters) to do the requests to different datacenters
         except:
             pass
 
-        result = self.getRouteDS(stream, tw, alternative)
+        result = self.getRouteDS(service, stream, tw, alternative)
 
         if result is None:
             # Through an exception if there is an error
@@ -1122,6 +1123,7 @@ used to translate the Arclink address to Dataselect address
             # order to do an expansion and try to add the expanded
             # streams
             # r1n, r1s, r1l, r1c = r1
+            print r1
             for rExp in self.ic.expand(r1.n, r1.s, r1.l, r1.c,
                                        tw.start, tw.end, True):
                 rExp = Stream(*rExp)
@@ -1134,6 +1136,7 @@ used to translate the Arclink address to Dataselect address
                 else:
                     self.logs.warning('Adding expanded %s\n' % str(rExp))
                     if (rExp in stream):
+                        print rExp
                         finalset.add(rExp)
 
         result = RequestMerge()
@@ -1147,9 +1150,63 @@ used to translate the Arclink address to Dataselect address
             st = finalset.pop()
             # FIXME For sure this call to getRouteArc needs to be replaced
             # For instance, I must include the service in the search
-            resArc = self.getRouteArc(st, tw, alternative)
+            #resArc = self.getRouteArc(st, tw, alternative)
 
-            result.extend(resArc)
+            #result.extend(resArc)
+
+
+
+
+            # Requested timewindow
+            setTW = set()
+            setTW.add(tw)
+
+            # We don't need to loop as routes are already ordered by
+            # priority. Take the first one!
+            while setTW:
+                toProc = setTW.pop()
+                self.logs.debug('Processing %s\n' % str(toProc))
+                
+                # Take the first route from the Routing table
+                for ro in self.routingTable[st]:
+                    print service
+                    print ro.service, ro.address
+
+                    if ro.service == service:
+                        break
+                else:
+                    raise Exception('No route with the specified service was found')
+
+                # Check if the timewindow is encompassed in the returned dates
+                self.logs.debug('%s in %s = %s\n' % (str(toProc),
+                                                     str(ro.tw),
+                                                     (toProc in ro.tw)))
+                if (toProc in ro.tw):
+
+                    # If the timewindow is not complete then add the missing
+                    # ranges to the tw set.
+                    for auxTW in toProc.difference(ro.tw):
+                        self.logs.debug('Adding %s\n' % str(auxTW))
+                        setTW.add(auxTW)
+
+                    auxSt, auxEn = toProc.intersection(ro.tw)
+                    result.append(service, ro.address,
+                                  ro.priority if ro.priority is not
+                                  None else '', stream,
+                                  auxSt if auxSt is not None else '',
+                                  auxEn if auxEn is not None else '')
+                    # Unless alternative routes are needed I can stop here
+                    if not alternative:
+                        break
+                    # To look for alternative routes do not look in the whole
+                    # period once we found a principal route. Try only to look
+                    # for alternative routes for THIS timewindow
+                    else:
+                        toProc = TW(auxSt, auxEn)
+
+
+
+
 
         # Check the coherency of the routes to set the return code
         if len(result) == 0:
@@ -1363,6 +1420,7 @@ The following table lookup is implemented for the Arclink service::
 
         self.logs.debug('Entering updateAll()\n')
         self.update()
+        
         if self.masterFile is not None:
             self.updateMT()
         # Add inventory cache here, to be able to expand request if necessary
