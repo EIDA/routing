@@ -1116,7 +1116,8 @@ used to translate the Arclink address to Dataselect address
                                       (r1, r2))
                     break
             else:
-                finalset.add(r1.strictMatch(stream))
+                #finalset.add(r1.strictMatch(stream))
+                finalset.add(r1)
                 continue
 
             # The break from 10 lines above jumps until this line in
@@ -1169,8 +1170,6 @@ used to translate the Arclink address to Dataselect address
                 
                 # Take the first route from the Routing table
                 for ro in self.routingTable[st]:
-                    print service
-                    print ro.service, ro.address
 
                     if ro.service == service:
                         break
@@ -1192,7 +1191,7 @@ used to translate the Arclink address to Dataselect address
                     auxSt, auxEn = toProc.intersection(ro.tw)
                     result.append(service, ro.address,
                                   ro.priority if ro.priority is not
-                                  None else '', stream,
+                                  None else '', stream.strictMatch(st),
                                   auxSt if auxSt is not None else '',
                                   auxEn if auxEn is not None else '')
                     # Unless alternative routes are needed I can stop here
