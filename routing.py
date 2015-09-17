@@ -404,9 +404,9 @@ def application(environ, start_response):
     if routes is None:
         # Add routing cache here, to be accessible to all modules
         routesFile = os.path.join(here, 'data', 'routing.xml')
-        invFile = os.path.join(here, 'data', 'Arclink-inventory.xml')
+        #invFile = os.path.join(here, 'data', 'Arclink-inventory.xml')
         masterFile = os.path.join(here, 'data', 'masterTable.xml')
-        routes = RoutingCache(routesFile, invFile, masterFile, Logs(verbo))
+        routes = RoutingCache(routesFile, masterFile, Logs(verbo))
 
     fname = environ['PATH_INFO'].split('/')[-1]
     if fname not in implementedFunctions:
