@@ -460,8 +460,7 @@ def application(environ, start_response):
 
 
 def main():
-    routes = RoutingCache("./routing.xml", "./Arclink-inventory.xml",
-                          "./masterTable.xml")
+    routes = RoutingCache("./routing.xml", "./masterTable.xml")
     print len(routes.routingTable)
 
 
