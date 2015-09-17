@@ -39,7 +39,7 @@ from time import sleep
 from collections import namedtuple
 from operator import add
 from operator import itemgetter
-from inventorycache import InventoryCache
+#from inventorycache import InventoryCache
 from wsgicomm import Logs
 
 
