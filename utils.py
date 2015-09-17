@@ -62,8 +62,12 @@ a regular period of time.
 
 :param fileName: File with routes to add the the routing table.
 :type fileName: str
-:returns: Three dictionaries with the routing tables (main, seedlink, station)
-:rtype: tuple
+:param ptRT: Routing Table where routes should be added to.
+:type ptRT: dict
+:param logs: Logging class with different preconfigured levels (error, warning, etc.).
+:type logs: :class:`~Logs`
+:returns: Updated routing table containing routes from the input file.
+:rtype: dict
 """
 
     logs.debug('Entering addRoutes(%s)\n' % fileName)
@@ -162,10 +166,10 @@ a regular period of time.
                         try:
                             address = att.get('address')
                             if len(address) == 0:
-                                print 'Could not add %s' %att
+                                logs.error('Could not add %s' %att)
                                 continue
                         except:
-                            print 'Could not add %s' %att
+                            logs.error('Could not add %s' %att)
                             continue
 
                         try:
@@ -260,6 +264,7 @@ a regular period of time.
     return ptRT
 
 
+# FIXME It is probably better to swap the first two parameters
 def addRemote(fileName, url, logs=Logs(2)):
     """Read the routing file from a remote datacenter and store it in memory.
 
@@ -432,16 +437,21 @@ datacenter, everything is added.
 class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
     """
 :synopsis: Namedtuple with methods to calculate matching and overlapping of
-           streams including (or not) wildcards
+           streams including (or not) wildcards. Components are the usual to
+           determine a stream:
+           n: network
+           s: station
+           l: location
+           c: channel
 :platform: Any
     """
 
     __slots__ = ()
 
     def __contains__(self, st):
-        """Check if one Stream is contained in this Stream.
+        """Check if one :class:`~Stream` is contained in this :class:`~Stream`.
 
-:param st: Stream which should checked for overlapping
+:param st: :class:`~Stream` which should checked for overlapping
 :type st: :class:`~Stream`
 :returns: Value specifying whether the given stream is contained in this one
 :rtype: Bool
@@ -456,12 +466,12 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
         return False
 
     def strictMatch(self, other):
-        """Returns a new Stream with a *reduction* of this one to force the
-        matching of the specification received as an input.
+        """Returns a new :class:`~Stream` with a *reduction* of this one to
+        force the matching of the specification received as an input.
 
-:param other: :class:`~Stream` which should checked for overlapping
+:param other: :class:`~Stream` which should be checked for overlaps
 :type other: :class:`~Stream`
-:returns: *reduced* version of this stream to match the one passed in
+:returns: *reduced* version of this :class:`~Stream` to match the one passed in
           the parameter
 :rtype: :class:`~Stream`
 """
@@ -478,10 +488,10 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
     def overlap(self, other):
         """Checks if there is an overlap between this stream and other one
 
-:param other: :class:`~Stream` which should be checked for overlapping
+:param other: :class:`~Stream` which should be checked for overlaps
 :type other: :class:`~Stream`
 :returns: Value specifying whether there is an overlap between this
-          stream and the one in the parameter
+          stream and the one passed as a parameter
 :rtype: Bool
 """
 
@@ -495,7 +505,9 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
 
 class TW(namedtuple('TW', ['start', 'end'])):
     """
-:synopsis: Namedtuple with methods to perform calculations on timewindows
+:synopsis: Namedtuple with methods to perform calculations on timewindows.
+           start: Start datetime
+           end: End datetime
 :platform: Any
     """
 
@@ -503,10 +515,18 @@ class TW(namedtuple('TW', ['start', 'end'])):
 
     # This method works with the "in" clause or with the "overlap" method
     def __contains__(self, otherTW):
+        """Wrap of the overlap method to allow  the use of the "in" clause.
+
+:param otherTW: timewindow which should be checked for overlaps
+:type otherTW: :class:`~TW`
+:returns: Value specifying whether there is an overlap between this
+          timewindow and the one in the parameter
+:rtype: Bool
+    """
         return self.overlap(otherTW)
 
     def overlap(self, otherTW):
-        """Check if other TW is contained in this TW.
+        """Check if the :class:`~TW` passed as a parameter is contained in this :class:`~TW`.
 
 :param otherTW: timewindow which should be checked for overlapping
 :type otherTW: :class:`~TW`
@@ -631,8 +651,11 @@ False
 
 class Route(namedtuple('Route', ['service', 'address', 'tw', 'priority'])):
     """
-:synopsis: Namedtuple including the information to define a :class:`~Route`
-           (a service name, a URL, a timewindow and a priority)
+:synopsis: Namedtuple defining a :class:`~Route`.
+           service: service name
+           address: a URL
+           tw: timewindow
+           priority: priority of the route
 :platform: Any
     """
 
@@ -706,13 +729,11 @@ class RoutingCache(object):
 :platform: Linux (maybe also Windows)
     """
 
-    def __init__(self, routingFile, invFile, masterFile=None, logs=Logs(2)):
+    def __init__(self, routingFile, masterFile=None, logs=Logs(2)):
         """RoutingCache constructor
 
 :param routingFile: XML file with routing information
 :type routingFile: str
-:param invFile: XML file with full inventory information
-:type invFile: str
 :param masterFile: XML file with high priority routes at network level
 :type masterFile: str
 :param logs: Class providing the methods: error/warning/info/debug
@@ -747,8 +768,8 @@ class RoutingCache(object):
         #    self.update()
 
         # Add inventory cache here, to be able to expand request if necessary
-        self.invFile = invFile
-        self.ic = InventoryCache(invFile)
+        #self.invFile = invFile
+        #self.ic = InventoryCache(invFile)
 
         # Read the configuration file and checks when do we need to update
         # the routes
@@ -803,11 +824,10 @@ The address and port of the server are read from ``routing.cfg``.
 The data is saved in the file ``routing.xml``. Generally used to start
 operating with an EIDA default configuration.
 
-.. note::
+.. deprecated:: 1.1
 
-    In the future this method should not be used and the configuration should
-    be independent from Arclink. Namely, the ``routing.xml`` file must exist in
-    advance.
+    This method should not be used and the configuration should be independent
+    from Arclink. Namely, the ``routing.xml`` file must exist in advance.
 
         """
 
@@ -893,6 +913,12 @@ operating with an EIDA default configuration.
 :returns: Dataselect URL equivalent of the given Arclink route
 :rtype: str
 :raises: Exception
+
+.. deprecated:: 1.1
+
+    This method should not be used and the configuration should be independent
+    from Arclink. Namely, the ``routing.xml`` file must exist in advance.
+
         """
 
         gfz = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
@@ -1063,41 +1089,46 @@ used to translate the Arclink address to Dataselect address
 
         """
 
+        subs = list()
+        for stRT in self.routingTable.keys():
+            if ((stRT in stream) or (stream in stRT)):
+                subs.append(stRT)
+
         # Filter first by the attributes without wildcards
-        subs = self.routingTable.keys()
+        #subs = self.routingTable.keys()
 
-        if (('*' not in stream.s) and ('?' not in stream.s)):
-            subs = [k for k in subs if (k.s is None or k.s == '*' or
-                                        k.s == stream.s)]
+        #if (('*' not in stream.s) and ('?' not in stream.s)):
+        #    subs = [k for k in subs if (k.s is None or k.s == '*' or
+        #                                k.s == stream.s)]
 
-        if (('*' not in stream.n) and ('?' not in stream.n)):
-            subs = [k for k in subs if (k.n is None or k.n == '*' or
-                                        k.n == stream.n)]
+        #if (('*' not in stream.n) and ('?' not in stream.n)):
+        #    subs = [k for k in subs if (k.n is None or k.n == '*' or
+        #                                k.n == stream.n)]
 
-        if (('*' not in stream.c) and ('?' not in stream.c)):
-            subs = [k for k in subs if (k.c is None or k.c == '*' or
-                                        k.c == stream.c)]
+        #if (('*' not in stream.c) and ('?' not in stream.c)):
+        #    subs = [k for k in subs if (k.c is None or k.c == '*' or
+        #                                k.c == stream.c)]
 
-        if (('*' not in stream.l) and ('?' not in stream.l)):
-            subs = [k for k in subs if (k.l is None or k.l == '*' or
-                                        k.l == stream.l)]
+        #if (('*' not in stream.l) and ('?' not in stream.l)):
+        #    subs = [k for k in subs if (k.l is None or k.l == '*' or
+        #                                k.l == stream.l)]
 
-        # Filter then by the attributes WITH wildcards
-        if (('*' in stream.s) or ('?' in stream.s)):
-            subs = [k for k in subs if (k.s is None or k.s == '*' or
-                                        fnmatch.fnmatch(k.s, stream.s))]
+        ## Filter then by the attributes WITH wildcards
+        #if (('*' in stream.s) or ('?' in stream.s)):
+        #    subs = [k for k in subs if (k.s is None or k.s == '*' or
+        #                                fnmatch.fnmatch(k.s, stream.s))]
 
-        if (('*' in stream.n) or ('?' in stream.n)):
-            subs = [k for k in subs if (k.n is None or k.n == '*' or
-                                        fnmatch.fnmatch(k.n, stream.n))]
+        #if (('*' in stream.n) or ('?' in stream.n)):
+        #    subs = [k for k in subs if (k.n is None or k.n == '*' or
+        #                                fnmatch.fnmatch(k.n, stream.n))]
 
-        if (('*' in stream.c) or ('?' in stream.c)):
-            subs = [k for k in subs if (k.c is None or k.c == '*' or
-                                        fnmatch.fnmatch(k.c, stream.c))]
+        #if (('*' in stream.c) or ('?' in stream.c)):
+        #    subs = [k for k in subs if (k.c is None or k.c == '*' or
+        #                                fnmatch.fnmatch(k.c, stream.c))]
 
-        if (('*' in stream.l) or ('?' in stream.l)):
-            subs = [k for k in subs if (k.l is None or k.l == '*' or
-                                        fnmatch.fnmatch(k.l, stream.l))]
+        #if (('*' in stream.l) or ('?' in stream.l)):
+        #    subs = [k for k in subs if (k.l is None or k.l == '*' or
+        #                                fnmatch.fnmatch(k.l, stream.l))]
 
         # Alternative NEW approach based on number of wildcards
         orderS = [sum([3 for t in r if '*' in t]) for r in subs]
@@ -1107,6 +1138,7 @@ used to translate the Arclink address to Dataselect address
 
         orderedSubs = [x for (y, x) in sorted(zip(order, subs))]
 
+        self.logs.debug('Preselection: %s\n' % orderedSubs)
         finalset = set()
 
         for r1 in orderedSubs:
@@ -1124,7 +1156,6 @@ used to translate the Arclink address to Dataselect address
             # order to do an expansion and try to add the expanded
             # streams
             # r1n, r1s, r1l, r1c = r1
-            print r1
             for rExp in self.ic.expand(r1.n, r1.s, r1.l, r1.c,
                                        tw.start, tw.end, True):
                 rExp = Stream(*rExp)
@@ -1137,7 +1168,6 @@ used to translate the Arclink address to Dataselect address
                 else:
                     self.logs.warning('Adding expanded %s\n' % str(rExp))
                     if (rExp in stream):
-                        print rExp
                         finalset.add(rExp)
 
         result = RequestMerge()
@@ -1145,7 +1175,7 @@ used to translate the Arclink address to Dataselect address
         # In finalset I have all the streams (including expanded and
         # the ones with wildcards), that I need to request.
         # Now I need the URLs
-        self.logs.debug(str(finalset) + '\n')
+        self.logs.debug('Selected streams: %s\n' % finalset)
 
         while finalset:
             st = finalset.pop()
@@ -1268,6 +1298,10 @@ the normal configuration.
     def getRouteArc(self, stream, tw, alternative=False):
         """Based on a :class:`~Stream` and a timewindow (:class:`~TW`)returns
 all the needed information (URLs and parameters) split by hosting datacenter.
+
+.. deprecated:: 1.1
+
+    This method should not be used as there is a more generic method.
 
 .. warning:
     This is not too useful because Arclink can already do automatically the
@@ -1415,7 +1449,7 @@ The following table lookup is implemented for the Arclink service::
         return result
 
     def updateAll(self):
-        """Read the three sources of routing and inventory information"""
+        """Read the two sources of routing information"""
 
         self.logs.debug('Entering updateAll()\n')
         self.update()
@@ -1423,7 +1457,7 @@ The following table lookup is implemented for the Arclink service::
         if self.masterFile is not None:
             self.updateMT()
         # Add inventory cache here, to be able to expand request if necessary
-        self.ic = InventoryCache(self.invFile)
+        #self.ic = InventoryCache(self.invFile)
 
     def updateMT(self):
         """Read the routes with highest priority and store them in memory.
@@ -1580,10 +1614,12 @@ The following table lookup is implemented for the Arclink service::
                         tw = TW(startD, endD)
 
                         if st not in ptMT:
-                            ptMT[st] = [RouteMT(address, tw, prio, service)]
+                            #ptMT[st] = [RouteMT(address, tw, prio, service)]
+                            ptMT[st] = [Route(service, address, tw, prio)]
                         else:
-                            ptMT[st].append(RouteMT(address, tw, prio,
-                                                    service))
+                            #ptMT[st].append(RouteMT(address, tw, prio,
+                            #                        service))
+                            ptMT[st].append(Route(service, address, tw, prio))
 
                         arcl.clear()
 
