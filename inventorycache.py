@@ -42,16 +42,12 @@ class InventoryCache(object):
     """
 
 
-    def __init__(self, inventory, logs=wsgicomm.Logs(2)):
+    def __init__(self, inventory):
         """InventoryCache constructor
 
         :param inventory: file name containing inventory information in
                           Arclink-XML format
         :type inventory: str
-        :param logs: Logging class supporting methods to write dependeing on
-                     the verbosity level.
-        :type logs: :class:`~wsgicomm.logs` (or other class implementing the
-                    expected methods)
 
         """
 
@@ -59,7 +55,8 @@ class InventoryCache(object):
         self.inventory = inventory
 
         # Check where should we log all our output
-        self.logs = logs
+        #self.logs = logs
+        self.logs = logging.getLogger('InventoryCache')
 
         # Temporary file to store the internal representation of the cache
         # in pickle format

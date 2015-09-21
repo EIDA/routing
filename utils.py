@@ -40,10 +40,11 @@ from collections import namedtuple
 from operator import add
 from operator import itemgetter
 #from inventorycache import InventoryCache
-from wsgicomm import Logs
+#from wsgicomm import Logs
+import logging
 
 
-def checkOverlap(str1, routeList, str2, route, logs=Logs(2)):
+def checkOverlap(str1, routeList, str2, route):
     if str1.overlap(str2):
         for auxRoute in routeList:
             if auxRoute.overlap(route):
@@ -52,7 +53,7 @@ def checkOverlap(str1, routeList, str2, route, logs=Logs(2)):
     return False
 
 
-def addRoutes(fileName, ptRT=dict(), logs=Logs(2)):
+def addRoutes(fileName, ptRT=dict()):
     """Read the routing file in XML format and store it in memory.
 
 All the routing information is read into a dictionary. Only the
@@ -70,6 +71,7 @@ a regular period of time.
 :rtype: dict
 """
 
+    logs = logging.getLogger('addRoutes')
     logs.debug('Entering addRoutes(%s)\n' % fileName)
 
     # Read the configuration file and checks when do we need to update
@@ -265,7 +267,7 @@ a regular period of time.
 
 
 # FIXME It is probably better to swap the first two parameters
-def addRemote(fileName, url, logs=Logs(2)):
+def addRemote(fileName, url):
     """Read the routing file from a remote datacenter and store it in memory.
 
     All the routing information is read into a dictionary. Only the
@@ -279,6 +281,7 @@ def addRemote(fileName, url, logs=Logs(2)):
 
     """
 
+    logs = logging.getLogger('addRemote')
     logs.debug('Entering addRemote(%s)\n' %
                os.path.basename(fileName))
 
@@ -729,7 +732,7 @@ class RoutingCache(object):
 :platform: Linux (maybe also Windows)
     """
 
-    def __init__(self, routingFile, masterFile=None, logs=Logs(2)):
+    def __init__(self, routingFile, masterFile=None):
         """RoutingCache constructor
 
 :param routingFile: XML file with routing information
@@ -742,7 +745,8 @@ class RoutingCache(object):
 """
 
         # Save the logging object
-        self.logs = logs
+        #self.logs = logs
+        self.logs = logging.getLogger('RoutingCache')
 
         # Arclink routing file in XML format
         self.routingFile = routingFile
