@@ -31,9 +31,6 @@ import datetime
 import fnmatch
 import telnetlib
 import xml.etree.cElementTree as ET
-import urllib2
-import cPickle as pickle
-import ConfigParser
 import glob
 from time import sleep
 from collections import namedtuple
@@ -43,6 +40,20 @@ from operator import itemgetter
 #from wsgicomm import Logs
 import logging
 
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
+
+try:
+    import urllib.request as ul
+except ImportError:
+    import urllib2 as ul
 
 def checkOverlap(str1, routeList, str2, route):
     if str1.overlap(str2):
@@ -76,7 +87,7 @@ a regular period of time.
 
     # Read the configuration file and checks when do we need to update
     # the routes
-    config = ConfigParser.RawConfigParser()
+    config = configparser.RawConfigParser()
 
     here = os.path.dirname(__file__)
     config.read(os.path.join(here, 'routing.cfg'))
@@ -104,7 +115,10 @@ a regular period of time.
         context = iter(context)
 
         # get the root element
-        event, root = context.next()
+        if 'next' in context:
+            event, root = context.next()
+        else:
+            event, root = next(context)
 
         # Check that it is really an inventory
         if root.tag[-len('routing'):] != 'routing':
@@ -286,7 +300,7 @@ def addRemote(fileName, url):
                os.path.basename(fileName))
 
     # Prepare Request
-    req = urllib2.Request(url + '/localconfig')
+    req = ul.Request(url + '/localconfig')
 
     blockSize = 4096
 
@@ -303,7 +317,7 @@ def addRemote(fileName, url):
 
     # Connect to the proper Routing-WS
     try:
-        u = urllib2.urlopen(req)
+        u = ul.urlopen(req)
 
         with open(fileName, 'w') as routeExt:
             logs.debug('%s opened\n%s:' % (fileName, url))
@@ -318,7 +332,7 @@ def addRemote(fileName, url):
             # Close the connection to avoid overloading the server
             u.close()
 
-    except urllib2.URLError as e:
+    except ul.URLError as e:
         if hasattr(e, 'reason'):
             logs.error('%s - Reason: %s\n' % (url, e.reason))
         elif hasattr(e, 'code'):
@@ -777,7 +791,7 @@ class RoutingCache(object):
 
         # Read the configuration file and checks when do we need to update
         # the routes
-        config = ConfigParser.RawConfigParser()
+        config = configparser.RawConfigParser()
 
         here = os.path.dirname(__file__)
         config.read(os.path.join(here, 'routing.cfg'))
@@ -838,7 +852,7 @@ operating with an EIDA default configuration.
         # Functionality moved away from this module. Check updateAll.py.
         return
         # Check Arclink server that must be contacted to get a routing table
-        config = ConfigParser.RawConfigParser()
+        config = configparser.RawConfigParser()
 
         here = os.path.dirname(__file__)
         config.read(os.path.join(here, 'routing.cfg'))

@@ -30,7 +30,6 @@ import os
 import cgi
 import datetime
 import xml.etree.cElementTree as ET
-import ConfigParser
 import json
 from wsgicomm import WIContentError
 from wsgicomm import WIClientError
@@ -43,6 +42,10 @@ from utils import RequestMerge
 from utils import RoutingCache
 from utils import RoutingException
 
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 
 def _ConvertDictToXmlRecurse(parent, dictitem):
     assert not isinstance(dictitem, list)
@@ -383,7 +386,7 @@ def application(environ, start_response):
         else:
             raise Exception
 
-    except ValueError, e:
+    except ValueError as e:
         if str(e) == "Maximum content length exceeded":
             # Add some user-friendliness (this message triggers an alert
             # box on the client)
@@ -397,7 +400,7 @@ def application(environ, start_response):
     implementedFunctions = ['query', 'application.wadl', 'localconfig',
                             'version', 'info']
 
-    config = ConfigParser.RawConfigParser()
+    config = configparser.RawConfigParser()
     here = os.path.dirname(__file__)
     config.read(os.path.join(here, 'routing.cfg'))
     #verbo = config.getint('Service', 'verbosity')
@@ -455,7 +458,7 @@ def application(environ, start_response):
         return send_plain_response('200 OK', text, start_response)
 
     elif fname == 'info':
-        config = ConfigParser.RawConfigParser()
+        config = configparser.RawConfigParser()
         here = os.path.dirname(__file__)
         config.read(os.path.join(here, 'routing.cfg'))
 
@@ -467,7 +470,7 @@ def application(environ, start_response):
 
 def main():
     routes = RoutingCache("./routing.xml", "./masterTable.xml")
-    print len(routes.routingTable)
+    #print len(routes.routingTable)
 
 
 if __name__ == "__main__":
