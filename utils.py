@@ -115,7 +115,7 @@ a regular period of time.
         context = iter(context)
 
         # get the root element
-        if 'next' in context:
+        if hasattr(context, 'next'):
             event, root = context.next()
         else:
             event, root = next(context)
@@ -1512,7 +1512,10 @@ The following table lookup is implemented for the Arclink service::
         context = iter(context)
 
         # get the root element
-        event, root = context.next()
+        if hasattr(context, 'next'):
+            event, root = context.next()
+        else:
+            event, root = next(context)
 
         # Check that it is really an inventory
         if root.tag[-len('routing'):] != 'routing':
