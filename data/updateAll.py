@@ -13,6 +13,13 @@ from utils import addRemote
 from utils import addRoutes
 from wsgicomm import Logs
 
+"""
+.. todo::
+    We need to include a function that is able to "translate" from arclink
+    to dataselect. It should read routing.xml.download and change the addresses
+    and services following the same table that we had previously.
+
+"""
 
 def getArcRoutes(arcServ='eida.gfz-potsdam.de', arcPort=18001):
     """Connects via telnet to an Arclink server to get routing information.
@@ -113,6 +120,8 @@ start operating with an EIDA default configuration.
 :type arcServ: str
 :param arcPort: Arclink server port
 :type arcPort: int
+
+.. deprecated:: since version 1.0.2
 
 .. warning::
 
@@ -296,7 +305,7 @@ def main(logLevel=2):
 
     mergeRoutes(synchroList, logs)
 
-    getArcInv(arcServ, arcPort)
+    #getArcInv(arcServ, arcPort)
 
 
 if __name__ == '__main__':
