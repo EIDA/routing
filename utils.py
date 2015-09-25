@@ -64,7 +64,7 @@ def checkOverlap(str1, routeList, str2, route):
     return False
 
 
-def addRoutes(fileName, ptRT=dict()):
+def addRoutes(fileName, ptRT=dict(), configF='routing.cfg'):
     """Read the routing file in XML format and store it in memory.
 
 All the routing information is read into a dictionary. Only the
@@ -76,8 +76,8 @@ a regular period of time.
 :type fileName: str
 :param ptRT: Routing Table where routes should be added to.
 :type ptRT: dict
-:param logs: Logging class with different preconfigured levels (error, warning, etc.).
-:type logs: :class:`~Logs`
+:param config: File where the configuration must be read from.
+:type config: str
 :returns: Updated routing table containing routes from the input file.
 :rtype: dict
 """
@@ -90,7 +90,7 @@ a regular period of time.
     config = configparser.RawConfigParser()
 
     here = os.path.dirname(__file__)
-    config.read(os.path.join(here, 'routing.cfg'))
+    config.read(os.path.join(here, configF))
 
     if 'allowoverlap' in config.options('Service'):
         allowOverlap = config.getboolean('Service', 'allowoverlap')
@@ -144,6 +144,14 @@ a regular period of time.
                         locationCode = route.get('locationCode')
                         if len(locationCode) == 0:
                             locationCode = '*'
+
+                        # Do not allow "?" wildcard in the input, because it
+                        # will be impossible to match with the user input if
+                        # this also has a mixture of "*" and "?"
+                        if '?' in locationCode:
+                            logging.error('Wildcard "?" is not allowed!')
+                            continue
+
                     except:
                         locationCode = '*'
 
@@ -152,6 +160,14 @@ a regular period of time.
                         networkCode = route.get('networkCode')
                         if len(networkCode) == 0:
                             networkCode = '*'
+
+                        # Do not allow "?" wildcard in the input, because it
+                        # will be impossible to match with the user input if
+                        # this also has a mixture of "*" and "?"
+                        if '?' in networkCode:
+                            logging.error('Wildcard "?" is not allowed!')
+                            continue
+
                     except:
                         networkCode = '*'
 
@@ -160,6 +176,14 @@ a regular period of time.
                         stationCode = route.get('stationCode')
                         if len(stationCode) == 0:
                             stationCode = '*'
+                    
+                        # Do not allow "?" wildcard in the input, because it
+                        # will be impossible to match with the user input if
+                        # this also has a mixture of "*" and "?"
+                        if '?' in stationCode:
+                            logging.error('Wildcard "?" is not allowed!')
+                            continue
+
                     except:
                         stationCode = '*'
 
@@ -168,6 +192,14 @@ a regular period of time.
                         streamCode = route.get('streamCode')
                         if len(streamCode) == 0:
                             streamCode = '*'
+
+                        # Do not allow "?" wildcard in the input, because it
+                        # will be impossible to match with the user input if
+                        # this also has a mixture of "*" and "?"
+                        if '?' in streamCode:
+                            logging.error('Wildcard "?" is not allowed!')
+                            continue
+
                     except:
                         streamCode = '*'
 
@@ -746,15 +778,15 @@ class RoutingCache(object):
 :platform: Linux (maybe also Windows)
     """
 
-    def __init__(self, routingFile, masterFile=None):
+    def __init__(self, routingFile, masterFile=None, config='routing.cfg'):
         """RoutingCache constructor
 
 :param routingFile: XML file with routing information
 :type routingFile: str
 :param masterFile: XML file with high priority routes at network level
 :type masterFile: str
-:param logs: Class providing the methods: error/warning/info/debug
-:type logs: for instance, :class:`~wsgicomm.Logs`
+:param config: File where the configuration must be read from
+:type config: str
 
 """
 
@@ -764,6 +796,9 @@ class RoutingCache(object):
 
         # Arclink routing file in XML format
         self.routingFile = routingFile
+
+        # Arclink routing file in XML format
+        self.configFile = config
 
         # Dictionary with all the routes
         self.routingTable = dict()
@@ -791,11 +826,11 @@ class RoutingCache(object):
 
         # Read the configuration file and checks when do we need to update
         # the routes
-        config = configparser.RawConfigParser()
+        configP = configparser.RawConfigParser()
 
         here = os.path.dirname(__file__)
-        config.read(os.path.join(here, 'routing.cfg'))
-        updTime = config.get('Service', 'updateTime')
+        configP.read(os.path.join(here, self.configFile))
+        updTime = configP.get('Service', 'updateTime')
 
         auxL = list()
         for auxT in updTime.split():
@@ -838,7 +873,7 @@ class RoutingCache(object):
 
     def configArclink(self):
         """Connects via telnet to an Arclink server to get routing information.
-The address and port of the server are read from ``routing.cfg``.
+The address and port of the server are read from the configuration file.
 The data is saved in the file ``routing.xml``. Generally used to start
 operating with an EIDA default configuration.
 
@@ -855,7 +890,7 @@ operating with an EIDA default configuration.
         config = configparser.RawConfigParser()
 
         here = os.path.dirname(__file__)
-        config.read(os.path.join(here, 'routing.cfg'))
+        config.read(os.path.join(here, self.config))
         arcServ = config.get('Arclink', 'server')
         arcPort = config.getint('Arclink', 'port')
 
