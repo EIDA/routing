@@ -403,7 +403,6 @@ def application(environ, start_response):
     config = configparser.RawConfigParser()
     here = os.path.dirname(__file__)
     config.read(os.path.join(here, 'routing.cfg'))
-    #verbo = config.getint('Service', 'verbosity')
     verbo = config.get('Service', 'verbosity')
     # Warning is the default value
     verboNum = getattr(logging, verbo.upper(), 30)

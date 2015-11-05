@@ -65,7 +65,7 @@ def checkOverlap(str1, routeList, str2, route):
     return False
 
 
-def addRoutes(fileName, ptRT=dict(), config='routing.cfg'):
+def addRoutes(fileName, **kwargs):
     """Read the routing file in XML format and store it in memory.
 
 All the routing information is read into a dictionary. Only the
@@ -77,28 +77,21 @@ a regular period of time.
 :type fileName: str
 :param ptRT: Routing Table where routes should be added to.
 :type ptRT: dict
-:param config: File where the configuration must be read from.
-:type config: str
 :returns: Updated routing table containing routes from the input file.
 :rtype: dict
 """
 
+    # Routing table is empty (default)
+    ptRT = kwargs.get('routingTable', dict())
+
     logs = logging.getLogger('addRoutes')
     logs.debug('Entering addRoutes(%s)\n' % fileName)
 
-    # Read the configuration file and checks when do we need to update
-    # the routes
-    configP = configparser.RawConfigParser()
-
-    configP.read(config)
-
-    if 'allowoverlap' in configP.options('Service'):
-        allowOverlap = configP.getboolean('Service', 'allowoverlap')
-    else:
-        allowOverlap = False
+    # Default value is NOT to allow overlapping streams
+    allowOverlaps = kwargs.get('allowOverlaps', False)
 
     logs.info('Overlaps between routes will ' +
-              '' if allowOverlap else 'NOT ' + 'be allowed')
+              ('' if allowOverlaps else 'NOT ' + 'be allowed'))
 
     with open(fileName, 'r') as testFile:
         # Parse the routing file
@@ -282,7 +275,7 @@ a regular period of time.
                                     msg = '%s: Overlap between %s and %s!\n'\
                                         % (fileName, st, testStr)
                                     logs.error(msg)
-                                    if not allowOverlap:
+                                    if not allowOverlaps:
                                         logs.error('Skipping %s\n' % str(st))
                                         addIt = False
                                     break
@@ -332,9 +325,6 @@ def addRemote(fileName, url):
     req = ul.Request(url + '/localconfig')
 
     blockSize = 4096
-
-    #here = os.path.dirname(__file__)
-    #fileName = os.path.join(here, 'data', dcid + '.xml.download')
 
     fileName = fileName + '.download'
 
@@ -772,7 +762,6 @@ class RoutingCache(object):
         # Save the logging object
         #self.logs = logs
         self.logs = logging.getLogger('RoutingCache')
-        logging.basicConfig()
 
         # Arclink routing file in XML format
         self.routingFile = routingFile
@@ -784,11 +773,6 @@ class RoutingCache(object):
         configP = configparser.RawConfigParser()
         configP.read(config)
 
-        verbo = configP.get('Service', 'verbosity')
-        verboNum = getattr(logging, verbo.upper(), 30)
-        self.logs.setLevel(verboNum)
-
-
         # Dictionary with all the routes
         self.routingTable = dict()
         self.logs.info('Reading routes from %s' % self.routingFile)
@@ -799,13 +783,7 @@ class RoutingCache(object):
         self.update()
         self.logs.info('RoutingCache finished!')
 
-        # Read the configuration file and checks when do we need to update
-        # the routes
-        configP = configparser.RawConfigParser()
-
-        # FIXME The next line is not needed
-        # Read configuration file
-        configP.read(self.configFile)
+        # Check update time
         updTime = configP.get('Service', 'updateTime')
 
         auxL = list()

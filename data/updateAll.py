@@ -80,7 +80,7 @@ def mapArcFDSN(route):
         return koeri
     raise Exception('No FDSN-WS equivalent found for %s' % route)
 
-def arc2fdsnws(filein, fileout, config='../ownDC.cfg'):
+def arc2fdsnws(filein, fileout, config='../routing.cfg'):
     """Read the routing file in XML format and add the Dataselect and Station
 routes based on the Arclink information. The resulting table is stored in 
 
@@ -328,22 +328,25 @@ start operating with an EIDA default configuration.
     logs.info('\nInventory read from Arclink!\n')
 
 
-def mergeRoutes(synchroList, logs=Logs(2)):
-    """Retrieve routes from different sources and merge them witht he local
-ones in the three usual routing tables (main, seedlink, station). The
-configuration file is checked to see whether overlapping routes are allowed
-or not. A pickled version of the three routing tables is saved in
-``routing.bin``.
+def mergeRoutes(fileRoutes, synchroList, allowOverlaps=False):
+    """Retrieve routes from different sources and merge them with the local
+ones in the routing tables. The configuration file is checked to see whether
+overlapping routes are allowed or not. A pickled version of the the routing
+table is saved in ``routing.bin``.
 
+:param fileRoutes: File containing the local routing table
+:type fileRoutes: str
 :param synchroList: List of data centres where routes should be imported from
 :type synchroList: str
-:param logs: Logging object supporting the methods :func:`~Logs.error`,
-    :func:`~Logs.warning` and so on.
-:type logs: :class:`~Logs`
+:param allowOverlaps: Specify if overlapping streams should be allowed or discarded
+:type allowOverlaps: boolean
 
 """
 
-    ptRT = addRoutes('./routing.xml')
+    logs = logging.getLogger('mergeRoutes')
+    logs.info('Synchronizing with: %s' % synchroList)
+
+    ptRT = addRoutes(fileRoutes, allowOverlaps=allowOverlaps)
 
     for line in synchroList.splitlines():
         if not len(line):
@@ -351,17 +354,18 @@ or not. A pickled version of the three routing tables is saved in
         logs.debug(str(line.split(',')))
         dcid, url = line.split(',')
         try:
-            addRemote('./routing-' + dcid.strip() + '.xml', url.strip(), logs)
+            addRemote('./routing-%s.xml' % dcid.strip(), url.strip())
         except:
             msg = 'Failure updating routing information from %s (%s)' % \
                 (dcid, url)
             logs.error(msg)
 
-        if os.path.exists('./routing-' + dcid.strip() + '.xml'):
+        if os.path.exists('./routing-%s.xml' % dcid.strip()):
             # FIXME addRoutes should return no Exception ever and skip a
             # problematic file returning a coherent version of the routes
-            ptRT = addRoutes('./routing-' + dcid.strip() + '.xml',
-                                         ptRT, logs)
+            print 'Adding REMOTE %s' % dcid
+            ptRT = addRoutes('./routing-%s.xml' % dcid.strip(),
+                             routingTable=ptRT, allowOverlaps=allowOverlaps)
 
     try:
         os.remove('./routing.bin')
@@ -369,11 +373,11 @@ or not. A pickled version of the three routing tables is saved in
         pass
 
     with open('./routing.bin', 'wb') as finalRoutes:
-        pickle.dump((ptRT, ptSL, ptST), finalRoutes)
+        pickle.dump(ptRT, finalRoutes)
         logs.info('Routes in main Routing Table: %s\n' % len(ptRT))
 
 
-def main(logLevel=2):
+def main():
     # FIXME logLevel must be used via argparser
     # Check verbosity in the output
     parser = argparse.ArgumentParser(description='Get EIDA routing configuration and "export" it to the FDSN-WS style.')
@@ -384,11 +388,13 @@ def main(logLevel=2):
             help='Arclink server address (address.domain:18001).')
     parser.add_argument('-c', '--config',
                         help='Config file to use.',
-                        default='../ownDC.cfg')
+                        default='../routing.cfg')
     args = parser.parse_args()
 
     config = configparser.RawConfigParser()
-    config.read(args.config)
+    if not len(config.read(args.config)):
+        logs.error('Configuration file %s could not be read' % args.config)
+        return
 
     # Command line parameter has priority
     try:
@@ -405,6 +411,7 @@ def main(logLevel=2):
     # INFO is the default value
     logging.basicConfig(level=verbo)
     logs = logging.getLogger('getEIDAconfig')
+    logs.setLevel(verbo)
 
     # Check Arclink server that must be contacted to get a routing table
     if args.server:
@@ -421,29 +428,32 @@ def main(logLevel=2):
 
 
     if config.getboolean('Service', 'ArclinkBased'):
-        getArcRoutes(arcServ, arcPort, 'ownDC-routes-tmp.xml')
-        arc2fdsnws('ownDC-routes-tmp.xml', 'ownDC-routes.xml', config=args.config)
+        logs.info('Starting routing table creation based on Arclink data')
+        getArcRoutes(arcServ, arcPort, 'routing-tmp.xml')
+        logs.info('Adding Station and Dataselect routes based on Arclink data')
+        arc2fdsnws('routing-tmp.xml', 'routing.xml', config=args.config)
         try:
-            os.remove('ownDC-routes-tmp.xml')
+            os.remove('routing-tmp.xml')
+            logs.debug('routing-tmp.xml removed')
         except:
             pass
 
     else:
         print 'Skipping routing information. Config file does not allow to ' \
-            + 'overwrite the information. (../routing.cfg)'
+            + 'overwrite the information. (%s)' % args.config
+
+    try:
+        os.remove('routing-tmp.xml.bin')
+    except:
+        pass
 
     synchroList = ''
     if 'synchronize' in config.options('Service'):
         synchroList = config.get('Service', 'synchronize')
 
-    mergeRoutes(synchroList, logs)
+    mergeRoutes('routing.xml', synchroList)
 
     #getArcInv(arcServ, arcPort)
-
-    try:
-        os.remove('ownDC-routes-tmp.xml.bin')
-    except:
-        pass
 
 if __name__ == '__main__':
     main()
