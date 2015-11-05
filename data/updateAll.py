@@ -2,16 +2,28 @@
 
 import os
 import sys
-import ConfigParser
 import telnetlib
-import cPickle as pickle
+import argparse
 from time import sleep
+import xml.etree.cElementTree as ET
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 
 sys.path.append('..')
 
 from utils import addRemote
 from utils import addRoutes
-from wsgicomm import Logs
+from utils import Route
+from utils import RoutingCache
+import logging
 
 """
 .. todo::
@@ -21,15 +33,92 @@ from wsgicomm import Logs
 
 """
 
-def getArcRoutes(arcServ='eida.gfz-potsdam.de', arcPort=18001):
+def mapArcFDSN(route):
+    """Map from an Arclink address to a Dataselect one
+
+:param route: Arclink route
+:type route: str
+:returns: Base URL equivalent of the given Arclink route
+:rtype: str
+:raises: Exception
+
+    """
+
+    gfz = 'http://geofon.gfz-potsdam.de'
+    odc = 'http://www.orfeus-eu.org'
+    eth = 'http://eida.ethz.ch'
+    resif = 'http://ws.resif.fr'
+    ingv = 'http://webservices.rm.ingv.it'
+    bgr = 'http://eida.bgr.de'
+    lmu = 'http://erde.geophysik.uni-muenchen.de'
+    ipgp = 'http://eida.ipgp.fr'
+    niep = 'http://eida-sc3.infp.ro'
+    koeri = 'http://eida-service.koeri.boun.edu.tr'
+
+    # Try to identify the hosting institution
+    host = route.split(':')[0]
+
+    if host.endswith('gfz-potsdam.de'):
+        return gfz
+    elif host.endswith('knmi.nl'):
+        return odc
+    elif host.endswith('ethz.ch'):
+        return eth
+    elif host.endswith('resif.fr'):
+        return resif
+    elif host.endswith('ingv.it'):
+        return ingv
+    elif host.endswith('bgr.de'):
+        return bgr
+    elif host.startswith('141.84.'):
+        return lmu
+    elif host.endswith('ipgp.fr'):
+        return ipgp
+    elif host.endswith('infp.ro'):
+        return niep
+    elif host.endswith('boun.edu.tr') or host.startswith('193.140.203'):
+        return koeri
+    raise Exception('No FDSN-WS equivalent found for %s' % route)
+
+def arc2fdsnws(filein, fileout, config='../ownDC.cfg'):
+    """Read the routing file in XML format and add the Dataselect and Station
+routes based on the Arclink information. The resulting table is stored in 
+
+:param filein: Input file with routes (usually from an Arclink server).
+:type filein: str
+:param fileout: Output file with all routes from the input file plus new
+                Station and Dataselect routes based on the Arclink route.
+:type fileout: str
+"""
+    rc = RoutingCache(filein, config=config)
+    for st, lr in rc.routingTable.iteritems():
+        toAdd = list()
+        for r in lr:
+            if r.service == 'arclink':
+                stat = Route('station', '%s/fdsnws/station/1/query' %
+                             mapArcFDSN(r.address), r.tw, r.priority)
+                toAdd.append(stat)
+
+                data = Route('dataselect', '%s/fdsnws/dataselect/1/query' %
+                             mapArcFDSN(r.address), r.tw, r.priority)
+                toAdd.append(data)
+
+        lr.extend(toAdd)
+
+    rc.toXML(fileout)
+
+
+def getArcRoutes(arcServ='eida.gfz-potsdam.de', arcPort=18001, foutput='routing.xml'):
     """Connects via telnet to an Arclink server to get routing information.
-The data is saved in the file ``routing.xml``. Generally used to start
+The data is saved in the file specified by foutput. Generally used to start
 operating with an EIDA default configuration.
 
 :param arcServ: Arclink server address
 :type arcServ: str
 :param arcPort: Arclink server port
 :type arcPort: int
+:param foutput: Filename where the output must be saved
+:type foutput: str
 
 .. warning::
 
@@ -39,7 +128,7 @@ operating with an EIDA default configuration.
 
     """
 
-    logs = Logs(4)
+    logs = logging.getLogger('getArcRoutes')
 
     tn = telnetlib.Telnet(arcServ, arcPort)
     tn.write('HELLO\n')
@@ -89,22 +178,22 @@ operating with an EIDA default configuration.
 
     here = os.path.dirname(__file__)
     try:
-        os.remove(os.path.join(here, 'routing.xml.download'))
+        os.remove(os.path.join(here, '%s.download' % foutput))
     except:
         pass
 
-    with open(os.path.join(here, 'routing.xml.download'), 'w') as fout:
+    with open(os.path.join(here, '%s.download' % foutput), 'w') as fout:
         fout.write(routTable[routTable.find('<'):-3])
 
     try:
-        os.rename(os.path.join(here, './routing.xml'),
-                  os.path.join(here, './routing.xml.bck'))
+        os.rename(os.path.join(here, foutput),
+                  os.path.join(here, '%s.bck' % foutput))
     except:
         pass
 
     try:
-        os.rename(os.path.join(here, './routing.xml.download'),
-                  os.path.join(here, './routing.xml'))
+        os.rename(os.path.join(here, '%s.download' % foutput),
+                  os.path.join(here, foutput))
     except:
         pass
 
@@ -131,7 +220,9 @@ start operating with an EIDA default configuration.
 
     """
 
-    logs = Logs(4)
+    logs = logging.getLogger('getArcInv')
+
+    logs.warning('This function should probably not be used! Be carefull!')
 
     tn = telnetlib.Telnet(arcServ, arcPort)
     tn.write('HELLO\n')
@@ -283,18 +374,60 @@ or not. A pickled version of the three routing tables is saved in
 
 
 def main(logLevel=2):
-    logs = Logs(logLevel)
+    # FIXME logLevel must be used via argparser
+    # Check verbosity in the output
+    parser = argparse.ArgumentParser(description='Get EIDA routing configuration and "export" it to the FDSN-WS style.')
+    parser.add_argument('-l', '--loglevel',
+                        help='Verbosity in the output.',
+                        choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'])
+    parser.add_argument('-s', '--server',
+            help='Arclink server address (address.domain:18001).')
+    parser.add_argument('-c', '--config',
+                        help='Config file to use.',
+                        default='../ownDC.cfg')
+    args = parser.parse_args()
+
+    config = configparser.RawConfigParser()
+    config.read(args.config)
+
+    # Command line parameter has priority
+    try:
+        verbo = getattr(logging, args.loglevel)
+    except:
+        # If no command-line parameter then read from config file
+        try:
+            verbo = config.get('Service', 'verbosity')
+            verbo = getattr(logging, verbo)
+        except:
+            # Otherwise, default value
+            verbo = logging.INFO
+
+    # INFO is the default value
+    logging.basicConfig(level=verbo)
+    logs = logging.getLogger('getEIDAconfig')
 
     # Check Arclink server that must be contacted to get a routing table
-    config = ConfigParser.RawConfigParser()
+    if args.server:
+        arcServ, arcPort = args.server.split(':')
+    else:
+        # If no command-line parameter then read from config file
+        try:
+            arcServ = config.get('Arclink', 'server')
+            arcPort = config.getint('Arclink', 'port')
+        except:
+            # Otherwise, default value
+            arcServ = 'eida.gfz-potsdam.de'
+            arcPort = 18002
 
-    here = os.path.dirname(__file__)
-    config.read(os.path.join(here, '../routing.cfg'))
-    arcServ = config.get('Arclink', 'server')
-    arcPort = config.getint('Arclink', 'port')
 
     if config.getboolean('Service', 'ArclinkBased'):
-        getArcRoutes(arcServ, arcPort)
+        getArcRoutes(arcServ, arcPort, 'ownDC-routes-tmp.xml')
+        arc2fdsnws('ownDC-routes-tmp.xml', 'ownDC-routes.xml', config=args.config)
+        try:
+            os.remove('ownDC-routes-tmp.xml')
+        except:
+            pass
+
     else:
         print 'Skipping routing information. Config file does not allow to ' \
             + 'overwrite the information. (../routing.cfg)'
@@ -307,9 +440,10 @@ def main(logLevel=2):
 
     #getArcInv(arcServ, arcPort)
 
+    try:
+        os.remove('ownDC-routes-tmp.xml.bin')
+    except:
+        pass
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        main(int(sys.argv[1]))
-    else:
-        main()
+    main()
