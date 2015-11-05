@@ -769,10 +769,6 @@ class RoutingCache(object):
         # Arclink routing file in XML format
         self.configFile = config
 
-        # Read the verbosity setting
-        configP = configparser.RawConfigParser()
-        configP.read(config)
-
         # Dictionary with all the routes
         self.routingTable = dict()
         self.logs.info('Reading routes from %s' % self.routingFile)
@@ -784,24 +780,29 @@ class RoutingCache(object):
         self.logs.info('RoutingCache finished!')
 
         # Check update time
-        updTime = configP.get('Service', 'updateTime')
-
-        auxL = list()
-        for auxT in updTime.split():
-            toAdd = datetime.datetime.strptime(auxT, '%H:%M')
-            auxL.append(toAdd)
-
         # Configure the expected update moment of the day
         now = datetime.datetime.now()
 
-        self.updTimes = sorted(auxL)
         self.nextUpd = None
         self.lastUpd = now
-        secsDay = 60 * 60 * 24
-        if auxL:
-            self.nextUpd = min(enumerate([(x - now).total_seconds() %
-                                          secsDay for x in self.updTimes]),
-                               key=itemgetter(1))[0]
+
+        # Read the verbosity setting
+        configP = configparser.RawConfigParser()
+        if len(configP.read(config)):
+
+            updTime = configP.get('Service', 'updateTime')
+
+            auxL = list()
+            for auxT in updTime.split():
+                toAdd = datetime.datetime.strptime(auxT, '%H:%M')
+                auxL.append(toAdd)
+
+            self.updTimes = sorted(auxL)
+            secsDay = 60 * 60 * 24
+            if auxL:
+                self.nextUpd = min(enumerate([(x - now).total_seconds() %
+                                              secsDay for x in self.updTimes]),
+                                   key=itemgetter(1))[0]
 
         # Check for masterTable
         if masterFile is None:
@@ -984,9 +985,9 @@ operating with an EIDA default configuration.
 
     def __time2Update(self):
         secsDay = 60 * 60 * 24
-        lU = self.lastUpd
         # First check whether the information should be updated or not
         if self.nextUpd is not None:
+            lU = self.lastUpd
             now = datetime.datetime.now()
             if len(self.updTimes) == 1:
                 now2lastUpd = (now - lU).seconds % secsDay \
