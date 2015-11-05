@@ -148,7 +148,7 @@ class RouteCacheTests(unittest.TestCase):
         except:
             raise Exception('Error retrieving data for CH.LIENZ.*.?HZ')
 
-        expected = '[{"url": "http://www.orfeus-eu.org/fdsnws/dataselect/1/query", "params": [{"loc": "*", "end": "", "sta": "LIENZ", "cha": "BHZ", "priority": 2, "start": "1980-01-01T00:00:00", "net": "CH"}], "name": "dataselect"}, {"url": "http://eida.ethz.ch/fdsnws/dataselect/1/query", "params": [{"loc": "*", "end": "", "sta": "LIENZ", "cha": "HHZ", "priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}, {"loc": "*", "end": "", "sta": "LIENZ", "cha": "LHZ", "priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}], "name": "dataselect"}]'
+        expected = '[{"url": "http://www.orfeus-eu.org/fdsnws/dataselect/1/query", "params": [{"loc": "*", "end": "", "sta": "LIENZ", "cha": "BHZ", "priority": 2, "start": "1980-01-01T00:00:00", "net": "CH"}], "name": "dataselect"}, {"url": "http://eida.ethz.ch/fdsnws/dataselect/1/query", "params": [{"loc": "*", "end": "", "sta": "LIENZ", "cha": "LHZ", "priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}, {"loc": "*", "end": "", "sta": "LIENZ", "cha": "HHZ", "priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}], "name": "dataselect"}]'
 
         numErrors = 0
         errors = []
