@@ -1095,9 +1095,6 @@ information (URLs and parameters) to do the requests to different datacenters
         """Based on a :class:`~Stream` and a timewindow (:class:`~TW`) returns
 all the needed information (URLs and parameters) to request waveforms from
 different datacenters (if needed) and be able to merge it avoiding duplication.
-The Arclink routing table is used to select the datacenters and a mapping is
-used to translate the Arclink address to Dataselect address
-(see :func:`~RoutingCache.__arc2DS`).
 
 :param service: Specifies the service is being looked for
 :type service: string
@@ -1113,60 +1110,94 @@ used to translate the Arclink address to Dataselect address
 
         """
 
+        # Create list to store results
         subs = list()
+        subs2 = list()
+
+        # Filter by stream
         for stRT in self.routingTable.keys():
-            if ((stRT in stream) or (stream in stRT)):
+            if stRT.overlap(stream):
                 subs.append(stRT)
 
-        # Alternative NEW approach based on number of wildcards
-        orderS = [sum([3 for t in r if '*' in t]) for r in subs]
-        orderQ = [sum([1 for t in r if '?' in t]) for r in subs]
+        # print 'subs', subs
 
-        order = map(add, orderS, orderQ)
+        # Filter by service and timewindow
+        for stRT in subs:
+            priorities = list()
+            for rou in self.routingTable[stRT]:
+                # If it is the proper service and the timewindow coincides
+                # with the one in the parameter, add the priority to use it
+                # in the last check
+                # FIXME The method overlap below does NOT work if I swap
+                # rou.tw and tw. For instance, check with:
+                # TW(start=None, end=None) TW(start=datetime(1993, 1, 1, 0, 0), end=None)
+                if (service == rou.service) and (rou.tw.overlap(tw)):
+                    priorities.append(rou.priority)
+                else:
+                    priorities.append(None)
 
-        orderedSubs = [x for (y, x) in sorted(zip(order, subs))]
+            for pos, p in enumerate(priorities):
+                if p is None:
+                    continue
 
-        self.logs.debug('Preselection: %s\n' % orderedSubs)
-        finalset = set()
+                # Add tuples with (Stream, Route)
+                subs2.append((stRT, self.routingTable[stRT][pos]))
 
-        for r1 in orderedSubs:
-            for r2 in finalset:
-                if r1.overlap(r2):
-                    self.logs.warning('Overlap between %s and %s\n' %
-                                      (r1, r2))
+                # If I don't want the alternative take only the first one
+                if not alternative:
                     break
+
+        # print 'subs2', subs2
+
+        # WARNING ! This approach based on wildcards is more Arclink style
+        # From now on we will base the selection on priority
+
+        # Alternative approach based on number of wildcards
+        # orderS = [sum([3 for t in r if '*' in t]) for r in subs]
+        # orderQ = [sum([1 for t in r if '?' in t]) for r in subs]
+
+        # order = map(add, orderS, orderQ)
+
+        # orderedSubs = [x for (y, x) in sorted(zip(order, subs))]
+
+        # self.logs.debug('Preselection: %s\n' % orderedSubs)
+        # finalset = set()
+        finalset = list()
+
+        # Reorder to have higher priorities first
+        priorities = [rt.priority for (st, rt) in subs2]
+        subs3 = [x for (y, x) in sorted(zip(priorities, subs2))]
+
+        # print 'subs3', subs3
+
+        for (s1, r1) in subs3:
+            for (s2, r2) in finalset:
+                if s1.overlap(s2) and r1.tw.overlap(r2.tw):
+                    if not alternative:
+                        self.logs.error('%s OVERLAPS\n %s\n' %
+                                        ((s1,r1), (s2,r2)))
+                        break
+
+                    # Check that the priority is different! Because all
+                    # the other attributes are the same or overlap
+                    if r1.priority == r2.priority:
+                        self.logs.error('Overlap between %s and %s\n' %
+                                        ((s1,r1), (s2,r2)))
+                        break
             else:
                 #finalset.add(r1.strictMatch(stream))
-                finalset.add(r1)
+                finalset.append((s1, r1))
                 continue
-
-            # The break from 10 lines above jumps until this line in
-            # order to do an expansion and try to add the expanded
-            # streams
-            # r1n, r1s, r1l, r1c = r1
-            for rExp in self.ic.expand(r1.n, r1.s, r1.l, r1.c,
-                                       tw.start, tw.end, True):
-                rExp = Stream(*rExp)
-                for r3 in finalset:
-                    if rExp.overlap(r3):
-                        msg = 'Stream %s discarded! Overlap with %s\n' % \
-                            (rExp, r3)
-                        self.logs.warning(msg)
-                        break
-                else:
-                    self.logs.warning('Adding expanded %s\n' % str(rExp))
-                    if (rExp in stream):
-                        finalset.add(rExp)
 
         result = RequestMerge()
 
         # In finalset I have all the streams (including expanded and
         # the ones with wildcards), that I need to request.
         # Now I need the URLs
-        self.logs.debug('Selected streams: %s\n' % finalset)
+        self.logs.debug('Selected streams and routes: %s\n' % finalset)
 
         while finalset:
-            st = finalset.pop()
+            (st, ro) = finalset.pop()
 
             # Requested timewindow
             setTW = set()
@@ -1178,14 +1209,6 @@ used to translate the Arclink address to Dataselect address
                 toProc = setTW.pop()
                 self.logs.debug('Processing %s\n' % str(toProc))
                 
-                # Take the first route from the Routing table
-                for ro in self.routingTable[st]:
-
-                    if ro.service == service:
-                        break
-                else:
-                    raise Exception('No route with the specified service was found')
-
                 # Check if the timewindow is encompassed in the returned dates
                 self.logs.debug('%s in %s = %s\n' % (str(toProc),
                                                      str(ro.tw),
@@ -1204,14 +1227,18 @@ used to translate the Arclink address to Dataselect address
                                   None else '', stream.strictMatch(st),
                                   auxSt if auxSt is not None else '',
                                   auxEn if auxEn is not None else '')
+                    
+                    # FIXME This below seems to be wrong!
+
                     # Unless alternative routes are needed I can stop here
-                    if not alternative:
-                        break
+                    # and go for the next route
+                    # if not alternative:
+                    #     break
                     # To look for alternative routes do not look in the whole
                     # period once we found a principal route. Try only to look
                     # for alternative routes for THIS timewindow
-                    else:
-                        toProc = TW(auxSt, auxEn)
+                    # else:
+                    #     toProc = TW(auxSt, auxEn)
 
         # Check the coherency of the routes to set the return code
         if len(result) == 0:
