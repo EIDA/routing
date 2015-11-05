@@ -332,7 +332,7 @@ def mergeRoutes(fileRoutes, synchroList, allowOverlaps=False):
     """Retrieve routes from different sources and merge them with the local
 ones in the routing tables. The configuration file is checked to see whether
 overlapping routes are allowed or not. A pickled version of the the routing
-table is saved in ``routing.bin``.
+table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
 
 :param fileRoutes: File containing the local routing table
 :type fileRoutes: str
@@ -368,11 +368,11 @@ table is saved in ``routing.bin``.
                              routingTable=ptRT, allowOverlaps=allowOverlaps)
 
     try:
-        os.remove('./routing.bin')
+        os.remove('./%s.bin' % fileRoutes)
     except:
         pass
 
-    with open('./routing.bin', 'wb') as finalRoutes:
+    with open('./%s.bin' % fileRoutes, 'wb') as finalRoutes:
         pickle.dump(ptRT, finalRoutes)
         logs.info('Routes in main Routing Table: %s\n' % len(ptRT))
 
