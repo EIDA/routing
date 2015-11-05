@@ -36,7 +36,6 @@ from wsgicomm import WIClientError
 from wsgicomm import WIError
 from wsgicomm import send_plain_response
 from wsgicomm import send_xml_response
-#from wsgicomm import Logs
 import logging
 from utils import RequestMerge
 from utils import RoutingCache
@@ -82,6 +81,7 @@ def ConvertDictToXml(listdict):
     return r
 
 
+# Important to support the comma-syntax from FDSN (f.i. GE,RO,XX)
 def lsNSLC(net, sta, loc, cha):
     for n in net:
         for s in sta:
@@ -470,7 +470,6 @@ def application(environ, start_response):
 
 def main():
     routes = RoutingCache("./routing.xml", "./masterTable.xml")
-    #print len(routes.routingTable)
 
 
 if __name__ == "__main__":

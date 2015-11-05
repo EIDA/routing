@@ -267,4 +267,4 @@ def send_dynamicfile_response(status, body, start_response):
         status = '204 No Content'
         response_headers = []
         start_response(status, response_headers)
-        print '204 sent'
+        #print '204 sent'
