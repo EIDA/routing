@@ -15,11 +15,13 @@ updateTime = 03:00
 # Also the algorithms for other services will be based on the arclink routes.
 ArclinkBased = true
 # Verbosity of the logging system
-# 1: Error, 2: Warning, 3: Info, 4: Debug
-verbosity = 3
+# Possible values are:
+# CRITICAL, ERROR, WARNING, INFO, DEBUG
+verbosity = INFO
 # Servers with routes to be imported (name, url)
-synchronize = SERVER2, http://localhost/eidaws/routing/2
+# synchronize = SERVER2, http://localhost/eidaws/routing/2
+synchronize =
 # Can overlapping routes be saved in the routing table?
 # If yes, the Arclink-inventory.xml must be used to expand the routes and
 # produce a coherent response.
-allowoverlap = true
+allowoverlap = false
