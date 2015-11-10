@@ -86,6 +86,7 @@ exclude_patterns = ['.build']
 # If true, sectionauthor and moduleauthor directives will be shown in the
 # output. They are ignored by default.
 #show_authors = False
+show_authors = True
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -187,6 +188,7 @@ htmlhelp_basename = 'Routing-WSdoc'
 latex_elements = {
 # The paper size ('letterpaper' or 'a4paper').
 #'papersize': 'letterpaper',
+'papersize': 'a4paper',
 
 # The font size ('10pt', '11pt' or '12pt').
 #'pointsize': '10pt',
@@ -201,6 +203,8 @@ latex_elements = {
 latex_documents = [
   ('index', 'Routing-WS.tex', u'Routing-WS Documentation',
    u'Javier Quinteros', 'manual'),
+  ('specification', 'Routing-spec-v1.0.tex', u'Routing Service Specification - v1.0',
+   u'Javier Quinteros and the EIDA team', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
