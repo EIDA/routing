@@ -5,6 +5,7 @@ import unittest
 import urllib2
 from unittestTools import WITestRunner
 from difflib import Differ
+from xml.dom.minidom import parseString
 
 
 class RouteCacheTests(unittest.TestCase):
@@ -16,6 +17,34 @@ class RouteCacheTests(unittest.TestCase):
     def setUp(cls):
         "Setting up test"
         cls.host = host
+
+    def test_application_wadl(self):
+        "the 'application.wadl' method"
+
+        if self.host.endswith('query'):
+            appmethod = '%sapplication.wadl' % self.host[:-len('query')]
+        else:
+            pass
+
+        req = urllib2.Request(appmethod)
+        try:
+            u = urllib2.urlopen(req)
+            buffer = u.read()
+        except:
+            msg = 'Error calling the "application.wadl" method'
+            self.assertTrue(False, msg)
+
+        msg = 'The "application.wadl" method returned an empty string'
+        self.assertGreater(len(buffer), 0, msg)
+        msg = 'The file returned by "application.wadl" does not contain a "<"'
+        self.assertIn('<', buffer, msg)
+
+        # Check that the returned value is a valid xml file
+        msg = 'Error "application.wadl" method does not return a valid xml file'
+        try:
+            parseString(buffer)
+        except:
+            self.assertTrue(False, msg)
 
     def test_info(self):
         "the 'info' method"
@@ -36,7 +65,6 @@ class RouteCacheTests(unittest.TestCase):
         # Check that the length is at least 1
         msg = 'Error "info" method does not return a valid text'
         self.assertGreater(len(buffer), 0, msg)
-
 
     def test_version(self):
         "the 'version' method"
