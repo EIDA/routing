@@ -19,6 +19,111 @@ class RouteCacheTests(unittest.TestCase):
         "Setting up test"
         cls.host = host
 
+    def test_long_URI(self):
+        "very large URI"
+
+        msg = 'A URI of more than 2000 characters is not allowed and should ' +\
+            'return a 414 erro code'
+        req = urllib2.Request('%s?net=GE%s' % (self.host, '&net=GE' * 500))
+        try:
+            u = urllib2.urlopen(req)
+            u.read()
+        except urllib2.URLError as e:
+            self.assertEqual(e.code, 414, msg)
+
+        self.assertTrue(False, msg)
+
+    def test_wrong_parameter(self):
+        "unknown parameter"
+
+        msg = 'An error code 400 Bad Request is expected for an unknown ' + \
+            'parameter'
+        req = urllib2.Request('%s?net=GE&wrongparam=1' % self.host)
+        try:
+            u = urllib2.urlopen(req)
+            u.read()
+        except urllib2.URLError as e:
+            self.assertEqual(e.code, 400, msg)
+
+        self.assertTrue(False, msg)
+
+    def testDS_XX(self):
+        "non-existing network XX"
+
+        req = urllib2.Request('%s?net=XX' % self.host)
+        msg = 'An error code 204 No Content is expected for an unknown network'
+        try:
+            u = urllib2.urlopen(req)
+            u.read()
+        except urllib2.URLError as e:
+            self.assertEqual(e.code, 204, msg)
+
+        self.assertTrue(False, msg)
+
+    def test_wrong_alternative(self):
+        "wrong values in alternative parameter"
+
+        # Test with an integer > 1
+        value = 2
+        msg = 'A %s in the alternative parameter is expected' % type(value) + \
+            ' to raise an error code 400'
+        req = urllib2.Request('%s?net=GE&alternative=%s' % (self.host, value))
+        try:
+            u = urllib2.urlopen(req)
+            u.read()
+        except urllib2.URLError as e:
+            self.assertEqual(e.code, 400, msg)
+
+        # Test with 1
+        value = 1
+        msg = 'A %s in the alternative parameter is expected' % type(value) + \
+            ' to raise an error code 400'
+        req = urllib2.Request('%s?net=GE&alternative=%s' % (self.host, value))
+        try:
+            u = urllib2.urlopen(req)
+            u.read()
+        except urllib2.URLError as e:
+            self.assertEqual(e.code, 400, msg)
+
+        # Test with 0
+        value = 0
+        msg = 'A %s in the alternative parameter is expected' % type(value) + \
+            ' to raise an error code 400'
+        req = urllib2.Request('%s?net=GE&alternative=%s' % (self.host, value))
+        try:
+            u = urllib2.urlopen(req)
+            u.read()
+        except urllib2.URLError as e:
+            self.assertEqual(e.code, 400, msg)
+
+        self.assertTrue(False, msg)
+
+        # Test with a float
+        value = 8.5
+        msg = 'A %s in the alternative parameter is expected' % type(value) + \
+            ' to raise an error code 400'
+        req = urllib2.Request('%s?net=GE&alternative=%s' % (self.host, value))
+        try:
+            u = urllib2.urlopen(req)
+            u.read()
+        except urllib2.URLError as e:
+            self.assertEqual(e.code, 400, msg)
+
+        self.assertTrue(False, msg)
+
+        # Test with a random string
+        value = 'skjndfvkjsn'
+        msg = 'A %s in the alternative parameter is expected' % type(value) + \
+            ' to raise an error code 400'
+        req = urllib2.Request('%s?net=GE&alternative=%s' % (self.host, value))
+        try:
+            u = urllib2.urlopen(req)
+            u.read()
+        except urllib2.URLError as e:
+            self.assertEqual(e.code, 400, msg)
+
+        self.assertTrue(False, msg)
+
     def test_alternative_format_get(self):
         "incompatibility between alternative=true and format=get"
 
@@ -55,7 +160,7 @@ class RouteCacheTests(unittest.TestCase):
         req = urllib2.Request('%s?net=GE&start=%s&end=%s' % (self.host,
                                                              d1.isoformat(),
                                                              d2.isoformat()))
-        msg = 'When start > end time an error code 400 is expected!'
+        msg = 'When starttime > endtime an error code 400 is expected!'
         try:
             u = urllib2.urlopen(req)
             u.read()
@@ -148,7 +253,11 @@ class RouteCacheTests(unittest.TestCase):
         except:
             raise Exception('Error retrieving data for GE.*.*.*')
 
-        expected = '[{"url": "http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query", "params": [{"loc": "*", "end": "", "sta": "*", "cha": "*", "priority": 1, "start": "1993-01-01T00:00:00", "net": "GE"}], "name": "dataselect"}]'
+        expected = '[{"url": ' + \
+            '"http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query", ' + \
+            '"params": [{"loc": "*", "end": "", "sta": "*", "cha": "*", ' + \
+            '"priority": 1, "start": "1993-01-01T00:00:00", "net": "GE"}], ' +\
+            '"name": "dataselect"}]'
 
         numErrors = 0
         errors = []
@@ -172,7 +281,15 @@ class RouteCacheTests(unittest.TestCase):
         except:
             raise Exception('Error retrieving data for GE,RO.*.*.*')
 
-        expected = '[{"url": "http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query", "params": [{"loc": "*", "end": "", "sta": "*", "cha": "*", "priority": 1, "start": "1993-01-01T00:00:00", "net": "GE"}], "name": "dataselect"}, {"url": "http://eida-sc3.infp.ro/fdsnws/dataselect/1/query", "params": [{"loc": "*", "end": "", "sta": "*", "cha": "*", "priority": 1, "start": "1980-01-01T00:00:00", "net": "RO"}], "name": "dataselect"}]'
+        expected = '[{"url": ' + \
+            '"http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query", ' + \
+            '"params": [{"loc": "*", "end": "", "sta": "*", "cha": "*", ' + \
+            '"priority": 1, "start": "1993-01-01T00:00:00", "net": "GE"}], ' +\
+            '"name": "dataselect"}, {"url": ' + \
+            '"http://eida-sc3.infp.ro/fdsnws/dataselect/1/query", "params": ' +\
+            '[{"loc": "*", "end": "", "sta": "*", "cha": "*", "priority": 1,' +\
+            ' "start": "1980-01-01T00:00:00", "net": "RO"}], ' + \
+            '"name": "dataselect"}]'
 
         numErrors = 0
         errors = []
@@ -196,7 +313,11 @@ class RouteCacheTests(unittest.TestCase):
         except:
             raise Exception('Error retrieving data for GE.APE.*.*')
 
-        expected = '[{"url": "http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query", "params": [{"loc": "*", "end": "", "sta": "APE", "cha": "*", "priority": 1, "start": "1993-01-01T00:00:00", "net": "GE"}], "name": "dataselect"}]'
+        expected = '[{"url": ' + \
+            '"http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query", ' + \
+            '"params": [{"loc": "*", "end": "", "sta": "APE", "cha": "*", ' + \
+            '"priority": 1, "start": "1993-01-01T00:00:00", "net": "GE"}], ' + \
+            '"name": "dataselect"}]'
 
         numErrors = 0
         errors = []
@@ -213,14 +334,19 @@ class RouteCacheTests(unittest.TestCase):
     def testDS_CH_LIENZ_HHZ(self):
         "Dataselect CH.LIENZ.*.HHZ"
 
-        req = urllib2.Request(self.host + '?net=CH&sta=LIENZ&cha=HHZ&format=json')
+        req = urllib2.Request('%s?net=CH&sta=LIENZ&cha=HHZ&format=json' %
+                              self.host)
         try:
             u = urllib2.urlopen(req)
             buffer = u.read()
         except:
             raise Exception('Error retrieving data for CH.LIENZ.*.HHZ')
 
-        expected = '[{"url": "http://eida.ethz.ch/fdsnws/dataselect/1/query", "params": [{"loc": "*", "end": "", "sta": "LIENZ", "cha": "HHZ", "priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}], "name": "dataselect"}]'
+        expected = '[{"url": ' + \
+            '"http://eida.ethz.ch/fdsnws/dataselect/1/query", "params": ' + \
+            '[{"loc": "*", "end": "", "sta": "LIENZ", "cha": "HHZ", ' + \
+            '"priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}], ' + \
+            '"name": "dataselect"}]'
 
         numErrors = 0
         errors = []
@@ -237,14 +363,19 @@ class RouteCacheTests(unittest.TestCase):
     def testDS_CH_LIENZ_BHZ(self):
         "Dataselect CH.LIENZ.*.BHZ"
 
-        req = urllib2.Request(self.host + '?net=CH&sta=LIENZ&cha=BHZ&format=json')
+        req = urllib2.Request('%s?net=CH&sta=LIENZ&cha=BHZ&format=json' %
+                              self.host)
         try:
             u = urllib2.urlopen(req)
             buffer = u.read()
         except:
             raise Exception('Error retrieving data for CH.LIENZ.*.BHZ')
 
-        expected = '[{"url": "http://www.orfeus-eu.org/fdsnws/dataselect/1/query", "params": [{"loc": "*", "end": "", "sta": "LIENZ", "cha": "BHZ", "priority": 2, "start": "1980-01-01T00:00:00", "net": "CH"}], "name": "dataselect"}]'
+        expected = '[{"url": ' + \
+            '"http://www.orfeus-eu.org/fdsnws/dataselect/1/query", ' + \
+            '"params": [{"loc": "*", "end": "", "sta": "LIENZ", "cha": ' + \
+            '"BHZ", "priority": 2, "start": "1980-01-01T00:00:00", "net": ' + \
+            '"CH"}], "name": "dataselect"}]'
 
         numErrors = 0
         errors = []
@@ -261,15 +392,25 @@ class RouteCacheTests(unittest.TestCase):
     def testDS_CH_LIENZ_qHZ(self):
         "Dataselect CH.LIENZ.*.?HZ"
 
-        req = urllib2.Request(self.host +
-                              '?net=CH&sta=LIENZ&cha=?HZ&format=json')
+        req = urllib2.Request('%s?net=CH&sta=LIENZ&cha=?HZ&format=json' %
+                              self.host)
         try:
             u = urllib2.urlopen(req)
             buffer = u.read()
         except:
             raise Exception('Error retrieving data for CH.LIENZ.*.?HZ')
 
-        expected = '[{"url": "http://www.orfeus-eu.org/fdsnws/dataselect/1/query", "params": [{"loc": "*", "end": "", "sta": "LIENZ", "cha": "BHZ", "priority": 2, "start": "1980-01-01T00:00:00", "net": "CH"}], "name": "dataselect"}, {"url": "http://eida.ethz.ch/fdsnws/dataselect/1/query", "params": [{"loc": "*", "end": "", "sta": "LIENZ", "cha": "LHZ", "priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}, {"loc": "*", "end": "", "sta": "LIENZ", "cha": "HHZ", "priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}], "name": "dataselect"}]'
+        expected = '[{"url": ' + \
+            '"http://www.orfeus-eu.org/fdsnws/dataselect/1/query", ' + \
+            '"params": [{"loc": "*", "end": "", "sta": "LIENZ", "cha": ' + \
+            '"BHZ", "priority": 2, "start": "1980-01-01T00:00:00", ' + \
+            '"net": "CH"}], "name": "dataselect"}, {"url": ' + \
+            '"http://eida.ethz.ch/fdsnws/dataselect/1/query", "params": ' + \
+            '[{"loc": "*", "end": "", "sta": "LIENZ", "cha": "LHZ", ' + \
+            '"priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}, ' + \
+            '{"loc": "*", "end": "", "sta": "LIENZ", "cha": "HHZ", ' + \
+            '"priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}], ' + \
+            '"name": "dataselect"}]'
 
         numErrors = 0
         errors = []
@@ -286,15 +427,19 @@ class RouteCacheTests(unittest.TestCase):
     def testDS_RO_BZS_BHZ(self):
         "Dataselect RO.BZS.*.BHZ"
 
-        req = urllib2.Request(self.host +
-                              '?net=RO&sta=BZS&cha=BHZ&format=json')
+        req = urllib2.Request('%s?net=RO&sta=BZS&cha=BHZ&format=json' %
+                              self.host)
         try:
             u = urllib2.urlopen(req)
             buffer = u.read()
         except:
             raise Exception('Error retrieving data for RO.BZS.*.BHZ')
 
-        expected = '[{"url": "http://eida-sc3.infp.ro/fdsnws/dataselect/1/query", "params": [{"loc": "*", "end": "", "sta": "BZS", "cha": "BHZ", "priority": 1, "start": "1980-01-01T00:00:00", "net": "RO"}], "name": "dataselect"}]'
+        expected = '[{"url": ' + \
+            '"http://eida-sc3.infp.ro/fdsnws/dataselect/1/query", ' + \
+            '"params": [{"loc": "*", "end": "", "sta": "BZS", "cha": ' + \
+            '"BHZ", "priority": 1, "start": "1980-01-01T00:00:00", "net": ' + \
+            '"RO"}], "name": "dataselect"}]'
 
         numErrors = 0
         errors = []
