@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import datetime
 import unittest
 import urllib2
 from unittestTools import WITestRunner
@@ -17,6 +18,51 @@ class RouteCacheTests(unittest.TestCase):
     def setUp(cls):
         "Setting up test"
         cls.host = host
+
+    def test_alternative_format_get(self):
+        "incompatibility between alternative=true and format=get"
+
+        req = urllib2.Request('%s?net=GE&format=get&alternative=true' %
+                              self.host)
+        msg = 'When a wrong format is specified an error code 400 is expected!'
+        try:
+            u = urllib2.urlopen(req)
+            u.read()
+        except urllib2.URLError as e:
+            self.assertEqual(e.code, 400, msg)
+
+        self.assertTrue(False, msg)
+
+    def test_wrong_format(self):
+        "wrong format option"
+
+        req = urllib2.Request('%s?net=GE&format=WRONGFORMAT' %
+                              self.host)
+        msg = 'When a wrong format is specified an error code 400 is expected!'
+        try:
+            u = urllib2.urlopen(req)
+            u.read()
+        except urllib2.URLError as e:
+            self.assertEqual(e.code, 400, msg)
+
+        self.assertTrue(False, msg)
+
+    def test_wrong_datetime(self):
+        "swap start and end time"
+
+        d1 = datetime.datetime(2004, 1, 1)
+        d2 = d1 - datetime.timedelta(days=1)
+        req = urllib2.Request('%s?net=GE&start=%s&end=%s' % (self.host,
+                                                             d1.isoformat(),
+                                                             d2.isoformat()))
+        msg = 'When start > end time an error code 400 is expected!'
+        try:
+            u = urllib2.urlopen(req)
+            u.read()
+        except urllib2.URLError as e:
+            self.assertEqual(e.code, 400, msg)
+
+        self.assertTrue(False, msg)
 
     def test_application_wadl(self):
         "the 'application.wadl' method"

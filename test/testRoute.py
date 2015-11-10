@@ -2,6 +2,7 @@
 
 import sys
 import os
+import datetime
 
 here = os.path.dirname(__file__)
 sys.path.append(os.path.join(here, '..'))
@@ -10,7 +11,7 @@ import unittest
 from unittestTools import WITestRunner
 from routing import RoutingCache
 from routing import RequestMerge
-from wsgicomm import Logs
+from utils import RoutingException
 
 
 class RouteCacheTests(unittest.TestCase):
@@ -25,6 +26,15 @@ class RouteCacheTests(unittest.TestCase):
             return
         cls.rc = RoutingCache('../data/routing.xml',
                               '../data/masterTable.xml')
+
+    def testDS_wrong_datetime(self):
+        "swap start and end time"
+
+        d1 = datetime.datetime(2004, 1, 1)
+        d2 = d1 - datetime.timedelta(days=1)
+
+        self.assertRaises(self.rc.getRoute('GE', '*', '*', '*', d1, d2),
+                          RoutingException)
 
     def testDS_GE(self):
         "Dataselect GE.*.*.*"
