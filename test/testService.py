@@ -17,6 +17,53 @@ class RouteCacheTests(unittest.TestCase):
         "Setting up test"
         cls.host = host
 
+    def test_info(self):
+        "the 'info' method"
+
+        if self.host.endswith('query'):
+            infomethod = '%sinfo' % self.host[:-len('query')]
+        else:
+            pass
+
+        req = urllib2.Request(infomethod)
+        try:
+            u = urllib2.urlopen(req)
+            buffer = u.read()
+        except:
+            msg = 'Error calling the "info" method'
+            self.assertTrue(False, msg)
+
+        # Check that the length is at least 1
+        msg = 'Error "info" method does not return a valid text'
+        self.assertGreater(len(buffer), 0, msg)
+
+
+    def test_version(self):
+        "the 'version' method"
+
+        if self.host.endswith('query'):
+            vermethod = '%sversion' % self.host[:-len('query')]
+        else:
+            pass
+
+        req = urllib2.Request(vermethod)
+        try:
+            u = urllib2.urlopen(req)
+            buffer = u.read()
+        except:
+            raise Exception('Error retrieving version number')
+
+        # Check that it has three components (ints) separated by '.'
+        components = buffer.split('.')
+        msg = 'Version number does not include the three components'
+        self.assertEqual(len(components), 3, msg)
+
+        try:
+            components = map(int, components)
+        except ValueError:
+            msg = 'Components of the version number seem not to be integers.'
+            self.assertEqual(1, 0, msg)
+
     def testDS_GE(self):
         "Dataselect GE.*.*.*"
 
@@ -186,19 +233,6 @@ class RouteCacheTests(unittest.TestCase):
         if numErrors:
             print '\n', '\n'.join(errors)
             self.assertEqual(0, 1, 'Error in %d lines' % len(errors))
-
-    #    "Dataselect RO.BZS.*.BHZ"
-
-    #    expURL = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
-    #    result = self.rc.getRoute('RO', 'BZS', '*', 'BHZ')
-    #    self.assertIsInstance(result, RequestMerge,
-    #                          'A RequestMerge object was expected!')
-    #    self.assertEqual(len(result), 1,
-    #                     'Wrong number of data centers for RO.BZS.*.BHZ!')
-    #    self.assertEqual(result[0]['url'], expURL,
-    #                     'Wrong URL for RO.BZS.*.BHZ!')
-    #    self.assertEqual(result[0]['name'], 'dataselect',
-    #                     'Wrong service name!')
 
 
 # ----------------------------------------------------------------------
