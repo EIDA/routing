@@ -225,7 +225,7 @@ def makeQueryGET(parameters):
             pass
 
     if len(result) == 0:
-        raise WIContentError('No routes have been found!')
+        raise WIContentError()
     return result
 
 
@@ -300,7 +300,7 @@ def makeQueryPOST(postText):
             pass
 
     if len(result) == 0:
-        raise WIContentError('No routes have been found!')
+        raise WIContentError()
     return result
 
 

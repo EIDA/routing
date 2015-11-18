@@ -128,7 +128,7 @@ class WIContentError(WIError):
 """
 
     def __init__(self, *args, **kwargs):
-        WIError.__init__(self, "204 No Content", *args, **kwargs)
+        WIError.__init__(self, "204 No Content", '', *args, **kwargs)
 
 
 class WIClientError(WIError):
@@ -267,4 +267,4 @@ def send_dynamicfile_response(status, body, start_response):
         status = '204 No Content'
         response_headers = []
         start_response(status, response_headers)
-        #print '204 sent'
+        # print '204 sent'
