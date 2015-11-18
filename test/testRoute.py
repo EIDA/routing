@@ -33,8 +33,8 @@ class RouteCacheTests(unittest.TestCase):
         d1 = datetime.datetime(2004, 1, 1)
         d2 = d1 - datetime.timedelta(days=1)
 
-        self.assertRaises(self.rc.getRoute('GE', '*', '*', '*', d1, d2),
-                          RoutingException)
+        self.assertRaises(RoutingException, self.rc.getRoute,
+                          'GE', '*', '*', '*', d1, d2)
 
     def testDS_GE(self):
         "Dataselect GE.*.*.*"
