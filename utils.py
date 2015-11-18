@@ -1126,7 +1126,7 @@ different datacenters (if needed) and be able to merge it avoiding duplication.
 :type alternative: bool
 :returns: URLs and parameters to request the data
 :rtype: :class:`~RequestMerge`
-:raises: RoutingException
+:raises: RoutingException, ValueError
 
         """
 
