@@ -34,7 +34,7 @@ import xml.etree.cElementTree as ET
 import glob
 from time import sleep
 from collections import namedtuple
-from operator import add
+# from operator import add
 from operator import itemgetter
 import logging
 
@@ -55,6 +55,7 @@ try:
     import urllib.request as ul
 except ImportError:
     import urllib2 as ul
+
 
 def checkOverlap(str1, routeList, str2, route):
     if str1.overlap(str2):
@@ -170,7 +171,7 @@ a regular period of time.
                         stationCode = route.get('stationCode')
                         if len(stationCode) == 0:
                             stationCode = '*'
-                    
+
                         # Do not allow "?" wildcard in the input, because it
                         # will be impossible to match with the user input if
                         # this also has a mixture of "*" and "?"
@@ -208,10 +209,10 @@ a regular period of time.
                         try:
                             address = att.get('address')
                             if len(address) == 0:
-                                logs.error('Could not add %s' %att)
+                                logs.error('Could not add %s' % att)
                                 continue
                         except:
-                            logs.error('Could not add %s' %att)
+                            logs.error('Could not add %s' % att)
                             continue
 
                         try:
@@ -271,7 +272,8 @@ a regular period of time.
                                 # This checks the overlap of Streams and also
                                 # of timewindows and priority
                                 if checkOverlap(testStr, ptRT[testStr], st,
-                                                Route(service, address, tw, priority)):
+                                                Route(service, address, tw,
+                                                      priority)):
                                     msg = '%s: Overlap between %s and %s!\n'\
                                         % (fileName, st, testStr)
                                     logs.error(msg)
@@ -281,7 +283,8 @@ a regular period of time.
                                     break
 
                             if addIt:
-                                ptRT[st].append(Route(service, address, tw, priority))
+                                ptRT[st].append(Route(service, address, tw,
+                                                      priority))
                             else:
                                 logs.warning('Skip %s - %s\n' %
                                              (st, Route(service, address, tw,
@@ -485,7 +488,8 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
     __slots__ = ()
 
     def toXMLopen(self, nameSpace='ns0', level=1):
-        return '%s<%s:route networkCode="%s" stationCode="%s" locationCode="%s" streamCode="%s">\n' \
+        return '%s<%s:route networkCode="%s" stationCode="%s" ' + \
+            'locationCode="%s" streamCode="%s">\n' \
             % (' ' * level, nameSpace, self.n, self.s, self.l, self.c)
 
     def toXMLclose(self, nameSpace='ns0', level=1):
@@ -569,7 +573,8 @@ class TW(namedtuple('TW', ['start', 'end'])):
         return self.overlap(otherTW)
 
     def overlap(self, otherTW):
-        """Check if the :class:`~TW` passed as a parameter is contained in this :class:`~TW`.
+        """Check if the :class:`~TW` passed as a parameter is contained in this
+        :class:`~TW`.
 
 :param otherTW: timewindow which should be checked for overlapping
 :type otherTW: :class:`~TW`
@@ -612,6 +617,17 @@ False
             # The three are not None
             # print a, b, c, a < b, b < c, a < b < c
             return a < b < c
+
+        # First of all check that the TWs are correctly created
+        if ((self.start is not None) and (self.end is not None) and
+                (self.start > self.end)):
+            raise ValueError('Start greater than End: %s > %s' % (self.start,
+                                                                  self.end))
+
+        if ((otherTW.start is not None) and (otherTW.end is not None) and
+                (otherTW.start > otherTW.end)):
+            raise ValueError('Start greater than End %s > %s' % (otherTW.start,
+                                                                 otherTW.end))
 
         # Check if self.start or self.end in otherTW
         if inOrder(otherTW.start, self.start, otherTW.end) or \
@@ -760,7 +776,6 @@ class RoutingCache(object):
 """
 
         # Save the logging object
-        #self.logs = logs
         self.logs = logging.getLogger('RoutingCache')
 
         # Arclink routing file in XML format
@@ -818,16 +833,17 @@ class RoutingCache(object):
         self.updateMT()
 
     def toXML(self, foutput, nameSpace='ns0'):
+        header = """<?xml version="0.0" encoding="utf-8"?>
+        <ns0:routing xmlns:ns0="http://geofon.gfz-potsdam.de/ns/Routing/1.0/">
+        """
         with open(foutput, 'w') as fo:
-            fo.write('<?xml version="1.0" encoding="utf-8"?>\n')
-            fo.write('<ns0:routing xmlns:ns0="http://geofon.gfz-potsdam.de/ns/Routing/1.0/">\n')
+            fo.write(header)
             for st, lr in self.routingTable.iteritems():
                 fo.write(st.toXMLopen())
                 for r in lr:
                     fo.write(r.toXML())
                 fo.write(st.toXMLclose())
             fo.write('</ns0:routing>')
-
 
     def localConfig(self):
         """Returns the local routing configuration
@@ -854,11 +870,12 @@ operating with an EIDA default configuration.
         """
 
         # Functionality moved away from this module. Check updateAll.py.
-        
+
         return
         # Check Arclink server that must be contacted to get a routing table
         config = configparser.RawConfigParser()
-        self.logs.warning('Method configArclink is deprecated and should NOT be used!')
+        msg = 'Method configArclink is deprecated and should NOT be used!'
+        self.logs.warning(msg)
 
         here = os.path.dirname(__file__)
         config.read(os.path.join(here, self.config))
@@ -1074,7 +1091,10 @@ information (URLs and parameters) to do the requests to different datacenters
         except:
             pass
 
-        result = self.getRouteDS(service, stream, tw, alternative)
+        try:
+            result = self.getRouteDS(service, stream, tw, alternative)
+        except ValueError as e:
+            raise RoutingException(e)
 
         if result is None:
             # Through an exception if there is an error
@@ -1084,9 +1104,9 @@ information (URLs and parameters) to do the requests to different datacenters
         # That would be more clear.
         for r in result:
             for p in r['params']:
-                if type(p['start']) == type(datetime.datetime.now()):
+                if isinstance(p['start'], datetime.datetime):
                     p['start'] = p['start'].isoformat('T')
-                if type(p['end']) == type(datetime.datetime.now()):
+                if isinstance(p['end'], datetime.datetime):
                     p['end'] = p['end'].isoformat('T')
 
         return result
@@ -1130,7 +1150,8 @@ different datacenters (if needed) and be able to merge it avoiding duplication.
                 # in the last check
                 # FIXME The method overlap below does NOT work if I swap
                 # rou.tw and tw. For instance, check with:
-                # TW(start=None, end=None) TW(start=datetime(1993, 1, 1, 0, 0), end=None)
+                # TW(start=None, end=None) TW(start=datetime(1993, 1, 1, 0, 0),
+                # end=None)
                 if (service == rou.service) and (rou.tw.overlap(tw)):
                     priorities.append(rou.priority)
                 else:
@@ -1175,17 +1196,17 @@ different datacenters (if needed) and be able to merge it avoiding duplication.
                 if s1.overlap(s2) and r1.tw.overlap(r2.tw):
                     if not alternative:
                         self.logs.error('%s OVERLAPS\n %s\n' %
-                                        ((s1,r1), (s2,r2)))
+                                        ((s1, r1), (s2, r2)))
                         break
 
                     # Check that the priority is different! Because all
                     # the other attributes are the same or overlap
                     if r1.priority == r2.priority:
                         self.logs.error('Overlap between %s and %s\n' %
-                                        ((s1,r1), (s2,r2)))
+                                        ((s1, r1), (s2, r2)))
                         break
             else:
-                #finalset.add(r1.strictMatch(stream))
+                # finalset.add(r1.strictMatch(stream))
                 finalset.append((s1, r1))
                 continue
 
@@ -1208,7 +1229,7 @@ different datacenters (if needed) and be able to merge it avoiding duplication.
             while setTW:
                 toProc = setTW.pop()
                 self.logs.debug('Processing %s\n' % str(toProc))
-                
+
                 # Check if the timewindow is encompassed in the returned dates
                 self.logs.debug('%s in %s = %s\n' % (str(toProc),
                                                      str(ro.tw),
@@ -1227,7 +1248,7 @@ different datacenters (if needed) and be able to merge it avoiding duplication.
                                   None else '', stream.strictMatch(st),
                                   auxSt if auxSt is not None else '',
                                   auxEn if auxEn is not None else '')
-                    
+
                     # FIXME This below seems to be wrong!
 
                     # Unless alternative routes are needed I can stop here
@@ -1288,7 +1309,7 @@ the normal configuration.
         # If I found nothing raise 204
         if not len(result):
             raise RoutingException('No routes have been found!')
-            #raise WIContentError('No routes have been found!')
+            # raise WIContentError('No routes have been found!')
 
         result2 = RequestMerge()
         for r in result:
@@ -1305,7 +1326,7 @@ the normal configuration.
 
         self.logs.debug('Entering updateAll()\n')
         self.update()
-        
+
         if self.masterFile is not None:
             self.updateMT()
 
@@ -1402,7 +1423,7 @@ the normal configuration.
                         streamCode = None
 
                     # Traverse through the sources
-                    #for arcl in route.findall(namesp + 'dataselect'):
+                    # for arcl in route.findall(namesp + 'dataselect'):
                     for arcl in route:
                         service = arcl.tag.replace(namesp, '')
                         # Extract the address
@@ -1467,11 +1488,11 @@ the normal configuration.
                         tw = TW(startD, endD)
 
                         if st not in ptMT:
-                            #ptMT[st] = [RouteMT(address, tw, prio, service)]
+                            # ptMT[st] = [RouteMT(address, tw, prio, service)]
                             ptMT[st] = [Route(service, address, tw, prio)]
                         else:
-                            #ptMT[st].append(RouteMT(address, tw, prio,
-                            #                        service))
+                            # ptMT[st].append(RouteMT(address, tw, prio,
+                            #                         service))
                             ptMT[st].append(Route(service, address, tw, prio))
 
                         arcl.clear()
@@ -1501,20 +1522,20 @@ the normal configuration.
         # Clear all previous information
         ptRT.clear()
 
-        #here = os.path.dirname(__file__)
+        # here = os.path.dirname(__file__)
         binFile = self.routingFile + '.bin'
         try:
-            #with open(os.path.join(here, binFile)) as rMerged:
+            # with open(os.path.join(here, binFile)) as rMerged:
             with open(binFile) as rMerged:
                 self.routingTable = pickle.load(rMerged)
         except:
             ptRT = addRoutes(self.routingFile, config=self.configFile)
-            #for routeFile in glob.glob(
+            # for routeFile in glob.glob(
             #        os.path.join(here, 'data/routing-*.xml')):
             for routeFile in glob.glob('data/routing-*.xml'):
                 ptRT = addRoutes(routeFile, ptRT, self.logs)
 
-            #with open(os.path.join(here, binFile), 'wb') \
+            #  with open(os.path.join(here, binFile), 'wb') \
             with open(binFile, 'wb') \
                     as finalRoutes:
                 self.logs.debug('Writing %s\n' % binFile)
