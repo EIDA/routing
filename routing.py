@@ -203,6 +203,18 @@ def makeQueryGET(parameters):
     except:
         alt = False
 
+    try:
+        if 'format' in parameters:
+            form = parameters['format'].value.lower()
+        else:
+            form = 'xml'
+    except:
+        form = 'xml'
+
+    if alt and form == 'GET':
+        msg = 'alternative=true and format=get are incompatible parameters'
+        raise RoutingException(msg)
+
     result = RequestMerge()
     # Expand lists in parameters (f.i., cha=BHZ,HHN) and yield all possible
     # values
@@ -352,6 +364,11 @@ def application(environ, start_response):
     if fname is None:
         raise WIClientError('Method name not recognized!')
         # return send_html_response(status, 'Error! ' + status, start_response)
+
+    if len(environ['QUERY_STRING']) > 1000:
+        # FIXME Actually the code must be 414
+        # FIXME This needs to be added to wsgicomm
+        raise WIClientError('URI too large')
 
     try:
         outForm = 'xml'
