@@ -232,6 +232,18 @@ def send_plain_response(status, body, start_response):
     return [body]
 
 
+def send_nobody_response(status, start_response):
+    """
+    :synopsis: Sends a plain response without body in WSGI style
+    :platform: Linux
+
+    """
+
+    response_headers = [('Content-Length', 0)]
+    start_response(status, response_headers)
+    return []
+
+
 def send_error_response(status, body, start_response):
     """
     :synopsis: Sends a plain response in WSGI style
@@ -290,4 +302,4 @@ def send_dynamicfile_response(status, body, start_response):
         yield data
 
     if loop == 0:
-        send_error_response('204 No Content', '', start_response)
+        send_nobody_response('204 No Content', start_response)

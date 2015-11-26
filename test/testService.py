@@ -54,37 +54,27 @@ class RouteCacheTests(unittest.TestCase):
     def testDS_XX(self):
         "non-existing network XX"
 
-        fout = open('deleteme.txt', 'w')
         req = urllib2.Request('%s?net=XX' % self.host)
         msg = 'An error code 204 No Content is expected for an unknown network'
         try:
             u = urllib2.urlopen(req)
             u.read()
-            fout.write('No errors after read!')
-            fout.close()
+            self.assertEqual(u.getcode(), 204, '%s (%s)' % (msg, u.getcode()))
+            return
         except urllib2.URLError as e:
-            fout.write('e.getcode %s' % e.getcode)
             if hasattr(e, 'code'):
-                fout.write('e.code %s' % e.code)
-                fout.close()
                 self.assertEqual(e.code, 204, '%s (%s)' % (msg, e.code))
                 return
             else:
-                fout.write('dir(e) %s' % dir(e))
-                fout.write('e %s' % e)
-                fout.close()
                 self.assertTrue(False, '%s (%s)' % (msg, e))
                 return
 
         except Exception as e:
-            fout.write('dir(e) %s' % dir(e))
-            fout.write('e %s' % e)
-            fout.close()
             self.assertTrue(False, '%s (%s)' % (msg, e))
             return
 
-        fout.close()
         self.assertTrue(False, msg)
+        return
 
     def test_wrong_alternative(self):
         "wrong values in alternative parameter"
