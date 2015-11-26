@@ -119,6 +119,17 @@ class WIError(Exception):
         return repr(self.status) + ': ' + repr(self.body)
 
 
+class WIURIError(WIError):
+    """
+:synopsis: Exception to signal that the URI is beyond the allowed limit (414)
+:platform: Linux
+
+"""
+
+    def __init__(self, *args, **kwargs):
+        WIError.__init__(self, "414 Request URI too large", *args, **kwargs)
+
+
 class WIContentError(WIError):
     """
 :synopsis: Exception to signal that no content has been found for the
@@ -221,6 +232,21 @@ def send_plain_response(status, body, start_response):
     return [body]
 
 
+def send_error_response(status, body, start_response):
+    """
+    :synopsis: Sends a plain response in WSGI style
+    :platform: Linux
+
+    """
+
+    response_headers = [('Content-Type', 'text/plain')]
+    print response_headers
+    print status
+    print sys.exc_info()
+    start_response(status, response_headers, sys.exc_info())
+    return [body]
+
+
 def send_file_response(status, body, start_response):
     """
     :synopsis: Sends a file or a similar object. Caller must set the
@@ -264,7 +290,4 @@ def send_dynamicfile_response(status, body, start_response):
         yield data
 
     if loop == 0:
-        status = '204 No Content'
-        response_headers = []
-        start_response(status, response_headers)
-        # print '204 sent'
+        send_error_response('204 No Content', '', start_response)

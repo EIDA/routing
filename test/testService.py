@@ -30,8 +30,10 @@ class RouteCacheTests(unittest.TestCase):
             u.read()
         except urllib2.URLError as e:
             self.assertEqual(e.code, 414, msg)
+            return
 
         self.assertTrue(False, msg)
+        return
 
     def test_wrong_parameter(self):
         "unknown parameter"
@@ -44,20 +46,44 @@ class RouteCacheTests(unittest.TestCase):
             u.read()
         except urllib2.URLError as e:
             self.assertEqual(e.code, 400, msg)
+            return
 
         self.assertTrue(False, msg)
+        return
 
     def testDS_XX(self):
         "non-existing network XX"
 
+        fout = open('deleteme.txt', 'w')
         req = urllib2.Request('%s?net=XX' % self.host)
         msg = 'An error code 204 No Content is expected for an unknown network'
         try:
             u = urllib2.urlopen(req)
             u.read()
+            fout.write('No errors after read!')
+            fout.close()
         except urllib2.URLError as e:
-            self.assertEqual(e.code, 204, msg)
+            fout.write('e.getcode %s' % e.getcode)
+            if hasattr(e, 'code'):
+                fout.write('e.code %s' % e.code)
+                fout.close()
+                self.assertEqual(e.code, 204, '%s (%s)' % (msg, e.code))
+                return
+            else:
+                fout.write('dir(e) %s' % dir(e))
+                fout.write('e %s' % e)
+                fout.close()
+                self.assertTrue(False, '%s (%s)' % (msg, e))
+                return
 
+        except Exception as e:
+            fout.write('dir(e) %s' % dir(e))
+            fout.write('e %s' % e)
+            fout.close()
+            self.assertTrue(False, '%s (%s)' % (msg, e))
+            return
+
+        fout.close()
         self.assertTrue(False, msg)
 
     def test_wrong_alternative(self):
@@ -71,6 +97,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = urllib2.urlopen(req)
             u.read()
+            self.assertTrue(False, msg)
         except urllib2.URLError as e:
             self.assertEqual(e.code, 400, msg)
 
@@ -82,6 +109,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = urllib2.urlopen(req)
             u.read()
+            self.assertTrue(False, msg)
         except urllib2.URLError as e:
             self.assertEqual(e.code, 400, msg)
 
@@ -93,10 +121,9 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = urllib2.urlopen(req)
             u.read()
+            self.assertTrue(False, msg)
         except urllib2.URLError as e:
             self.assertEqual(e.code, 400, msg)
-
-        self.assertTrue(False, msg)
 
         # Test with a float
         value = 8.5
@@ -106,10 +133,9 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = urllib2.urlopen(req)
             u.read()
+            self.assertTrue(False, msg)
         except urllib2.URLError as e:
             self.assertEqual(e.code, 400, msg)
-
-        self.assertTrue(False, msg)
 
         # Test with a random string
         value = 'skjndfvkjsn'
@@ -119,10 +145,11 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = urllib2.urlopen(req)
             u.read()
+            self.assertTrue(False, msg)
         except urllib2.URLError as e:
             self.assertEqual(e.code, 400, msg)
 
-        self.assertTrue(False, msg)
+        return
 
     def test_alternative_format_get(self):
         "incompatibility between alternative=true and format=get"
@@ -135,8 +162,10 @@ class RouteCacheTests(unittest.TestCase):
             u.read()
         except urllib2.URLError as e:
             self.assertEqual(e.code, 400, msg)
+            return
 
         self.assertTrue(False, msg)
+        return
 
     def test_wrong_format(self):
         "wrong format option"
@@ -148,9 +177,15 @@ class RouteCacheTests(unittest.TestCase):
             u = urllib2.urlopen(req)
             u.read()
         except urllib2.URLError as e:
-            self.assertEqual(e.code, 400, msg)
+            if hasattr(e, 'code'):
+                self.assertEqual(e.code, 400, '%s (%s)' % (msg, e.code))
+                return
+
+            self.assertTrue(False, '%s (%s)' % (msg, e))
+            return
 
         self.assertTrue(False, msg)
+        return
 
     def test_wrong_datetime(self):
         "swap start and end time"
@@ -166,8 +201,10 @@ class RouteCacheTests(unittest.TestCase):
             u.read()
         except urllib2.URLError as e:
             self.assertEqual(e.code, 400, msg)
+            return
 
         self.assertTrue(False, msg)
+        return
 
     def test_application_wadl(self):
         "the 'application.wadl' method"

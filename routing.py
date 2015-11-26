@@ -33,9 +33,11 @@ import xml.etree.cElementTree as ET
 import json
 from wsgicomm import WIContentError
 from wsgicomm import WIClientError
+from wsgicomm import WIURIError
 from wsgicomm import WIError
 from wsgicomm import send_plain_response
 from wsgicomm import send_xml_response
+from wsgicomm import send_error_response
 import logging
 from utils import RequestMerge
 from utils import RoutingCache
@@ -45,6 +47,7 @@ try:
     import configparser
 except ImportError:
     import ConfigParser as configparser
+
 
 def _ConvertDictToXmlRecurse(parent, dictitem):
     assert not isinstance(dictitem, list)
@@ -196,10 +199,17 @@ def makeQueryGET(parameters):
 
     try:
         if 'alternative' in parameters:
-            alt = True if parameters['alternative'].value.lower() == 'true'\
-                else False
+            if parameters['alternative'].value.lower() == 'true':
+                alt = True
+            elif parameters['alternative'].value.lower() == 'false':
+                alt = False
+            else:
+                msg = 'Wrong value passed in parameter "alternative"'
+                raise WIClientError(msg)
         else:
             alt = False
+    except WIClientError:
+        raise
     except:
         alt = False
 
@@ -211,9 +221,13 @@ def makeQueryGET(parameters):
     except:
         form = 'xml'
 
-    if alt and form == 'GET':
+    if ((alt) and (form == 'get')):
         msg = 'alternative=true and format=get are incompatible parameters'
-        raise RoutingException(msg)
+        raise WIClientError(msg)
+
+    if ((start is not None) and (endt is not None) and (start > endt)):
+        msg = 'Start datetime cannot be greater than end datetime'
+        raise WIClientError(msg)
 
     result = RequestMerge()
     # Expand lists in parameters (f.i., cha=BHZ,HHN) and yield all possible
@@ -326,8 +340,8 @@ def applyFormat(resultRM, outFormat='xml'):
                                          type(item[k]) is not
                                          type(datetime.datetime.now())
                                          else item[k].isoformat()) for k in item
-                                         if item[k] not in ('', '*')
-                                         and k != 'priority']))
+                                         if item[k] not in ('', '*') and
+                                         k != 'priority']))
         iterObj = '\n'.join(iterObj)
         return iterObj
     elif outFormat == 'post':
@@ -342,9 +356,11 @@ def applyFormat(resultRM, outFormat='xml'):
             iterObj.append('')
         iterObj = '\n'.join(iterObj)
         return iterObj
-    else:
+    elif outFormat == 'xml':
         iterObj2 = ET.tostring(ConvertDictToXml(resultRM))
         return iterObj2
+    else:
+        raise WIClientError('Wrong format requested!')
 
 # This variable will be treated as GLOBAL by all the other functions
 routes = None
@@ -366,9 +382,9 @@ def application(environ, start_response):
         # return send_html_response(status, 'Error! ' + status, start_response)
 
     if len(environ['QUERY_STRING']) > 1000:
-        # FIXME Actually the code must be 414
-        # FIXME This needs to be added to wsgicomm
-        raise WIClientError('URI too large')
+        return send_error_response("414 Request URI too large",
+                                   "maximum URI length is 1000 characters",
+                                   start_response)
 
     try:
         outForm = 'xml'
@@ -407,11 +423,11 @@ def application(environ, start_response):
         if str(e) == "Maximum content length exceeded":
             # Add some user-friendliness (this message triggers an alert
             # box on the client)
-            return send_plain_response("400 Bad Request",
+            return send_error_response("400 Bad Request",
                                        "maximum request size exceeded",
                                        start_response)
 
-        return send_plain_response("400 Bad Request", str(e), start_response)
+        return send_error_response("400 Bad Request", str(e), start_response)
 
     # Check whether the function called is implemented
     implementedFunctions = ['query', 'application.wadl', 'localconfig',
@@ -428,14 +444,12 @@ def application(environ, start_response):
     if routes is None:
         # Add routing cache here, to be accessible to all modules
         routesFile = os.path.join(here, 'data', 'routing.xml')
-        #invFile = os.path.join(here, 'data', 'Arclink-inventory.xml')
         masterFile = os.path.join(here, 'data', 'masterTable.xml')
-        #routes = RoutingCache(routesFile, masterFile, Logs(verbo))
         routes = RoutingCache(routesFile, masterFile)
 
     fname = environ['PATH_INFO'].split('/')[-1]
     if fname not in implementedFunctions:
-        return send_plain_response("400 Bad Request",
+        return send_error_response("400 Bad Request",
                                    'Function "%s" not implemented.' % fname,
                                    start_response)
 
@@ -463,7 +477,7 @@ def application(environ, start_response):
                 return send_plain_response(status, iterObj, start_response)
 
         except WIError as w:
-            return send_plain_response(w.status, w.body, start_response)
+            return send_error_response(w.status, w.body, start_response)
 
     elif fname == 'localconfig':
         return send_xml_response('200 OK', routes.localConfig(),
@@ -485,7 +499,7 @@ def application(environ, start_response):
 
 
 def main():
-    routes = RoutingCache("./routing.xml", "./masterTable.xml")
+    RoutingCache("./routing.xml", "./masterTable.xml")
 
 
 if __name__ == "__main__":
