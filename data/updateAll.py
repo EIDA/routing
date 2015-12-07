@@ -447,7 +447,6 @@ def main():
 
     mergeRoutes('routing.xml', synchroList)
 
-    #getArcInv(arcServ, arcPort)
 
 if __name__ == '__main__':
     main()

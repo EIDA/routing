@@ -833,7 +833,7 @@ class RoutingCache(object):
         self.updateMT()
 
     def toXML(self, foutput, nameSpace='ns0'):
-        header = """<?xml version="0.0" encoding="utf-8"?>
+        header = """<?xml version="1.0" encoding="utf-8"?>
         <ns0:routing xmlns:ns0="http://geofon.gfz-potsdam.de/ns/Routing/1.0/">
         """
         with open(foutput, 'w') as fo:

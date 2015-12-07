@@ -151,10 +151,41 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
       $ sudo service apache2 start
 
 
-#. Get initial metadata in the `data` directory by running the ``updateAll.py`` script in that directory. ::
+#. Get initial metadata in the `data` directory. You have two options to feed the system with
+   some routes. Either you edit by hand (or copy from some other place) a file with your local
+   streams and save them into `data/routing.xml`, or you get them from an Arclink server.
+   In the latter case, you need to allow this in the configuration file like this: ::
+   
+      $ vim routing.cfg
+      $ # set ArclinkBased = true to allow the information to be overwritten by Arclink data
+      $ grep ArclinkBased routing.cfg
+      ArclinkBased = true
+      
+   After saving this change you can run change into the `data` directory and run the ``updateAll.py``
+   script there. ::
 
       $ cd /var/www/eidaws/routing/1/data
       $ ./updateAll.py
+
+   If you don't specify any parameters to the script, the information needed will be read from
+   the configuration file at the default location `../routing.cfg`. You can use the switch `-h`
+   to see the parameters you can use. ::
+
+      $ ./updateAlls.py -h
+      usage: updateAll.py [-h] [-l {CRITICAL,ERROR,WARNING,INFO,DEBUG}] [-s SERVER]
+                          [-c CONFIG]
+
+      Get EIDA routing configuration and "export" it to the FDSN-WS style.
+
+      optional arguments:
+        -h, --help            show this help message and exit
+        -l {CRITICAL,ERROR,WARNING,INFO,DEBUG}, --loglevel {CRITICAL,ERROR,WARNING,INFO,DEBUG}
+                              Verbosity in the output.
+        -s SERVER, --server SERVER
+                              Arclink server address (address.domain:18001).
+        -c CONFIG, --config CONFIG
+                              Config file to use.
+
 
 #. It is important to check the permissions of the working directory
    and the files in it, as some data needs to be saved there.
@@ -328,17 +359,29 @@ used to check the local installation. ::
     Checking Dataselect CH.LIENZ.*.?HZ... [OK]
     Checking Dataselect GE.*.*.*... [OK]
     Checking Dataselect GE.APE.*.*... [OK]
+    Checking Dataselect GE,RO.*.*.*... [OK]
     Checking Dataselect RO.BZS.*.BHZ... [OK]
+    Checking non-existing network XX... [OK]
+    Checking incompatibility between alternative=true and format=get... [OK]
+    Checking the 'application.wadl' method... [OK]
+    Checking the 'info' method... [OK]
+    Checking very large URI... [OK]
+    Checking the 'version' method... [OK]
+    Checking wrong values in alternative parameter... [OK]
+    Checking swap start and end time... [OK]
+    Checking wrong format option... [OK]
+    Checking unknown parameter... [OK]
     
-The set of test cases provided are the same as in the ``testRoute.py`` script.
+The set of test cases related to data consistency are the same as in the
+``testRoute.py`` script. The other tests are related to the protocol itself.
 
 Maintenance
 -----------
 
-Metadata needs to be updated regularly due to the small but constant changes in
-the Arclink inventory. You can always run safely the ``updateAll.py``
-script at any time you want.
-The Routing Service creates a processed version of the Arclink XML, but this
+The Routing Table needs to be updated regularly due to the small but constant
+changes in the EIDA structure. You should always be able to run safely the
+``updateAll.py`` script at any time you want.
+The Routing Service creates a binary version of the Arclink XML, but this
 will be automatically updated each time a new inventory XML file is detected.
 
 Upgrade
@@ -392,7 +435,7 @@ The following is an example of an Arclink-XML file.
         </ns0:route>
     </ns0:routing>
 
-This is exactly one of the two files that the ``updateAll.py`` script creates
+This is exactly the file that the ``updateAll.py`` script creates
 with information from EIDA. With this information and
 the metadata downloaded by the same script the service can be started.
 
@@ -460,7 +503,7 @@ Importing remote routes
 -----------------------
 
 In the case case that one datacenter decides to include routes from other
-datacenter, there is no need to define them locally.
+datacenter (as in the EIDA case) , there is no need to define them locally.
 
 A normal use case would be that the datacenter `A` needs to provide routing
 information of datacenters `A` **and** `B` to its users. In order to allow
@@ -486,16 +529,13 @@ configuration file.
 When the service in datacenter `A` starts, it will first include all the
 routes defined in ``routing.xml`` and then it will save the routes read from
 http://datacenter-b/path/routing/1/localconfig in a file called ``DC-B.xml``
-under the ``data`` folder. This file will be used for future reference in case
+under the ``data`` folder. This file can be used for future reference in case
 that all the routes need to be updated and datacenter `B` is not available.
 
 .. todo:: Skip update if datacenter is down and use the old data.
 
 Once the file is saved, all the routes inside it will be added to the routing
-table.
-
-.. todo:: Check for overlap in the routes and decide what to do!
-
+table in memory.
 
 
 Methods available
@@ -717,14 +757,6 @@ repeated (URL and POST body). ::
 
  http://ws.resif.fr/fdsnws/dataselect/1/query
  4C KES28 * * 2010-01-01T00:00:00 2010-01-01T00:10:00
-
-In case that the service is ``arclink`` or ``seedlink``, the implemented
-routing algorithm is exactly the same as in the Arclink protocol. See the
-`SeisComP3 documentation for Arclink <http://www.seiscomp3.org/doc/seattle/2013.046/apps/arclink.html>`_
-under the section `"How routing is resolved"`. It is not expected that the
-Routing Service expands the wildcards given in the input parameters. Only the
-algorithm to find the route will be exactly as Arclink, and that means that
-the output will have only one route (unless the alternative parameter is set).
 
 Alternative routes
 """"""""""""""""""
