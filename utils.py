@@ -488,9 +488,9 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
     __slots__ = ()
 
     def toXMLopen(self, nameSpace='ns0', level=1):
-        return '%s<%s:route networkCode="%s" stationCode="%s" ' + \
-            'locationCode="%s" streamCode="%s">\n' \
-            % (' ' * level, nameSpace, self.n, self.s, self.l, self.c)
+        conv = '%s<%s:route networkCode="%s" stationCode="%s" ' + \
+            'locationCode="%s" streamCode="%s">\n'
+        return conv % (' ' * level, nameSpace, self.n, self.s, self.l, self.c)
 
     def toXMLclose(self, nameSpace='ns0', level=1):
         return '%s</%s:route>\n' % (' ' * level, nameSpace)

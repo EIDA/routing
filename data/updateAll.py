@@ -25,13 +25,6 @@ from utils import Route
 from utils import RoutingCache
 import logging
 
-"""
-.. todo::
-    We need to include a function that is able to "translate" from arclink
-    to dataselect. It should read routing.xml.download and change the addresses
-    and services following the same table that we had previously.
-
-"""
 
 def mapArcFDSN(route):
     """Map from an Arclink address to a Dataselect one
@@ -82,7 +75,8 @@ def mapArcFDSN(route):
 
 def arc2fdsnws(filein, fileout, config='../routing.cfg'):
     """Read the routing file in XML format and add the Dataselect and Station
-routes based on the Arclink information. The resulting table is stored in 
+routes based on the Arclink information. The resulting table is stored in the
+file passed in the second parameter.
 
 :param filein: Input file with routes (usually from an Arclink server).
 :type filein: str
@@ -108,7 +102,7 @@ routes based on the Arclink information. The resulting table is stored in
     rc.toXML(fileout)
 
 
-def getArcRoutes(arcServ='eida.gfz-potsdam.de', arcPort=18001, foutput='routing.xml'):
+def getArcRoutes(arcServ='eida.gfz-potsdam.de', arcPort=18002, foutput='routing.xml'):
     """Connects via telnet to an Arclink server to get routing information.
 The data is saved in the file specified by foutput. Generally used to start
 operating with an EIDA default configuration.
