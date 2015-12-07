@@ -12,13 +12,14 @@ info = Routing information from the Arclink Server at GEOFON.
 updateTime = 03:00
 # Should the routing information be updated and overwritten by the data from
 # the configured Arclink server when updateAll.py is run?
-ArclinkBased = true
+# Also the algorithms for other services will be based on the arclink routes.
+ArclinkBased = false
 # Verbosity of the logging system
 # Possible values are:
 # CRITICAL, ERROR, WARNING, INFO, DEBUG
 verbosity = INFO
 # Servers with routes to be imported (name, url)
-# synchronize = SERVER2, http://localhost/eidaws/routing/2
+# synchronize = SERVER2, http://remotehost/eidaws/routing/1
 synchronize =
 # Can overlapping routes be saved in the routing table?
 # If yes, the Arclink-inventory.xml must be used to expand the routes and

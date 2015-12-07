@@ -61,8 +61,7 @@ Download the tar file / source from the GEOFON web page at http://geofon.gfz-pot
 [Eventually it may be included in the SeisComP3 distribution.]
 
 .. note ::
-    Nightly builds can be downloaded from Bitbucket (https://javiquinte@bitbucket.org/javiquinte/routing.git).
-    You can request access at geofon_dc@gfz-potsdam.de.
+    Nightly builds can be downloaded from Github (https://github.com/javiquinte/routing.git).
 
 Untar into a suitable directory visible to the web server,
 such as `/var/www/eidaws/routing/1/` ::
@@ -138,7 +137,7 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
 
 #. Edit `routing.wsgi` and check that the paths there reflect the ones selected for your installation.
 
-#. Edit `routing.cfg` and be sure to configure everything corectly. This is discussed under "`Configuration Options`_" below.
+#. Edit `routing.cfg` and be sure to configure everything correctly. This is discussed under "`Configuration Options`_" below.
 
 #. Start/restart the web server e.g. as root. In **OpenSUSE** ::
 
