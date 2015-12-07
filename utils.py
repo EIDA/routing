@@ -763,7 +763,7 @@ class RoutingCache(object):
 :platform: Linux (maybe also Windows)
     """
 
-    def __init__(self, routingFile, masterFile=None, config='routing.cfg'):
+    def __init__(self, routingFile=None, masterFile=None, config='routing.cfg'):
         """RoutingCache constructor
 
 :param routingFile: XML file with routing information
@@ -790,9 +790,10 @@ class RoutingCache(object):
         self.logs.info('Reading configuration from %s' % self.configFile)
         self.logs.info('Reading masterTable from %s' % masterFile)
 
-        self.logs.info('Wait until the RoutingCache is updated...')
-        self.update()
-        self.logs.info('RoutingCache finished!')
+        if self.routingFile is not None:
+            self.logs.info('Wait until the RoutingCache is updated...')
+            self.update()
+            self.logs.info('RoutingCache finished!')
 
         # Check update time
         # Configure the expected update moment of the day
@@ -834,8 +835,8 @@ class RoutingCache(object):
 
     def toXML(self, foutput, nameSpace='ns0'):
         header = """<?xml version="1.0" encoding="utf-8"?>
-        <ns0:routing xmlns:ns0="http://geofon.gfz-potsdam.de/ns/Routing/1.0/">
-        """
+<ns0:routing xmlns:ns0="http://geofon.gfz-potsdam.de/ns/Routing/1.0/">
+"""
         with open(foutput, 'w') as fo:
             fo.write(header)
             for st, lr in self.routingTable.iteritems():

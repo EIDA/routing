@@ -85,6 +85,7 @@ file passed in the second parameter.
 :type fileout: str
 """
     rc = RoutingCache(filein, config=config)
+    rOut = RoutingCache()
     for st, lr in rc.routingTable.iteritems():
         toAdd = list()
         for r in lr:
@@ -97,9 +98,12 @@ file passed in the second parameter.
                              mapArcFDSN(r.address), r.tw, r.priority)
                 toAdd.append(data)
 
-        lr.extend(toAdd)
+        try:
+            rOut.routingTable[st].extend(toAdd)
+        except:
+            rOut.routingTable[st] = toAdd
 
-    rc.toXML(fileout)
+    rOut.toXML(fileout)
 
 
 def getArcRoutes(arcServ='eida.gfz-potsdam.de', arcPort=18002, foutput='routing.xml'):
