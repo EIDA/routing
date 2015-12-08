@@ -285,10 +285,9 @@ imported. This is explained in detail in
 
 `allowoverlap` determines whether the routes imported from other services can
 overlap the ones already present. In case this is set to ``true`` and an
-overlapping route is found while trying to expand the wildcards, the
-inconsistency must be resolved by the expansion by means of the whole inventory
-stored in ``Arclink-inventory.xml`` (not recommended in case of big data
-centres).
+overlapping route is found, the Route will be discarded with an error message
+in the log. When it is set to ``false``, the Route will be still included, but
+the resulting data could be inconsistent.
 
 .. _service_configuration:
 
