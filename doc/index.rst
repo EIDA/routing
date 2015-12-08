@@ -79,11 +79,20 @@ Installation on Apache
 
 To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
 
-1. Unpack the files into the chosen directory.
-   (See Download_ above.)
+1. Extract the package in the desired directory.
    In these instructions we assume this directory is `/var/www/eidaws/routing/1/`.
+   
+   * If you downloaded the package from the GEOFON website, unpack the files
+     into the chosen directory. (See Download_ above.)
 
-#. Enable `mod_wsgi`. For openSUSE, add 'wsgi' to the list of modules in the APACHE_MODULES variable in `/etc/sysconfig/apache2` ::
+   * If you want to get the package from Github, use the following commands: ::
+
+       $ cd /var/www/eidaws/routing
+       $ git clone https://github.com/javiquinte/routing.git 1
+       $ cd 1
+
+#. Enable `mod_wsgi`. For openSUSE, add 'wsgi' to the list of modules in the
+   APACHE_MODULES variable in `/etc/sysconfig/apache2` ::
 
        APACHE_MODULES+=" python wsgi"
 
