@@ -4,6 +4,7 @@ import sys
 import datetime
 import unittest
 import urllib2
+import json
 from unittestTools import WITestRunner
 from difflib import Differ
 from xml.dom.minidom import parseString
@@ -301,6 +302,9 @@ class RouteCacheTests(unittest.TestCase):
     def testDS_GE_RO(self):
         "Dataselect GE,RO.*.*.*"
 
+        expected = {'RO': 'http://eida-sc3.infp.ro/fdsnws/dataselect/1/query',
+            'GE': 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'}
+
         req = urllib2.Request(self.host + '?net=GE,RO&format=json')
         try:
             u = urllib2.urlopen(req)
@@ -308,27 +312,21 @@ class RouteCacheTests(unittest.TestCase):
         except:
             raise Exception('Error retrieving data for GE,RO.*.*.*')
 
-        expected = '[{"url": ' + \
-            '"http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query", ' + \
-            '"params": [{"loc": "*", "end": "", "sta": "*", "cha": "*", ' + \
-            '"priority": 1, "start": "1993-01-01T00:00:00", "net": "GE"}], ' +\
-            '"name": "dataselect"}, {"url": ' + \
-            '"http://eida-sc3.infp.ro/fdsnws/dataselect/1/query", "params": ' +\
-            '[{"loc": "*", "end": "", "sta": "*", "cha": "*", "priority": 1,' +\
-            ' "start": "1980-01-01T00:00:00", "net": "RO"}], ' + \
-            '"name": "dataselect"}]'
+        result = json.loads(buffer)
 
-        numErrors = 0
-        errors = []
-        d = Differ()
-        for line in d.compare([buffer], [expected]):
-            if line[:2] != '  ':
-                numErrors += 1
-                errors.append(line)
+        for node in result:
+            self.assertEqual(node['name'], 'dataselect',
+                             'Service of node is not dataselect!')
 
-        if numErrors:
-            print '\n', '\n'.join(errors)
-            self.assertEqual(0, 1, 'Error in %d lines' % len(errors))
+            self.assertTrue(node['params'][0]['net'] in expected.keys(),
+                            '%s is not a requested network' %
+                            node['params'][0]['net'])
+                             
+            self.assertEqual(expected[node['params'][0]['net']],
+                             node['url'],
+                             'URL for network %s is not from %s!' %
+                             (node['params'][0]['net'],
+                              expected[node['params'][0]['net']]))
 
     def testDS_GE_APE(self):
         "Dataselect GE.APE.*.*"
