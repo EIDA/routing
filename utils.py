@@ -600,23 +600,27 @@ False
 """
 
         def inOrder(a, b, c):
-            if b is None:
-                return False
+            # if b is None:
+            #     return False
 
             # Here I'm sure that b is not None
             if (a is None and c is None):
                 return True
 
+            # Here I'm sure that b is not None
+            if (b is None and c is None):
+                return True
+
             # I also know that a or c are not None
             if a is None:
-                return b < c
+                return b <= c
 
             if c is None:
-                return a < b
+                return a <= b
 
             # The three are not None
             # print a, b, c, a < b, b < c, a < b < c
-            return a < b < c
+            return a <= b <= c
 
         # First of all check that the TWs are correctly created
         if ((self.start is not None) and (self.end is not None) and
@@ -630,6 +634,20 @@ False
                                                                  otherTW.end))
 
         # Check if self.start or self.end in otherTW
+        # print 'Check if %s overlaps %s' % (self, otherTW)
+        # print otherTW.start, self.start, otherTW.end, \
+        #     inOrder(otherTW.start, self.start, otherTW.end)
+        # print otherTW.start, self.end, otherTW.end,   \
+        #     inOrder(otherTW.start, self.end, otherTW.end)
+        # print otherTW.start, self.start, self.end,    \
+        #     inOrder(otherTW.start, self.start, self.end)
+        # print self.start, self.end, otherTW.end,      \
+        #     inOrder(self.start, self.end, otherTW.end)
+        # print self.start, otherTW.start, otherTW.end, \
+        #     inOrder(self.start, otherTW.start, otherTW.end)
+        # print otherTW.start, otherTW.end, self.end,   \
+        #     inOrder(otherTW.start, otherTW.end, self.end)
+
         if inOrder(otherTW.start, self.start, otherTW.end) or \
                 inOrder(otherTW.start, self.end, otherTW.end):
             return True
@@ -1171,19 +1189,6 @@ different datacenters (if needed) and be able to merge it avoiding duplication.
 
         # print 'subs2', subs2
 
-        # WARNING ! This approach based on wildcards is more Arclink style
-        # From now on we will base the selection on priority
-
-        # Alternative approach based on number of wildcards
-        # orderS = [sum([3 for t in r if '*' in t]) for r in subs]
-        # orderQ = [sum([1 for t in r if '?' in t]) for r in subs]
-
-        # order = map(add, orderS, orderQ)
-
-        # orderedSubs = [x for (y, x) in sorted(zip(order, subs))]
-
-        # self.logs.debug('Preselection: %s\n' % orderedSubs)
-        # finalset = set()
         finalset = list()
 
         # Reorder to have higher priorities first
