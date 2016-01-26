@@ -600,8 +600,8 @@ False
 """
 
         def inOrder(a, b, c):
-            # if b is None:
-            #     return False
+            if ((b is None) and (a is not None) and (c is not None)):
+                return False
 
             # Here I'm sure that b is not None
             if (a is None and c is None):
@@ -613,11 +613,16 @@ False
 
             # I also know that a or c are not None
             if a is None:
-                return b <= c
+                return b < c
 
             if c is None:
-                return a <= b
+                return a < b
 
+            # The three are not None
+            # print a, b, c, a < b, b < c, a < b < c
+            return a < b < c
+
+        def inOrder2(a, b, c):
             # The three are not None
             # print a, b, c, a < b, b < c, a < b < c
             return a <= b <= c
@@ -648,17 +653,25 @@ False
         # print otherTW.start, otherTW.end, self.end,   \
         #     inOrder(otherTW.start, otherTW.end, self.end)
 
-        if inOrder(otherTW.start, self.start, otherTW.end) or \
-                inOrder(otherTW.start, self.end, otherTW.end):
+        minDT = datetime.datetime(1900, 1, 1)
+        maxDT = datetime.datetime(2100, 1, 1)
+
+        sStart = self.start if self.start is not None else minDT
+        oStart = otherTW.start if otherTW.start is not None else minDT
+        sEnd = self.end if self.end is not None else maxDT
+        oEnd = otherTW.end if otherTW.end is not None else maxDT
+        
+        if inOrder2(oStart, sStart, oEnd) or \
+                inOrder2(oStart, sEnd, oEnd):
             return True
 
         # Check if this is included in otherTW
-        if inOrder(otherTW.start, self.start, self.end):
-                return inOrder(self.start, self.end, otherTW.end)
+        if inOrder2(oStart, sStart, sEnd):
+                return inOrder2(sStart, sEnd, oEnd)
 
         # Check if otherTW is included in this one
-        if inOrder(self.start, otherTW.start, otherTW.end):
-                return inOrder(otherTW.start, otherTW.end, self.end)
+        if inOrder2(sStart, oStart, oEnd):
+                return inOrder2(oStart, oEnd, sEnd)
 
         if self == otherTW:
             return True
@@ -722,6 +735,9 @@ False
                 else otherTW.end
         else:
             resEn = self.end
+
+        if ((resSt is not None) and (resEn is not None) and (resSt >= resEn)):
+            raise ValueError('Intersection is empty')
 
         return TW(resSt, resEn)
 
@@ -1245,15 +1261,21 @@ different datacenters (if needed) and be able to merge it avoiding duplication.
                     # If the timewindow is not complete then add the missing
                     # ranges to the tw set.
                     for auxTW in toProc.difference(ro.tw):
+                        # Skip the case that we fall alwys in the same time span
+                        if auxTW == toProc:
+                            break
                         self.logs.debug('Adding %s\n' % str(auxTW))
                         setTW.add(auxTW)
 
-                    auxSt, auxEn = toProc.intersection(ro.tw)
-                    result.append(service, ro.address,
-                                  ro.priority if ro.priority is not
-                                  None else '', stream.strictMatch(st),
-                                  auxSt if auxSt is not None else '',
-                                  auxEn if auxEn is not None else '')
+                    try:
+                        auxSt, auxEn = toProc.intersection(ro.tw)
+                        result.append(service, ro.address,
+                                      ro.priority if ro.priority is not
+                                      None else '', stream.strictMatch(st),
+                                      auxSt if auxSt is not None else '',
+                                      auxEn if auxEn is not None else '')
+                    except:
+                        pass
 
                     # FIXME This below seems to be wrong!
 
