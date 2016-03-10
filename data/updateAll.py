@@ -63,7 +63,7 @@ def mapArcFDSN(route):
         return ingv
     elif host.endswith('bgr.de'):
         return bgr
-    elif host.startswith('141.84.'):
+    elif host.startswith('141.84.') or host.endswith('uni-muenchen.de'):
         return lmu
     elif host.endswith('ipgp.fr'):
         return ipgp
