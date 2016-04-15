@@ -390,10 +390,6 @@ def main():
     args = parser.parse_args()
 
     config = configparser.RawConfigParser()
-    if not len(config.read(args.config)):
-        logs.error('Configuration file %s could not be read' % args.config)
-        return
-
     # Command line parameter has priority
     try:
         verbo = getattr(logging, args.loglevel)
@@ -411,6 +407,9 @@ def main():
     logs = logging.getLogger('getEIDAconfig')
     logs.setLevel(verbo)
 
+    if not len(config.read(args.config)):
+        logs.error('Configuration file %s could not be read' % args.config)
+
     # Check Arclink server that must be contacted to get a routing table
     if args.server:
         arcServ, arcPort = args.server.split(':')
@@ -424,8 +423,13 @@ def main():
             arcServ = 'eida.gfz-potsdam.de'
             arcPort = 18002
 
+    try:
+        arcBased = config.getboolean('Service', 'ArclinkBased')
+    except:
+        # Otherwise, default value
+        arcBased = True
 
-    if config.getboolean('Service', 'ArclinkBased'):
+    if arcBased:
         logs.info('Starting routing table creation based on Arclink data')
         getArcRoutes(arcServ, arcPort, 'routing-tmp.xml')
         logs.info('Adding Station and Dataselect routes based on Arclink data')
@@ -445,9 +449,12 @@ def main():
     except:
         pass
 
-    synchroList = ''
-    if 'synchronize' in config.options('Service'):
-        synchroList = config.get('Service', 'synchronize')
+    try:
+        if 'synchronize' in config.options('Service'):
+            synchroList = config.get('Service', 'synchronize')
+    except:
+        # Otherwise, default value
+        synchroList = ''
 
     mergeRoutes('routing.xml', synchroList)
 
