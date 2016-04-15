@@ -361,6 +361,30 @@ def addRemote(fileName, url):
             logs.error('The server couldn\'t fulfill the')
             logs.error(' request.\nError code: %s\n', e.code)
 
+        # Prepare Request without the "localconfig" method
+        req = ul.Request(url)
+        try:
+            u = ul.urlopen(req)
+
+            with open(fileName, 'w') as routeExt:
+                logs.debug('%s opened\n%s:' % (fileName, url))
+                # Read the data in blocks of predefined size
+                buf = u.read(blockSize)
+                while len(buf):
+                    logs.debug('.')
+                    # Return one block of data
+                    routeExt.write(buf)
+                    buf = u.read(blockSize)
+
+                # Close the connection to avoid overloading the server
+                u.close()
+        except ul.URLError as e:
+            if hasattr(e, 'reason'):
+                logs.error('%s - Reason: %s\n' % (url, e.reason))
+            elif hasattr(e, 'code'):
+                logs.error('The server couldn\'t fulfill the')
+                logs.error(' request.\nError code: %s\n', e.code)
+
     name = fileName[:- len('.download')]
     try:
         os.remove(name + '.bck')
