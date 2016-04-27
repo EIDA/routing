@@ -355,11 +355,13 @@ def addRemote(fileName, url):
             u.close()
 
     except ul.URLError as e:
+        logs.error('The URL does not seem to be a valid Routing Service')
         if hasattr(e, 'reason'):
-            logs.error('%s - Reason: %s\n' % (url, e.reason))
+            logs.error('%s/localconfig - Reason: %s\n' % (url, e.reason))
         elif hasattr(e, 'code'):
             logs.error('The server couldn\'t fulfill the')
             logs.error(' request.\nError code: %s\n', e.code)
+        logs.warning('Retrying with a static configuration file')
 
         # Prepare Request without the "localconfig" method
         req = ul.Request(url)
