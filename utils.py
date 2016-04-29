@@ -1197,11 +1197,11 @@ different datacenters (if needed) and be able to merge it avoiding duplication.
 
         # Filter by stream
         for stRT in self.routingTable.keys():
-            print stRT, stream
+            # print stRT, stream
             if stRT.overlap(stream):
                 subs.append(stRT)
 
-        print 'subs', subs
+        # print 'subs', subs
 
         # Filter by service and timewindow
         for stRT in subs:
@@ -1230,7 +1230,7 @@ different datacenters (if needed) and be able to merge it avoiding duplication.
                 if not alternative:
                     break
 
-        print 'subs2', subs2
+        # print 'subs2', subs2
 
         finalset = list()
 
