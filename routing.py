@@ -445,7 +445,8 @@ def application(environ, start_response):
         # Add routing cache here, to be accessible to all modules
         routesFile = os.path.join(here, 'data', 'routing.xml')
         masterFile = os.path.join(here, 'data', 'masterTable.xml')
-        routes = RoutingCache(routesFile, masterFile)
+        configFile = os.path.join(here, 'routing.cfg')
+        routes = RoutingCache(routesFile, masterFile, configFile)
 
     fname = environ['PATH_INFO'].split('/')[-1]
     if fname not in implementedFunctions:
