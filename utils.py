@@ -1197,10 +1197,11 @@ different datacenters (if needed) and be able to merge it avoiding duplication.
 
         # Filter by stream
         for stRT in self.routingTable.keys():
+            print stRT, stream
             if stRT.overlap(stream):
                 subs.append(stRT)
 
-        # print 'subs', subs
+        print 'subs', subs
 
         # Filter by service and timewindow
         for stRT in subs:
@@ -1229,7 +1230,7 @@ different datacenters (if needed) and be able to merge it avoiding duplication.
                 if not alternative:
                     break
 
-        # print 'subs2', subs2
+        print 'subs2', subs2
 
         finalset = list()
 
@@ -1570,26 +1571,59 @@ the normal configuration.
 
         self.logs.debug('Entering update()\n')
 
+        here = os.path.dirname(__file__)
+
+        # Otherwise, default value
+        synchroList = ''
+        allowOverlaps = False
+
+        try:
+            config = configparser.RawConfigParser()
+	    self.logs.debug(self.configFile)
+            with open(self.configFile) as c:
+                config.readfp(c)
+
+            if 'synchronize' in config.options('Service'):
+                synchroList = config.get('Service', 'synchronize')
+        except:
+            pass
+
+        try:
+            if 'allowOverlaps' in config.options('Service'):
+                allowOverlaps = config.getboolean('Service', 'allowoverlap')
+        except:
+            pass
+
+	self.logs.debug(synchroList)
+        self.logs.debug('allowOverlaps: %s' % allowOverlaps)
+
         # Just to shorten notation
         ptRT = self.routingTable
 
         # Clear all previous information
         ptRT.clear()
+        ptRT = addRoutes(self.routingFile, allowOverlaps=allowOverlaps)
 
-        # here = os.path.dirname(__file__)
         binFile = self.routingFile + '.bin'
         try:
-            # with open(os.path.join(here, binFile)) as rMerged:
             with open(binFile) as rMerged:
                 self.routingTable = pickle.load(rMerged)
         except:
-            ptRT = addRoutes(self.routingFile, config=self.configFile)
-            # for routeFile in glob.glob(
-            #        os.path.join(here, 'data/routing-*.xml')):
-            for routeFile in glob.glob('data/routing-*.xml'):
-                ptRT = addRoutes(routeFile, ptRT, self.logs)
+            # Loop for the datacenters which should be integrated
+            for line in synchroList.splitlines():
+                if not len(line):
+                    break
+                self.logs.debug(str(line.split(',')))
+                dcid, url = line.split(',')
 
-            #  with open(os.path.join(here, binFile), 'wb') \
+                if os.path.exists(os.path.join(here, 'data', 'routing-%s.xml' % dcid.strip())):
+                    # FIXME addRoutes should return no Exception ever and skip a
+                    # problematic file returning a coherent version of the routes
+                    self.logs.debug('Routes in table: %s' % len(ptRT))
+                    self.logs.debug('Adding REMOTE %s' % dcid)
+                    ptRT = addRoutes(os.path.join(here, 'data', 'routing-%s.xml' % dcid.strip()),
+                                     routingTable=ptRT, allowOverlaps=allowOverlaps)
+
             with open(binFile, 'wb') \
                     as finalRoutes:
                 self.logs.debug('Writing %s\n' % binFile)
