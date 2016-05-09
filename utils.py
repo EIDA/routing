@@ -267,7 +267,7 @@ a regular period of time.
                             # and the ones already present in the main Routing
                             # table
                             addIt = True
-                            logs.debug('[RT] Checking %s\n' % str(st))
+                            logs.debug('[RT] Checking %s' % str(st))
                             for testStr in ptRT.keys():
                                 # This checks the overlap of Streams and also
                                 # of timewindows and priority
@@ -359,8 +359,8 @@ def addRemote(fileName, url):
         if hasattr(e, 'reason'):
             logs.error('%s/localconfig - Reason: %s\n' % (url, e.reason))
         elif hasattr(e, 'code'):
-            logs.error('The server couldn\'t fulfill the')
-            logs.error(' request.\nError code: %s\n', e.code)
+            logs.error('The server couldn\'t fulfill the request.')
+            logs.error('Error code: %s\n', e.code)
         logs.warning('Retrying with a static configuration file')
 
         # Prepare Request without the "localconfig" method
@@ -384,8 +384,8 @@ def addRemote(fileName, url):
             if hasattr(e, 'reason'):
                 logs.error('%s - Reason: %s\n' % (url, e.reason))
             elif hasattr(e, 'code'):
-                logs.error('The server couldn\'t fulfill the')
-                logs.error(' request.\nError code: %s\n', e.code)
+                logs.error('The server couldn\'t fulfill the request.')
+                logs.error('Error code: %s\n', e.code)
 
     name = fileName[:- len('.download')]
     try:
@@ -1579,7 +1579,7 @@ the normal configuration.
 
         try:
             config = configparser.RawConfigParser()
-	    self.logs.debug(self.configFile)
+            self.logs.debug(self.configFile)
             with open(self.configFile) as c:
                 config.readfp(c)
 
@@ -1594,7 +1594,7 @@ the normal configuration.
         except:
             pass
 
-	self.logs.debug(synchroList)
+        self.logs.debug(synchroList)
         self.logs.debug('allowOverlaps: %s' % allowOverlaps)
 
         # Just to shorten notation
