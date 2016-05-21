@@ -1,9 +1,6 @@
 Welcome to Routing WS's documentation!
 ######################################
 
-.. toctree::
-   :maxdepth: 2
-
 Summary
 =======
 
