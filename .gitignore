@@ -4,3 +4,4 @@ doc/.build/
 *.pyc
 *.cfg
 *.bck
+.ropeproject
