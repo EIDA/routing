@@ -680,7 +680,7 @@ False
         #     inOrder(otherTW.start, otherTW.end, self.end)
 
         minDT = datetime.datetime(1900, 1, 1)
-        maxDT = datetime.datetime(2100, 1, 1)
+        maxDT = datetime.datetime(3000, 1, 1)
 
         sStart = self.start if self.start is not None else minDT
         oStart = otherTW.start if otherTW.start is not None else minDT
