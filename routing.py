@@ -345,11 +345,14 @@ def applyFormat(resultRM, outFormat='xml'):
         iterObj = '\n'.join(iterObj)
         return iterObj
     elif outFormat == 'post':
+        now = datetime.datetime.utcnow()
         iterObj = []
         for datacenter in resultRM:
             iterObj.append(datacenter['url'])
             for item in datacenter['params']:
                 item['loc'] = item['loc'] if len(item['loc']) else '--'
+                item['end'] = item['end'] if len(item['end']) \
+                    else now.isoformat()
                 iterObj.append(item['net'] + ' ' + item['sta'] + ' ' +
                                item['loc'] + ' ' + item['cha'] + ' ' +
                                item['start'] + ' ' + item['end'])
