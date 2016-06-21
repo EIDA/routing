@@ -58,6 +58,7 @@ except ImportError:
 
 
 def checkOverlap(str1, routeList, str2, route):
+    """Check overlap of routes from stream str1 and a route from str2."""
     if str1.overlap(str2):
         for auxRoute in routeList:
             if auxRoute.overlap(route):
@@ -69,19 +70,18 @@ def checkOverlap(str1, routeList, str2, route):
 def addRoutes(fileName, **kwargs):
     """Read the routing file in XML format and store it in memory.
 
-All the routing information is read into a dictionary. Only the
-necessary attributes are stored. This relies on the idea
-that some other agent should update the routing file at
-a regular period of time.
+    All the routing information is read into a dictionary. Only the
+    necessary attributes are stored. This relies on the idea
+    that some other agent should update the routing file at
+    a regular period of time.
 
-:param fileName: File with routes to add the the routing table.
-:type fileName: str
-:param ptRT: Routing Table where routes should be added to.
-:type ptRT: dict
-:returns: Updated routing table containing routes from the input file.
-:rtype: dict
-"""
-
+    :param fileName: File with routes to add the the routing table.
+    :type fileName: str
+    :param ptRT: Routing Table where routes should be added to.
+    :type ptRT: dict
+    :returns: Updated routing table containing routes from the input file.
+    :rtype: dict
+    """
     # Routing table is empty (default)
     ptRT = kwargs.get('routingTable', dict())
 
@@ -319,7 +319,6 @@ def addRemote(fileName, url):
     :raise: Exception
 
     """
-
     logs = logging.getLogger('addRemote')
     logs.debug('Entering addRemote(%s)\n' %
                os.path.basename(fileName))
@@ -409,10 +408,10 @@ def addRemote(fileName, url):
 
 
 class RequestMerge(list):
-    """
-:synopsis: Extend a list to group automatically by datacenter the information
-           from many requests
-:platform: Any
+    """Extend a list to group data from many requests by datacenter.
+
+    :platform: Any
+
     """
 
     __slots__ = ()
@@ -421,25 +420,25 @@ class RequestMerge(list):
                end=None):
         """Append a new :class:`~Route` without repeating the datacenter.
 
-Overrides the *append* method of the inherited list. If another route for the
-datacenter was already added, the remaining attributes are appended in
-*params* for the datacenter. If this is the first :class:`~Route` for the
-datacenter, everything is added.
+        Overrides the *append* method of the inherited list. If another route
+        for the datacenter was already added, the remaining attributes are
+        appended in *params* for the datacenter. If this is the first
+        :class:`~Route` for the datacenter, everything is added.
 
-:param service: Service name (f.i., 'dataselect')
-:type service: str
-:param url: URL for the service (f.i., 'http://server/path/query')
-:type url: str
-:param priority: Priority of the Route (1: highest priority)
-:type priority: int
-:param stream: Stream(s) associated with the Route
-:type stream: :class:`~Stream`
-:param start: Start date for the Route
-:type start: datetime or None
-:param end: End date for the Route
-:type end: datetime or None
+        :param service: Service name (f.i., 'dataselect')
+        :type service: str
+        :param url: URL for the service (f.i., 'http://server/path/query')
+        :type url: str
+        :param priority: Priority of the Route (1: highest priority)
+        :type priority: int
+        :param stream: Stream(s) associated with the Route
+        :type stream: :class:`~Stream`
+        :param start: Start date for the Route
+        :type start: datetime or None
+        :param end: End date for the Route
+        :type end: datetime or None
+
         """
-
         try:
             pos = self.index(service, url)
             self[pos]['params'].append({'net': stream.n, 'sta': stream.s,
@@ -459,19 +458,21 @@ datacenter, everything is added.
                                         is not None else ''}]})
 
     def index(self, service, url):
-        """Check for the presence of the datacenter and service specified in
-the parameters. This overrides the *index* method of the inherited list.
+        """Check for the service and url specified in the parameters.
 
-:param service: Requests from (possibly) different datacenters to be added
-:type service: str
-:param url: Address of the service provided by a datacenter
-:type url: str
-:returns: position in the list where the service and url specified can
-          be found
-:rtype: int
-:raises: ValueError
+        This overrides the *index* method of the inherited list.
+
+        :param service: Requests from (possibly) different datacenters to be
+            added
+        :type service: str
+        :param url: Address of the service provided by a datacenter
+        :type url: str
+        :returns: position in the list where the service and url specified can
+            be found
+        :rtype: int
+        :raises: ValueError
+
         """
-
         for ind, r in enumerate(self):
             if ((r['name'] == service) and (r['url'] == url)):
                 return ind
@@ -479,18 +480,18 @@ the parameters. This overrides the *index* method of the inherited list.
         raise ValueError()
 
     def extend(self, listReqM):
-        """Append all the items in the list of :class:`~RequestMerge` without
-repeating the datacenter.
+        """Append all the items in :class:`~RequestMerge` grouped by datacenter.
 
-Overrides the *extend* method of the inherited list. If another route for the
-datacenter was already added, the remaining attributes are appended in
-*params* for the datacenter. If this is the first :class:`~Route` for the
-datacenter, everything is added.
+        Overrides the *extend* method of the inherited list. If another route
+        for the datacenter was already added, the remaining attributes are
+        appended in *params* for the datacenter. If this is the first
+        :class:`~Route` for the datacenter, everything is added.
 
-:param listReqM: Requests from (posibly) different datacenters to be added
-:type listReqM: list of :class:`~RequestMerge`
+        :param listReqM: Requests from (posibly) different datacenters to be
+            added
+        :type listReqM: list of :class:`~RequestMerge`
+
         """
-
         for r in listReqM:
             try:
                 pos = self.index(r['name'], r['url'])
@@ -500,36 +501,47 @@ datacenter, everything is added.
 
 
 class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
-    """
-:synopsis: Namedtuple with methods to calculate matching and overlapping of
-           streams including (or not) wildcards. Components are the usual to
-           determine a stream:
+    """Namedtuple representing a Stream.
+
+    It includes methods to calculate matching and overlapping of streams
+    including (or not) wildcards. Components are the usual to determine a
+    stream:
            n: network
            s: station
            l: location
            c: channel
-:platform: Any
+
+    :platform: Any
+
     """
 
     __slots__ = ()
 
     def toXMLopen(self, nameSpace='ns0', level=1):
+        """Export the stream to XML representing a route.
+
+        XML representation is incomplete and needs to be closed by the method
+        toXMLclose.
+
+        """
         conv = '%s<%s:route networkCode="%s" stationCode="%s" ' + \
             'locationCode="%s" streamCode="%s">\n'
         return conv % (' ' * level, nameSpace, self.n, self.s, self.l, self.c)
 
     def toXMLclose(self, nameSpace='ns0', level=1):
+        """Close the XML representation of a route given by toXMLopen."""
         return '%s</%s:route>\n' % (' ' * level, nameSpace)
 
     def __contains__(self, st):
         """Check if one :class:`~Stream` is contained in this :class:`~Stream`.
 
-:param st: :class:`~Stream` which should checked for overlapping
-:type st: :class:`~Stream`
-:returns: Value specifying whether the given stream is contained in this one
-:rtype: Bool
-"""
+        :param st: :class:`~Stream` which should checked for overlapping
+        :type st: :class:`~Stream`
+        :returns: Value specifying whether the given stream is contained in
+            this one
+        :rtype: Bool
 
+        """
         if (fnmatch.fnmatch(st.n, self.n) and
                 fnmatch.fnmatch(st.s, self.s) and
                 fnmatch.fnmatch(st.l, self.l) and
@@ -539,16 +551,15 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
         return False
 
     def strictMatch(self, other):
-        """Returns a new :class:`~Stream` with a *reduction* of this one to
-        force the matching of the specification received as an input.
+        """Return a *reduction* of this stream to match what's been received.
 
-:param other: :class:`~Stream` which should be checked for overlaps
-:type other: :class:`~Stream`
-:returns: *reduced* version of this :class:`~Stream` to match the one passed in
-          the parameter
-:rtype: :class:`~Stream`
-"""
+        :param other: :class:`~Stream` which should be checked for overlaps
+        :type other: :class:`~Stream`
+        :returns: *reduced* version of this :class:`~Stream` to match the one
+            passed in the parameter
+        :rtype: :class:`~Stream`
 
+        """
         res = list()
         for i in range(len(other)):
             if (self[i] is None) or (fnmatch.fnmatch(other[i], self[i])):
@@ -559,15 +570,15 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
         return Stream(*tuple(res))
 
     def overlap(self, other):
-        """Checks if there is an overlap between this stream and other one
+        """Check if there is an overlap between this stream and other one.
 
-:param other: :class:`~Stream` which should be checked for overlaps
-:type other: :class:`~Stream`
-:returns: Value specifying whether there is an overlap between this
-          stream and the one passed as a parameter
-:rtype: Bool
-"""
+        :param other: :class:`~Stream` which should be checked for overlaps
+        :type other: :class:`~Stream`
+        :returns: Value specifying whether there is an overlap between this
+                  stream and the one passed as a parameter
+        :rtype: Bool
 
+        """
         for i in range(len(other)):
             if ((self[i] is not None) and (other[i] is not None) and
                     not fnmatch.fnmatch(self[i], other[i]) and
@@ -577,11 +588,14 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
 
 
 class TW(namedtuple('TW', ['start', 'end'])):
-    """
-:synopsis: Namedtuple with methods to perform calculations on timewindows.
+    """Namedtuple with methods to perform calculations on timewindows.
+
+    Attributes are:
            start: Start datetime
            end: End datetime
-:platform: Any
+
+    :platform: Any
+
     """
 
     __slots__ = ()
@@ -590,41 +604,40 @@ class TW(namedtuple('TW', ['start', 'end'])):
     def __contains__(self, otherTW):
         """Wrap of the overlap method to allow  the use of the "in" clause.
 
-:param otherTW: timewindow which should be checked for overlaps
-:type otherTW: :class:`~TW`
-:returns: Value specifying whether there is an overlap between this
-          timewindow and the one in the parameter
-:rtype: Bool
-    """
+        :param otherTW: timewindow which should be checked for overlaps
+        :type otherTW: :class:`~TW`
+        :returns: Value specifying whether there is an overlap between this
+            timewindow and the one in the parameter
+        :rtype: Bool
+
+        """
         return self.overlap(otherTW)
 
     def overlap(self, otherTW):
-        """Check if the :class:`~TW` passed as a parameter is contained in this
-        :class:`~TW`.
+        """Check if the otherTW is contained in this :class:`~TW`.
 
-:param otherTW: timewindow which should be checked for overlapping
-:type otherTW: :class:`~TW`
-:returns: Value specifying whether there is an overlap between this
-          timewindow and the one in the parameter
-:rtype: Bool
+        :param otherTW: timewindow which should be checked for overlapping
+        :type otherTW: :class:`~TW`
+        :returns: Value specifying whether there is an overlap between this
+                  timewindow and the one in the parameter
+        :rtype: Bool
 
-.. rubric:: Examples
+        .. rubric:: Examples
 
->>> y2011 = datetime(2011, 1, 1)
->>> y2012 = datetime(2012, 1, 1)
->>> y2013 = datetime(2013, 1, 1)
->>> y2014 = datetime(2014, 1, 1)
->>> TW(y2011, y2014).overlap(TW(y2012, y2013))
-True
->>> TW(y2012, y2014).overlap(TW(y2011, y2013))
-True
->>> TW(y2012, y2013).overlap(TW(y2011, y2014))
-True
->>> TW(y2011, y2012).overlap(TW(y2013, y2014))
-False
+        >>> y2011 = datetime(2011, 1, 1)
+        >>> y2012 = datetime(2012, 1, 1)
+        >>> y2013 = datetime(2013, 1, 1)
+        >>> y2014 = datetime(2014, 1, 1)
+        >>> TW(y2011, y2014).overlap(TW(y2012, y2013))
+        True
+        >>> TW(y2012, y2014).overlap(TW(y2011, y2013))
+        True
+        >>> TW(y2012, y2013).overlap(TW(y2011, y2014))
+        True
+        >>> TW(y2011, y2012).overlap(TW(y2013, y2014))
+        False
 
-"""
-
+        """
         def inOrder(a, b, c):
             if ((b is None) and (a is not None) and (c is not None)):
                 return False
@@ -664,21 +677,6 @@ False
             raise ValueError('Start greater than End %s > %s' % (otherTW.start,
                                                                  otherTW.end))
 
-        # Check if self.start or self.end in otherTW
-        # print 'Check if %s overlaps %s' % (self, otherTW)
-        # print otherTW.start, self.start, otherTW.end, \
-        #     inOrder(otherTW.start, self.start, otherTW.end)
-        # print otherTW.start, self.end, otherTW.end,   \
-        #     inOrder(otherTW.start, self.end, otherTW.end)
-        # print otherTW.start, self.start, self.end,    \
-        #     inOrder(otherTW.start, self.start, self.end)
-        # print self.start, self.end, otherTW.end,      \
-        #     inOrder(self.start, self.end, otherTW.end)
-        # print self.start, otherTW.start, otherTW.end, \
-        #     inOrder(self.start, otherTW.start, otherTW.end)
-        # print otherTW.start, otherTW.end, self.end,   \
-        #     inOrder(otherTW.start, otherTW.end, self.end)
-
         minDT = datetime.datetime(1900, 1, 1)
         maxDT = datetime.datetime(3000, 1, 1)
 
@@ -686,7 +684,7 @@ False
         oStart = otherTW.start if otherTW.start is not None else minDT
         sEnd = self.end if self.end is not None else maxDT
         oEnd = otherTW.end if otherTW.end is not None else maxDT
-        
+
         if inOrder2(oStart, sStart, oEnd) or \
                 inOrder2(oStart, sEnd, oEnd):
             return True
@@ -705,17 +703,18 @@ False
         raise Exception('TW.overlap unresolved %s:%s' % (self, otherTW))
 
     def difference(self, otherTW):
-        """Substract the timewindow specified in otherTW from this one and
-        return the result in a list of TW. This does not modify the data in
+        """Substract otherTW from this TW.
+
+        The result is a list of TW. This operation does not modify the data in
         the current timewindow.
 
-:param otherTW: timewindow which should be substracted from this one
-:type otherTW: :class:`~TW`
-:returns: Difference between this timewindow and the one in the
-          parameter
-:rtype: list of :class:`~TW`
-"""
+        :param otherTW: timewindow which should be substracted from this one
+        :type otherTW: :class:`~TW`
+        :returns: Difference between this timewindow and the one in the
+                  parameter
+        :rtype: list of :class:`~TW`
 
+        """
         result = []
 
         if otherTW.start is not None:
@@ -733,16 +732,17 @@ False
         return result
 
     def intersection(self, otherTW):
-        """Calculate the intersection between this TW and the one in the
-        parameter. This does not modify the data in the current timewindow.
+        """Calculate the intersection between otherTW and this TW.
 
-:param otherTW: timewindow which should be intersected with this one
-:type otherTW: :class:`~TW`
-:returns: Intersection between this timewindow and the one in the
-          parameter
-:rtype: :class:`~TW`
-"""
+        This operation does not modify the data in the current timewindow.
 
+        :param otherTW: timewindow which should be intersected with this one
+        :type otherTW: :class:`~TW`
+        :returns: Intersection between this timewindow and the one in the
+                  parameter
+        :rtype: :class:`~TW`
+
+        """
         resSt = None
         resEn = None
 
@@ -769,30 +769,45 @@ False
 
 
 class Route(namedtuple('Route', ['service', 'address', 'tw', 'priority'])):
-    """
-:synopsis: Namedtuple defining a :class:`~Route`.
+    """Namedtuple defining a :class:`~Route`.
+
+    The attributes are
            service: service name
            address: a URL
            tw: timewindow
            priority: priority of the route
-:platform: Any
+
+    :platform: Any
+
     """
 
     __slots__ = ()
 
     def toXML(self, nameSpace='ns0', level=2):
-        return '%s<%s:%s address="%s" priority="%d" start="%s" end="%s" />\n' %\
-            (' ' * level, nameSpace, self.service, self.address, self.priority,
-             self.tw.start.isoformat() if self.tw.start is not None else '',
-             self.tw.end.isoformat() if self.tw.end is not None else '')
+        """Export the Route to an XML representation."""
+        return '%s<%s:%s address="%s" priority="%d" start="%s" end="%s" />\n' \
+            % (' ' * level, nameSpace, self.service, self.address,
+               self.priority, self.tw.start.isoformat()
+               if self.tw.start is not None else '',
+               self.tw.end.isoformat() if self.tw.end is not None else '')
 
     def overlap(self, otherRoute):
+        """Check if there is an overlap between this route and otherRoute.
+
+        :param other: :class:`~Stream` which should be checked for overlaps
+        :type other: :class:`~Stream`
+        :returns: Value specifying whether there is an overlap between this
+                  stream and the one passed as a parameter
+        :rtype: Bool
+
+        """
         if ((self.priority == otherRoute.priority) and
                 (self.service == otherRoute.service)):
             return self.tw.overlap(otherRoute.tw)
         return False
 
     def __contains__(self, pointTime):
+        """DEPRECATED METHOD."""
         raise Exception('This should not be used! Switch to the TW method!')
         if pointTime is None:
             return True
@@ -814,27 +829,30 @@ Route.__ge__ = lambda self, other: self.priority >= other.priority
 
 
 class RoutingException(Exception):
+    """Exception raised to flag a problem when searching for routes."""
+
     pass
 
 
 class RoutingCache(object):
+    """Manage routing information of streams read from an Arclink-XML file.
+
+    :platform: Linux (maybe also Windows)
+
     """
-:synopsis: Manage routing information of streams read from an Arclink-XML file.
-:platform: Linux (maybe also Windows)
-    """
 
-    def __init__(self, routingFile=None, masterFile=None, config='routing.cfg'):
-        """RoutingCache constructor
+    def __init__(self, routingFile=None, masterFile=None,
+                 config='routing.cfg'):
+        """RoutingCache constructor.
 
-:param routingFile: XML file with routing information
-:type routingFile: str
-:param masterFile: XML file with high priority routes at network level
-:type masterFile: str
-:param config: File where the configuration must be read from
-:type config: str
+        :param routingFile: XML file with routing information
+        :type routingFile: str
+        :param masterFile: XML file with high priority routes at network level
+        :type masterFile: str
+        :param config: File where the configuration must be read from
+        :type config: str
 
-"""
-
+        """
         # Save the logging object
         self.logs = logging.getLogger('RoutingCache')
 
@@ -894,6 +912,7 @@ class RoutingCache(object):
         self.updateMT()
 
     def toXML(self, foutput, nameSpace='ns0'):
+        """Export the RoutingCache to an XML representation."""
         header = """<?xml version="1.0" encoding="utf-8"?>
 <ns0:routing xmlns:ns0="http://geofon.gfz-potsdam.de/ns/Routing/1.0/">
 """
@@ -907,13 +926,12 @@ class RoutingCache(object):
             fo.write('</ns0:routing>')
 
     def localConfig(self):
-        """Returns the local routing configuration
+        """Return the local routing configuration.
 
-:returns: Local routing information in Arclink-XML format
-:rtype: str
+        :returns: Local routing information in Arclink-XML format
+        :rtype: str
 
-"""
-
+        """
         with open(self.routingFile) as f:
             return f.read()
 
@@ -1008,21 +1026,21 @@ operating with an EIDA default configuration.
         self.logs.info('Configuration read from Arclink!\n')
 
     def __arc2DS(self, route):
-        """Map from an Arclink address to a Dataselect one
+        """Map from an Arclink address to a Dataselect one.
 
-:param route: Arclink route
-:type route: str
-:returns: Dataselect URL equivalent of the given Arclink route
-:rtype: str
-:raises: Exception
+        :param route: Arclink route
+        :type route: str
+        :returns: Dataselect URL equivalent of the given Arclink route
+        :rtype: str
+        :raises: Exception
 
-.. deprecated:: 1.1
+        .. deprecated:: 1.1
 
-    This method should not be used and the configuration should be independent
-    from Arclink. Namely, the ``routing.xml`` file must exist in advance.
+        This method should not be used and the configuration should be
+        independent from Arclink. Namely, the ``routing.xml`` file must exist
+        in advance.
 
         """
-
         gfz = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
         odc = 'http://www.orfeus-eu.org/fdsnws/dataselect/1/query'
         eth = 'http://eida.ethz.ch/fdsnws/dataselect/1/query'
@@ -1101,32 +1119,35 @@ operating with an EIDA default configuration.
 
     def getRoute(self, n='*', s='*', l='*', c='*', startD=None, endD=None,
                  service='dataselect', alternative=False):
-        """Based on a stream(s) and a timewindow returns all the needed
-information (URLs and parameters) to do the requests to different datacenters
-(if needed) and be able to merge the returned data avoiding duplication.
+        """Return routes to request data for the stream and timewindow provided.
 
-:param n: Network code
-:type n: str
-:param s: Station code
-:type s: str
-:param l: Location code
-:type l: str
-:param c: Channel code
-:type c: str
-:param startD: Start date and time
-:type startD: datetime
-:param endD: End date and time
-:type endD: datetime
-:param service: Service from which you want to get information
-:type service: str
-:param alternative: Specifies whether alternative routes should be included
-:type alternative: bool
-:returns: URLs and parameters to request the data
-:rtype: :class:`~RequestMerge`
-:raises: RoutingException
+        Based on a stream(s) and a timewindow returns all the needed
+        information (URLs and parameters) to do the requests to different
+        datacenters (if needed) and be able to merge the returned data avoiding
+        duplication.
+
+        :param n: Network code
+        :type n: str
+        :param s: Station code
+        :type s: str
+        :param l: Location code
+        :type l: str
+        :param c: Channel code
+        :type c: str
+        :param startD: Start date and time
+        :type startD: datetime
+        :param endD: End date and time
+        :type endD: datetime
+        :param service: Service from which you want to get information
+        :type service: str
+        :param alternative: Specifies whether alternative routes should be
+            included
+        :type alternative: bool
+        :returns: URLs and parameters to request the data
+        :rtype: :class:`~RequestMerge`
+        :raises: RoutingException
 
         """
-
         # Is important to check against None because 0 is a valid value with a
         # total different meaning
         t2u = self.__time2Update()
@@ -1173,24 +1194,27 @@ information (URLs and parameters) to do the requests to different datacenters
         return result
 
     def getRouteDS(self, service, stream, tw, alternative=False):
-        """Based on a :class:`~Stream` and a timewindow (:class:`~TW`) returns
-all the needed information (URLs and parameters) to request waveforms from
-different datacenters (if needed) and be able to merge it avoiding duplication.
+        """Return routes to request data for the parameters specified.
 
-:param service: Specifies the service is being looked for
-:type service: string
-:param stream: :class:`~Stream` definition including wildcards
-:type stream: :class:`~Stream`
-:param tw: Timewindow
-:type tw: :class:`~TW`
-:param alternative: Specifies whether alternative routes should be included
-:type alternative: bool
-:returns: URLs and parameters to request the data
-:rtype: :class:`~RequestMerge`
-:raises: RoutingException, ValueError
+        Based on a :class:`~Stream` and a timewindow (:class:`~TW`) returns
+        all the needed information (URLs and parameters) to request waveforms
+        from different datacenters (if needed) and be able to merge it avoiding
+        duplication.
+
+        :param service: Specifies the service is being looked for
+        :type service: string
+        :param stream: :class:`~Stream` definition including wildcards
+        :type stream: :class:`~Stream`
+        :param tw: Timewindow
+        :type tw: :class:`~TW`
+        :param alternative: Specifies whether alternative routes should be
+            included
+        :type alternative: bool
+        :returns: URLs and parameters to request the data
+        :rtype: :class:`~RequestMerge`
+        :raises: RoutingException, ValueError
 
         """
-
         # Create list to store results
         subs = list()
         subs2 = list()
@@ -1288,7 +1312,8 @@ different datacenters (if needed) and be able to merge it avoiding duplication.
                     # If the timewindow is not complete then add the missing
                     # ranges to the tw set.
                     for auxTW in toProc.difference(ro.tw):
-                        # Skip the case that we fall alwys in the same time span
+                        # Skip the case that we fall always in the same time
+                        # span
                         if auxTW == toProc:
                             break
                         self.logs.debug('Adding %s\n' % str(auxTW))
@@ -1323,24 +1348,25 @@ different datacenters (if needed) and be able to merge it avoiding duplication.
         return result
 
     def getRouteMaster(self, n, tw, service='dataselect', alternative=False):
-        """Looks for a high priority :class:`~Route` for a particular network.
-This would provide the flexibility to incorporate new networks and override
-the normal configuration.
+        """Look for a high priority :class:`~Route` for a particular network.
 
-:param n: Network code
-:type n: str
-:param tw: Timewindow
-:type tw: :class:`~TW`
-:param service: Service (e.g. dataselect)
-:type service: str
-:param alternative: Specifies whether alternative routes should be included
-:type alternative: Bool
-:returns: URLs and parameters to request the data
-:rtype: :class:`~RequestMerge`
-:raises: RoutingException
+        This would provide the flexibility to incorporate new networks and
+        override the normal configuration.
+
+        :param n: Network code
+        :type n: str
+        :param tw: Timewindow
+        :type tw: :class:`~TW`
+        :param service: Service (e.g. dataselect)
+        :type service: str
+        :param alternative: Specifies whether alternative routes should be
+            included
+        :type alternative: Bool
+        :returns: URLs and parameters to request the data
+        :rtype: :class:`~RequestMerge`
+        :raises: RoutingException
 
         """
-
         result = list()
         realRoutes = None
 
@@ -1349,7 +1375,7 @@ the normal configuration.
             realRoutes = self.masterTable[n, None, None, None]
 
         if realRoutes is None:
-            raise RoutingException('No routes for this network in masterTable!')
+            raise RoutingException('No route for this network in masterTable!')
 
         # Check that I found a route
         for r in realRoutes:
@@ -1377,8 +1403,7 @@ the normal configuration.
         return result2
 
     def updateAll(self):
-        """Read the two sources of routing information"""
-
+        """Read the two sources of routing information."""
         self.logs.debug('Entering updateAll()\n')
         self.update()
 
@@ -1394,7 +1419,6 @@ the normal configuration.
         a regular period of time.
 
         """
-
         self.logs.debug('Entering updateMT()\n')
         # Just to shorten notation
         ptMT = self.masterTable
@@ -1568,7 +1592,6 @@ the normal configuration.
         other agent should update the routing data at a regular period of time.
 
         """
-
         self.logs.debug('Entering update()\n')
 
         here = os.path.dirname(__file__)
@@ -1616,13 +1639,18 @@ the normal configuration.
                 self.logs.debug(str(line.split(',')))
                 dcid, url = line.split(',')
 
-                if os.path.exists(os.path.join(here, 'data', 'routing-%s.xml' % dcid.strip())):
-                    # FIXME addRoutes should return no Exception ever and skip a
-                    # problematic file returning a coherent version of the routes
+                if os.path.exists(os.path.join(here, 'data', 'routing-%s.xml' %
+                                  dcid.strip())):
+                    # FIXME addRoutes should return no Exception ever and skip
+                    # a problematic file returning a coherent version of the
+                    # routes
                     self.logs.debug('Routes in table: %s' % len(ptRT))
                     self.logs.debug('Adding REMOTE %s' % dcid)
-                    ptRT = addRoutes(os.path.join(here, 'data', 'routing-%s.xml' % dcid.strip()),
-                                     routingTable=ptRT, allowOverlaps=allowOverlaps)
+                    ptRT = addRoutes(os.path.join(here, 'data',
+                                                  'routing-%s.xml' %
+                                                  dcid.strip()),
+                                     routingTable=ptRT,
+                                     allowOverlaps=allowOverlaps)
 
             with open(binFile, 'wb') \
                     as finalRoutes:

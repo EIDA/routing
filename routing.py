@@ -503,7 +503,7 @@ def application(environ, start_response):
 
 
 def main():
-    RoutingCache("./routing.xml", "./masterTable.xml")
+    routes = RoutingCache("./routing.xml", "./masterTable.xml")
 
 
 if __name__ == "__main__":
