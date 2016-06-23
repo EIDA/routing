@@ -1,6 +1,38 @@
 Routing Service v1.0
 --------------------
 
+Why a Routing Service?
+======================
+
+One of the aims of the
+`European Integrated Data Archive <http://www.orfeus-eu.org/eida/eida.html>`_
+(EIDA) is to provide transparent access and services to high quality, seismic
+data across different data archives in Europe. In the context of the design
+of the `EIDA New Generation` (EIDA-NG) software we envision a future in which
+many different data centers offer data products using compatible types of
+services, but pertaining to different seismic objects, such as waveforms,
+inventory, or event data. EIDA provides one example, in which data centers
+(the EIDA “nodes”) have long offered Arclink and Seedlink services, and now
+offer FDSN web services, for accessing their holdings. In keeping with the
+distributed nature of EIDA, these services could run at different nodes.
+Depending on the type of service, these may only provide information about a
+reduced subset of all the available waveforms.
+
+To assist users to locate data, we have designed a Routing Service, which
+could run at EIDA nodes or elsewhere, including on a user's personal computer.
+This (meta)service is supposed to be queried by clients (or other services) in
+order to localize the address(es) where the desired information is provided.
+
+The Routing Service must serve this information in order to help the
+development of smart clients and/or services of higher level, which can offer
+the user an integrated view of the whole EIDA, hiding the complexity of its
+internal structure. However, the Routing Service need not be aware of the
+extent of the content offered by each service, avoiding the need for a large
+synchronised database at any place.
+
+The service is intended to be open and able to be queried by anyone without
+the need of credentials or authentication.
+
 License
 =======
 

@@ -9,9 +9,9 @@ One of the aims of the
 (EIDA) is to provide transparent access and services to high quality, seismic
 data across different data archives in Europe. In the context of the design
 of the `EIDA New Generation` (EIDA-NG) software we envision a future in which
-many different data centres offer data products using compatible types of
+many different data centers offer data products using compatible types of
 services, but pertaining to different seismic objects, such as waveforms,
-inventory, or event data. EIDA provides one example, in which data centres
+inventory, or event data. EIDA provides one example, in which data centers
 (the EIDA “nodes”) have long offered Arclink and Seedlink services, and now
 offer FDSN web services, for accessing their holdings. In keeping with the
 distributed nature of EIDA, these services could run at different nodes.
