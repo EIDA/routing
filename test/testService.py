@@ -5,9 +5,12 @@ import datetime
 import unittest
 import urllib2
 import json
-from routeutils.unittestTools import WITestRunner
 from difflib import Differ
 from xml.dom.minidom import parseString
+
+here = os.path.dirname(__file__)
+sys.path.append(os.path.join(here, '..'))
+from routeutils.unittestTools import WITestRunner
 
 
 class RouteCacheTests(unittest.TestCase):
