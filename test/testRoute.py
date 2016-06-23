@@ -9,9 +9,9 @@ sys.path.append(os.path.join(here, '..'))
 
 import unittest
 from unittestTools import WITestRunner
-from routing import RoutingCache
-from routing import RequestMerge
-from utils import RoutingException
+from routeutils.routing import RoutingCache
+from routeutils.routing import RequestMerge
+from routeutils.utils import RoutingException
 
 
 class RouteCacheTests(unittest.TestCase):
@@ -149,7 +149,8 @@ class RouteCacheTests(unittest.TestCase):
 
     #             myStreams = ['LHZ', 'HHZ']
     #             self.assertEqual(len(res['params']), len(myStreams),
-    #                              'Wrong number of streams for ETH! %s' % res['params'])
+    #                              'Wrong number of streams for ETH! %s'
+    #                              % res['params'])
 
     #             for i in res['params']:
     #                 self.assertIn(i['cha'], myStreams,
