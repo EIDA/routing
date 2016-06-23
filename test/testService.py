@@ -5,7 +5,7 @@ import datetime
 import unittest
 import urllib2
 import json
-from unittestTools import WITestRunner
+from routeutils.unittestTools import WITestRunner
 from difflib import Differ
 from xml.dom.minidom import parseString
 

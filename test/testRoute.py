@@ -8,7 +8,7 @@ here = os.path.dirname(__file__)
 sys.path.append(os.path.join(here, '..'))
 
 import unittest
-from unittestTools import WITestRunner
+from routeutils.unittestTools import WITestRunner
 from routeutils.routing import RoutingCache
 from routeutils.routing import RequestMerge
 from routeutils.utils import RoutingException
