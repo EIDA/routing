@@ -18,7 +18,8 @@ Let's suppose it is "/var/www/eidaws/routing/1". ::
 
   $ cd /var/www/eidaws/routing/1/doc
 
-2. Build the documentation. ::
+2. Build the
+documentation. ::
 
   $ make latexpdf
 
