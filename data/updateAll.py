@@ -19,10 +19,10 @@ except ImportError:
 
 sys.path.append('..')
 
-from utils import addRemote
-from utils import addRoutes
-from utils import Route
-from utils import RoutingCache
+from routeutils.utils import addRemote
+from routeutils.utils import addRoutes
+from routeutils.utils import Route
+from routeutils.utils import RoutingCache
 import logging
 
 
@@ -73,6 +73,7 @@ def mapArcFDSN(route):
         return koeri
     raise Exception('No FDSN-WS equivalent found for %s' % route)
 
+
 def arc2fdsnws(filein, fileout, config='../routing.cfg'):
     """Read the routing file in XML format and add the Dataselect and Station
 routes based on the Arclink information. The resulting table is stored in the
@@ -106,7 +107,8 @@ file passed in the second parameter.
     rOut.toXML(fileout)
 
 
-def getArcRoutes(arcServ='eida.gfz-potsdam.de', arcPort=18002, foutput='routing.xml'):
+def getArcRoutes(arcServ='eida.gfz-potsdam.de', arcPort=18002,
+                 foutput='routing.xml'):
     """Connects via telnet to an Arclink server to get routing information.
 The data is saved in the file specified by foutput. Generally used to start
 operating with an EIDA default configuration.
@@ -336,7 +338,7 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
 :type fileRoutes: str
 :param synchroList: List of data centres where routes should be imported from
 :type synchroList: str
-:param allowOverlaps: Specify if overlapping streams should be allowed or discarded
+:param allowOverlaps: Specify if overlapping streams should be allowed or not
 :type allowOverlaps: boolean
 
 """
@@ -378,12 +380,14 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
 def main():
     # FIXME logLevel must be used via argparser
     # Check verbosity in the output
-    parser = argparse.ArgumentParser(description='Get EIDA routing configuration and "export" it to the FDSN-WS style.')
+    msg = 'Get EIDA routing configuration and "export" it to the FDSN-WS style.'
+    parser = argparse.ArgumentParser(description=msg)
     parser.add_argument('-l', '--loglevel',
                         help='Verbosity in the output.',
-                        choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'])
+                        choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO',
+                                 'DEBUG'])
     parser.add_argument('-s', '--server',
-            help='Arclink server address (address.domain:18001).')
+                        help='Arclink server address (address.domain:18001).')
     parser.add_argument('-c', '--config',
                         help='Config file to use.',
                         default='../routing.cfg')
