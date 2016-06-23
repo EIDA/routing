@@ -1,5 +1,22 @@
 #!/usr/bin/env python
 
+"""Tests to check that Routing Service is working
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+   :Copyright:
+       2014-2016 Javier Quinteros, GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
+   :License:
+       GPLv3
+   :Platform:
+       Linux
+
+.. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
+"""
+
 import sys
 import os
 import datetime

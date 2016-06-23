@@ -37,11 +37,27 @@ the need of credentials or authentication.
 Installation
 ============
 
+License
+-------
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 Requirements
 ------------
 
  * Python 2.7
-   
+
  * mod_wsgi (if using Apache). Also Python libraries for libxslt and libxml.
 
 .. _download:
@@ -73,7 +89,7 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
 
 1. Extract the package in the desired directory.
    In these instructions we assume this directory is `/var/www/eidaws/routing/1/`.
-   
+
    * If you downloaded the package from the GEOFON website, unpack the files
      into the chosen directory. (See Download_ above.)
 
@@ -156,12 +172,12 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
    some routes. Either you edit by hand (or copy from some other place) a file with your local
    streams and save them into `data/routing.xml`, or you get them from an Arclink server.
    In the latter case, you need to allow this in the configuration file like this: ::
-   
+
       $ vim routing.cfg
       $ # set ArclinkBased = true to allow the information to be overwritten by Arclink data
       $ grep ArclinkBased routing.cfg
       ArclinkBased = true
-      
+
    After saving this change you can run change into the `data` directory and run the ``updateAll.py``
    script there. ::
 
@@ -198,7 +214,7 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
    (see crontab configuration in the last point of this instruction list).
    The system will also try to create and
    write temporary information in this directory.
-   
+
    .. warning :: Wrong configuration in the permissions of the working directory could diminish the performance of the system.
 
    One possible configuration would be to install the system as a user (for
@@ -371,7 +387,7 @@ used to check the local installation. ::
     Checking swap start and end time... [OK]
     Checking wrong format option... [OK]
     Checking unknown parameter... [OK]
-    
+
 The set of test cases related to data consistency are the same as in the
 ``testRoute.py`` script. The other tests are related to the protocol itself.
 
@@ -643,12 +659,12 @@ if needed, which the service must translate to an empty string.
                                      samples on or
                                      after the specified start
                                      time.                          Any
- endtime (end)     Required ISO 8601 Limit results to time series 
+ endtime (end)     Required ISO 8601 Limit results to time series
                                      samples on or before the
                                      specified end time.            Any
  network (net)     Required char     Select one network code.
                                      This can be either SEED
-                                     network codes or data center 
+                                     network codes or data center
                                      defined codes.                  ``*``
  station (sta)     Required char     Select one station code.        ``*``
  location (loc)    Required char     Select one location
@@ -663,7 +679,7 @@ if needed, which the service must translate to an empty string.
                                      seedlink, station,
                                      dataselect).                 dataselect
  format            Required char     Select the output format.
-                                     Valid values are: xml, json, 
+                                     Valid values are: xml, json,
                                      get, post                      xml
  alternative       Optional boolean  Specify if the alternative
                                      routes should be also
