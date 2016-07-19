@@ -110,30 +110,50 @@ def makeQueryGET(parameters):
 
     try:
         if 'starttime' in parameters:
-            start = datetime.datetime.strptime(
-                parameters['starttime'].value[:19].upper(),
-                '%Y-%m-%dT%H:%M:%S')
+            start = parameters['starttime'].value.upper()
         elif 'start' in parameters:
-            start = datetime.datetime.strptime(
-                parameters['start'].value[:19].upper(),
-                '%Y-%m-%dT%H:%M:%S')
+            start = parameters['start'].value.upper()
         else:
-            start = None
+            raise Exception
+        startParts = start.replace('-', ' ').replace('T', ' ')
+        startParts = startParts.replace(':', ' ').replace('.', ' ')
+        startParts = startParts.replace('Z', '').split()
+        start = datetime.datetime(*map(int, startParts))
+        # if 'starttime' in parameters:
+        #     start = datetime.datetime.strptime(
+        #         parameters['starttime'].value[:19].upper(),
+        #         '%Y-%m-%dT%H:%M:%S')
+        # elif 'start' in parameters:
+        #     start = datetime.datetime.strptime(
+        #         parameters['start'].value[:19].upper(),
+        #         '%Y-%m-%dT%H:%M:%S')
+        # else:
+        #     start = None
     except:
         msg = 'Error while converting starttime parameter.'
         raise WIClientError(msg)
 
     try:
         if 'endtime' in parameters:
-            endt = datetime.datetime.strptime(
-                parameters['endtime'].value[:19].upper(),
-                '%Y-%m-%dT%H:%M:%S')
+            endt = parameters['endtime'].value.upper()
         elif 'end' in parameters:
-            endt = datetime.datetime.strptime(
-                parameters['end'].value[:19].upper(),
-                '%Y-%m-%dT%H:%M:%S')
+            endt = parameters['end'].value.upper()
         else:
-            endt = None
+            raise Exception
+        endParts = endt.replace('-', ' ').replace('T', ' ')
+        endParts = endParts.replace(':', ' ').replace('.', ' ')
+        endParts = endParts.replace('Z', '').split()
+        endt = datetime.datetime(*map(int, endParts))
+        # if 'endtime' in parameters:
+        #     endt = datetime.datetime.strptime(
+        #         parameters['endtime'].value[:19].upper(),
+        #         '%Y-%m-%dT%H:%M:%S')
+        # elif 'end' in parameters:
+        #     endt = datetime.datetime.strptime(
+        #         parameters['end'].value[:19].upper(),
+        #         '%Y-%m-%dT%H:%M:%S')
+        # else:
+        #     endt = None
     except:
         msg = 'Error while converting endtime parameter.'
         raise WIClientError(msg)
@@ -241,17 +261,25 @@ def makeQueryPOST(postText):
         sta = sta.upper()
         loc = loc.upper()
         try:
-            start = None if start in ("''", '""') else \
-                datetime.datetime.strptime(start[:19].upper(),
-                                           '%Y-%m-%dT%H:%M:%S')
+            startParts = start.replace('-', ' ').replace('T', ' ')
+            startParts = startParts.replace(':', ' ').replace('.', ' ')
+            startParts = startParts.replace('Z', '').split()
+            start = datetime.datetime(*map(int, startParts))
+            # start = None if start in ("''", '""') else \
+            #     datetime.datetime.strptime(start[:19].upper(),
+            #                                '%Y-%m-%dT%H:%M:%S')
         except:
             msg = 'Error while converting %s to datetime' % start
             raise WIClientError(msg)
 
         try:
-            endt = None if endt in ("''", '""') else \
-                datetime.datetime.strptime(endt[:19].upper(),
-                                           '%Y-%m-%dT%H:%M:%S')
+            endParts = endt.replace('-', ' ').replace('T', ' ')
+            endParts = endParts.replace(':', ' ').replace('.', ' ')
+            endParts = endParts.replace('Z', '').split()
+            endt = datetime.datetime(*map(int, endParts))
+            # endt = None if endt in ("''", '""') else \
+            #     datetime.datetime.strptime(endt[:19].upper(),
+            #                                '%Y-%m-%dT%H:%M:%S')
         except:
             msg = 'Error while converting %s to datetime' % endt
             raise WIError(msg)
