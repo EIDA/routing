@@ -335,10 +335,10 @@ def applyFormat(resultRM, outFormat='xml'):
         iterObj = []
         for datacenter in resultRM:
             for item in datacenter['params']:
+                # FIXME Should I use 'T' in isoformat?
                 iterObj.append(datacenter['url'] + '?' +
                                '&'.join([k + '=' + (str(item[k]) if
-                                         type(item[k]) is not
-                                         type(datetime.datetime.now())
+                                         not isinstance(item[k], datetime.datetime)
                                          else item[k].isoformat()) for k in item
                                          if item[k] not in ('', '*') and
                                          k != 'priority']))
@@ -351,11 +351,13 @@ def applyFormat(resultRM, outFormat='xml'):
             iterObj.append(datacenter['url'])
             for item in datacenter['params']:
                 item['loc'] = item['loc'] if len(item['loc']) else '--'
-                item['end'] = item['end'] if len(item['end']) \
-                    else now.isoformat()
+                item['end'] = item['end'] if isinstance(item['end'],
+                                                        datetime.datetime) \
+                    else now
                 iterObj.append(item['net'] + ' ' + item['sta'] + ' ' +
                                item['loc'] + ' ' + item['cha'] + ' ' +
-                               item['start'] + ' ' + item['end'])
+                               item['start'].isoformat('T') + ' ' +
+                               item['end'].isoformat('T'))
             iterObj.append('')
         iterObj = '\n'.join(iterObj)
         return iterObj
@@ -442,6 +444,7 @@ def application(environ, start_response):
     verbo = config.get('Service', 'verbosity')
     # Warning is the default value
     verboNum = getattr(logging, verbo.upper(), 30)
+    logging.info('Verbosity configured with %s' % verboNum)
     logging.basicConfig(level=verboNum)
 
     if routes is None:
@@ -472,6 +475,7 @@ def application(environ, start_response):
         try:
             iterObj = makeQuery(form)
 
+            # print iterObj
             iterObj = applyFormat(iterObj, outForm)
 
             status = '200 OK'

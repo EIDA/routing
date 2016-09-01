@@ -1184,12 +1184,12 @@ operating with an EIDA default configuration.
 
         # FIXME This could be done in the function that calls getRoute
         # That would be more clear.
-        for r in result:
-            for p in r['params']:
-                if isinstance(p['start'], datetime.datetime):
-                    p['start'] = p['start'].isoformat('T')
-                if isinstance(p['end'], datetime.datetime):
-                    p['end'] = p['end'].isoformat('T')
+        # for r in result:
+        #     for p in r['params']:
+        #         if isinstance(p['start'], datetime.datetime):
+        #             p['start'] = p['start'].isoformat('T')
+        #         if isinstance(p['end'], datetime.datetime):
+        #             p['end'] = p['end'].isoformat('T')
 
         return result
 
