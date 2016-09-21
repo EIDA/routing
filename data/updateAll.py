@@ -47,6 +47,7 @@ def mapArcFDSN(route):
     ipgp = 'http://eida.ipgp.fr'
     niep = 'http://eida-sc3.infp.ro'
     koeri = 'http://eida-service.koeri.boun.edu.tr'
+    noa = 'http://eida.gein.noa.gr'
 
     # Try to identify the hosting institution
     host = route.split(':')[0]
@@ -71,6 +72,8 @@ def mapArcFDSN(route):
         return niep
     elif host.endswith('boun.edu.tr') or host.startswith('193.140.203'):
         return koeri
+    elif host.endswith('noa.gr'):
+        return noa
     raise Exception('No FDSN-WS equivalent found for %s' % route)
 
 def arc2fdsnws(filein, fileout, config='../routing.cfg'):
