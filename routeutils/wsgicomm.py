@@ -1,34 +1,29 @@
 #!/usr/bin/env python
-#
-# Resources to communicate via a WSGI module
-#
-# Begun by Javier Quinteros, GEOFON team, June 2013
-# <javier@gfz-potsdam.de>
-#
-# ----------------------------------------------------------------------
-
 
 """Functions and resources to communicate via a WSGI module
 
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
    :Copyright:
-       GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
+       2014-2016 Javier Quinteros, GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
    :License:
-       To be decided!
+       GPLv3
    :Platform:
        Linux
 
 .. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
-
 """
 
 import sys
 
 
 class Logs(object):
-    """
-:synopsis: Given a log level and a stream, it redirects the output to the
-           proper destination
-:platform: Linux
+    """Given a log level and a stream, redirect the output to the proper place.
+
+    :Platform: Linux
 
 """
 

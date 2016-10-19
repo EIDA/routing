@@ -1,13 +1,34 @@
 #!/usr/bin/env python
 
+"""Tests to check that Routing Service is working
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+   :Copyright:
+       2014-2016 Javier Quinteros, GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
+   :License:
+       GPLv3
+   :Platform:
+       Linux
+
+.. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
+"""
+
 import sys
+import os
 import datetime
 import unittest
 import urllib2
 import json
-from unittestTools import WITestRunner
 from difflib import Differ
 from xml.dom.minidom import parseString
+
+here = os.path.dirname(__file__)
+sys.path.append(os.path.join(here, '..'))
+from routeutils.unittestTools import WITestRunner
 
 
 class RouteCacheTests(unittest.TestCase):
@@ -302,8 +323,8 @@ class RouteCacheTests(unittest.TestCase):
     def testDS_GE_RO(self):
         "Dataselect GE,RO.*.*.*"
 
-        expected = {'RO': 'http://eida-sc3.infp.ro/fdsnws/dataselect/1/query',
-            'GE': 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'}
+        expec = {'RO': 'http://eida-sc3.infp.ro/fdsnws/dataselect/1/query',
+                 'GE': 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'}
 
         req = urllib2.Request(self.host + '?net=GE,RO&format=json')
         try:
@@ -318,15 +339,15 @@ class RouteCacheTests(unittest.TestCase):
             self.assertEqual(node['name'], 'dataselect',
                              'Service of node is not dataselect!')
 
-            self.assertTrue(node['params'][0]['net'] in expected.keys(),
+            self.assertTrue(node['params'][0]['net'] in expec.keys(),
                             '%s is not a requested network' %
                             node['params'][0]['net'])
-                             
-            self.assertEqual(expected[node['params'][0]['net']],
+
+            self.assertEqual(expec[node['params'][0]['net']],
                              node['url'],
                              'URL for network %s is not from %s!' %
                              (node['params'][0]['net'],
-                              expected[node['params'][0]['net']]))
+                              expec[node['params'][0]['net']]))
 
     def testDS_GE_APE(self):
         "Dataselect GE.APE.*.*"
@@ -404,7 +425,7 @@ class RouteCacheTests(unittest.TestCase):
         # expected = '[{"url": ' + \
         #     '"http://www.orfeus-eu.org/fdsnws/dataselect/1/query", ' + \
         #     '"params": [{"loc": "*", "end": "", "sta": "LIENZ", "cha": ' + \
-        #     '"BHZ", "priority": 2, "start": "1980-01-01T00:00:00", "net": ' + \
+        #     '"BHZ", "priority": 2, "start": "1980-01-01T00:00:00", "net": ' +
         #     '"CH"}], "name": "dataselect"}]'
 
         numErrors = 0
@@ -437,9 +458,9 @@ class RouteCacheTests(unittest.TestCase):
     #         '"net": "CH"}], "name": "dataselect"}, {"url": ' + \
     #         '"http://eida.ethz.ch/fdsnws/dataselect/1/query", "params": ' + \
     #         '[{"loc": "*", "end": "", "sta": "LIENZ", "cha": "LHZ", ' + \
-    #         '"priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}, ' + \
+    #         '"priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}, ' +
     #         '{"loc": "*", "end": "", "sta": "LIENZ", "cha": "HHZ", ' + \
-    #         '"priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}], ' + \
+    #         '"priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}], ' +
     #         '"name": "dataselect"}]'
 
     #     numErrors = 0

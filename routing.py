@@ -1,96 +1,45 @@
 #!/usr/bin/env python
-#
-# Routing WS prototype
-#
-# (c) 2014 Javier Quinteros, GEOFON team
-# <javier@gfz-potsdam.de>
-#
-# ----------------------------------------------------------------------
 
-"""Routing Webservice for EIDA
+"""Routing Service for EIDA
 
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+   :Copyright:
+       2014-2016 Javier Quinteros, GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
+   :License:
+       GPLv3
    :Platform:
        Linux
-   :Copyright:
-       GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
-   :License:
-       To be decided!
 
 .. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
 """
-
-##################################################################
-#
-# First all the imports
-#
-##################################################################
-
 
 import os
 import cgi
 import datetime
 import xml.etree.cElementTree as ET
 import json
-from wsgicomm import WIContentError
-from wsgicomm import WIClientError
-from wsgicomm import WIURIError
-from wsgicomm import WIError
-from wsgicomm import send_plain_response
-from wsgicomm import send_xml_response
-from wsgicomm import send_error_response
 import logging
-from utils import RequestMerge
-from utils import RoutingCache
-from utils import RoutingException
+from routeutils.wsgicomm import WIContentError
+from routeutils.wsgicomm import WIClientError
+from routeutils.wsgicomm import WIURIError
+from routeutils.wsgicomm import WIError
+from routeutils.wsgicomm import send_plain_response
+from routeutils.wsgicomm import send_xml_response
+from routeutils.wsgicomm import send_error_response
+from routeutils.utils import RequestMerge
+from routeutils.utils import RoutingCache
+from routeutils.utils import RoutingException
+from routeutils.routing import lsNSLC
+from routeutils.routing import applyFormat
 
 try:
     import configparser
 except ImportError:
     import ConfigParser as configparser
-
-
-def _ConvertDictToXmlRecurse(parent, dictitem):
-    assert not isinstance(dictitem, list)
-
-    if isinstance(dictitem, dict):
-        for (tag, child) in dictitem.iteritems():
-            if str(tag) == '_text':
-                parent.text = str(child)
-            elif isinstance(child, list):
-                # iterate through the array and convert
-                for listchild in child:
-                    elem = ET.Element(tag)
-                    parent.append(elem)
-                    _ConvertDictToXmlRecurse(elem, listchild)
-            else:
-                elem = ET.Element(tag)
-                parent.append(elem)
-                _ConvertDictToXmlRecurse(elem, child)
-    else:
-        parent.text = str(dictitem)
-
-
-def ConvertDictToXml(listdict):
-    """
-    Converts a list with dictionaries to an XML ElementTree Element
-    """
-
-    r = ET.Element('service')
-    for di in listdict:
-        d = {'datacenter': di}
-        roottag = d.keys()[0]
-        root = ET.SubElement(r, roottag)
-        _ConvertDictToXmlRecurse(root, d[roottag])
-    return r
-
-
-# Important to support the comma-syntax from FDSN (f.i. GE,RO,XX)
-def lsNSLC(net, sta, loc, cha):
-    for n in net:
-        for s in sta:
-            for l in loc:
-                for c in cha:
-                    yield (n, s, l, c)
 
 
 def makeQueryGET(parameters):
@@ -161,30 +110,50 @@ def makeQueryGET(parameters):
 
     try:
         if 'starttime' in parameters:
-            start = datetime.datetime.strptime(
-                parameters['starttime'].value[:19].upper(),
-                '%Y-%m-%dT%H:%M:%S')
+            start = parameters['starttime'].value.upper()
         elif 'start' in parameters:
-            start = datetime.datetime.strptime(
-                parameters['start'].value[:19].upper(),
-                '%Y-%m-%dT%H:%M:%S')
+            start = parameters['start'].value.upper()
         else:
-            start = None
+            raise Exception
+        startParts = start.replace('-', ' ').replace('T', ' ')
+        startParts = startParts.replace(':', ' ').replace('.', ' ')
+        startParts = startParts.replace('Z', '').split()
+        start = datetime.datetime(*map(int, startParts))
+        # if 'starttime' in parameters:
+        #     start = datetime.datetime.strptime(
+        #         parameters['starttime'].value[:19].upper(),
+        #         '%Y-%m-%dT%H:%M:%S')
+        # elif 'start' in parameters:
+        #     start = datetime.datetime.strptime(
+        #         parameters['start'].value[:19].upper(),
+        #         '%Y-%m-%dT%H:%M:%S')
+        # else:
+        #     start = None
     except:
         msg = 'Error while converting starttime parameter.'
         raise WIClientError(msg)
 
     try:
         if 'endtime' in parameters:
-            endt = datetime.datetime.strptime(
-                parameters['endtime'].value[:19].upper(),
-                '%Y-%m-%dT%H:%M:%S')
+            endt = parameters['endtime'].value.upper()
         elif 'end' in parameters:
-            endt = datetime.datetime.strptime(
-                parameters['end'].value[:19].upper(),
-                '%Y-%m-%dT%H:%M:%S')
+            endt = parameters['end'].value.upper()
         else:
-            endt = None
+            raise Exception
+        endParts = endt.replace('-', ' ').replace('T', ' ')
+        endParts = endParts.replace(':', ' ').replace('.', ' ')
+        endParts = endParts.replace('Z', '').split()
+        endt = datetime.datetime(*map(int, endParts))
+        # if 'endtime' in parameters:
+        #     endt = datetime.datetime.strptime(
+        #         parameters['endtime'].value[:19].upper(),
+        #         '%Y-%m-%dT%H:%M:%S')
+        # elif 'end' in parameters:
+        #     endt = datetime.datetime.strptime(
+        #         parameters['end'].value[:19].upper(),
+        #         '%Y-%m-%dT%H:%M:%S')
+        # else:
+        #     endt = None
     except:
         msg = 'Error while converting endtime parameter.'
         raise WIClientError(msg)
@@ -292,17 +261,25 @@ def makeQueryPOST(postText):
         sta = sta.upper()
         loc = loc.upper()
         try:
-            start = None if start in ("''", '""') else \
-                datetime.datetime.strptime(start[:19].upper(),
-                                           '%Y-%m-%dT%H:%M:%S')
+            startParts = start.replace('-', ' ').replace('T', ' ')
+            startParts = startParts.replace(':', ' ').replace('.', ' ')
+            startParts = startParts.replace('Z', '').split()
+            start = datetime.datetime(*map(int, startParts))
+            # start = None if start in ("''", '""') else \
+            #     datetime.datetime.strptime(start[:19].upper(),
+            #                                '%Y-%m-%dT%H:%M:%S')
         except:
             msg = 'Error while converting %s to datetime' % start
             raise WIClientError(msg)
 
         try:
-            endt = None if endt in ("''", '""') else \
-                datetime.datetime.strptime(endt[:19].upper(),
-                                           '%Y-%m-%dT%H:%M:%S')
+            endParts = endt.replace('-', ' ').replace('T', ' ')
+            endParts = endParts.replace(':', ' ').replace('.', ' ')
+            endParts = endParts.replace('Z', '').split()
+            endt = datetime.datetime(*map(int, endParts))
+            # endt = None if endt in ("''", '""') else \
+            #     datetime.datetime.strptime(endt[:19].upper(),
+            #                                '%Y-%m-%dT%H:%M:%S')
         except:
             msg = 'Error while converting %s to datetime' % endt
             raise WIError(msg)
@@ -316,56 +293,6 @@ def makeQueryPOST(postText):
     if len(result) == 0:
         raise WIContentError()
     return result
-
-
-def applyFormat(resultRM, outFormat='xml'):
-    """Apply the format specified to the RequestMerge object received.
-
-    :rtype: str
-    :returns: Transformed version of the input in the desired format
-    """
-
-    if not isinstance(resultRM, RequestMerge):
-        raise Exception('applyFormat expects a RequestMerge object!')
-
-    if outFormat == 'json':
-        iterObj = json.dumps(resultRM, default=datetime.datetime.isoformat)
-        return iterObj
-    elif outFormat == 'get':
-        iterObj = []
-        for datacenter in resultRM:
-            for item in datacenter['params']:
-                # FIXME Should I use 'T' in isoformat?
-                iterObj.append(datacenter['url'] + '?' +
-                               '&'.join([k + '=' + (str(item[k]) if
-                                         not isinstance(item[k], datetime.datetime)
-                                         else item[k].isoformat()) for k in item
-                                         if item[k] not in ('', '*') and
-                                         k != 'priority']))
-        iterObj = '\n'.join(iterObj)
-        return iterObj
-    elif outFormat == 'post':
-        now = datetime.datetime.utcnow()
-        iterObj = []
-        for datacenter in resultRM:
-            iterObj.append(datacenter['url'])
-            for item in datacenter['params']:
-                item['loc'] = item['loc'] if len(item['loc']) else '--'
-                item['end'] = item['end'] if isinstance(item['end'],
-                                                        datetime.datetime) \
-                    else now
-                iterObj.append(item['net'] + ' ' + item['sta'] + ' ' +
-                               item['loc'] + ' ' + item['cha'] + ' ' +
-                               item['start'].isoformat('T') + ' ' +
-                               item['end'].isoformat('T'))
-            iterObj.append('')
-        iterObj = '\n'.join(iterObj)
-        return iterObj
-    elif outFormat == 'xml':
-        iterObj2 = ET.tostring(ConvertDictToXml(resultRM))
-        return iterObj2
-    else:
-        raise WIClientError('Wrong format requested!')
 
 # This variable will be treated as GLOBAL by all the other functions
 routes = None

@@ -1,6 +1,7 @@
 import sys
 import unittest
 
+
 class WITestRunner(object):
 
     def __init__(self, outStream=sys.stderr, mode=1):
@@ -93,5 +94,6 @@ class WITestResult(unittest.TestResult):
     def printErrorList(self, errorType, errors):
         for test, err in errors:
             self.testRunner.write('%s checking %s\n' %
-                                    (errorType, test.shortDescription()))
-            self.testRunner.write((self.WARNING + '    %s' + self.ENDC) % err.splitlines(True)[-1])
+                                  (errorType, test.shortDescription()))
+            self.testRunner.write((self.WARNING + '    %s' + self.ENDC) %
+                                  err.splitlines(True)[-1])

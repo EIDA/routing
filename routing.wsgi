@@ -7,7 +7,7 @@
 # ----------------------------------------------------------------------
 
 import os
-import sys	
+import sys
 
 sys.path.append('/var/www/eidaws/routing/1')
 import routing

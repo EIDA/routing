@@ -1,5 +1,22 @@
 #!/usr/bin/env python
 
+"""Tests to check that Routing Service classes are working
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+   :Copyright:
+       2014-2016 Javier Quinteros, GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
+   :License:
+       GPLv3
+   :Platform:
+       Linux
+
+.. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
+"""
+
 import sys
 import os
 import datetime
@@ -8,10 +25,10 @@ here = os.path.dirname(__file__)
 sys.path.append(os.path.join(here, '..'))
 
 import unittest
-from unittestTools import WITestRunner
-from routing import RoutingCache
-from routing import RequestMerge
-from utils import RoutingException
+from routeutils.unittestTools import WITestRunner
+from routeutils.routing import RoutingCache
+from routeutils.routing import RequestMerge
+from routeutils.utils import RoutingException
 
 
 class RouteCacheTests(unittest.TestCase):
@@ -149,7 +166,8 @@ class RouteCacheTests(unittest.TestCase):
 
     #             myStreams = ['LHZ', 'HHZ']
     #             self.assertEqual(len(res['params']), len(myStreams),
-    #                              'Wrong number of streams for ETH! %s' % res['params'])
+    #                              'Wrong number of streams for ETH! %s'
+    #                              % res['params'])
 
     #             for i in res['params']:
     #                 self.assertIn(i['cha'], myStreams,
