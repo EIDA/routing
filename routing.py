@@ -114,11 +114,13 @@ def makeQueryGET(parameters):
         elif 'start' in parameters:
             start = parameters['start'].value.upper()
         else:
-            raise Exception
-        startParts = start.replace('-', ' ').replace('T', ' ')
-        startParts = startParts.replace(':', ' ').replace('.', ' ')
-        startParts = startParts.replace('Z', '').split()
-        start = datetime.datetime(*map(int, startParts))
+            start = None
+
+        if start is not None:
+            startParts = start.replace('-', ' ').replace('T', ' ')
+            startParts = startParts.replace(':', ' ').replace('.', ' ')
+            startParts = startParts.replace('Z', '').split()
+            start = datetime.datetime(*map(int, startParts))
         # if 'starttime' in parameters:
         #     start = datetime.datetime.strptime(
         #         parameters['starttime'].value[:19].upper(),
@@ -139,11 +141,13 @@ def makeQueryGET(parameters):
         elif 'end' in parameters:
             endt = parameters['end'].value.upper()
         else:
-            raise Exception
-        endParts = endt.replace('-', ' ').replace('T', ' ')
-        endParts = endParts.replace(':', ' ').replace('.', ' ')
-        endParts = endParts.replace('Z', '').split()
-        endt = datetime.datetime(*map(int, endParts))
+            endt = None
+
+        if endt is not None:
+            endParts = endt.replace('-', ' ').replace('T', ' ')
+            endParts = endParts.replace(':', ' ').replace('.', ' ')
+            endParts = endParts.replace('Z', '').split()
+            endt = datetime.datetime(*map(int, endParts))
         # if 'endtime' in parameters:
         #     endt = datetime.datetime.strptime(
         #         parameters['endtime'].value[:19].upper(),
