@@ -18,6 +18,7 @@ any later version.
 """
 
 import os
+import sys
 import datetime
 import fnmatch
 import telnetlib
@@ -884,6 +885,12 @@ class RoutingCache(object):
 
             self.updTimes = sorted(auxL)
             secsDay = 60 * 60 * 24
+
+            # FIXME This hack disables the update time if python is old because
+            # it has no "total_seconds".
+            if sys.version_info.major == 2 and sys.version_info.minor < 7:
+                auxL = list()
+
             if auxL:
                 self.nextUpd = min(enumerate([(x - now).total_seconds() %
                                               secsDay for x in self.updTimes]),
