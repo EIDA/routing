@@ -31,7 +31,7 @@
 		<request>
 			<param name="service" style="query" type="xsd:string" default="dataselect"/>
 			<param name="starttime" style="query" type="xsd:dateTime" default="1908-01-01T00:00:00"/>
-			<param name="endtime" style="query" type="xsd:dateTime" default="tomorrow"/>
+			<param name="endtime" style="query" type="xsd:dateTime" default="%s"/>
 			<param name="network" style="query" type="xsd:string" default="*"/>
 			<param name="station" style="query" type="xsd:string" default="*"/>
 			<param name="location" style="query" type="xsd:string" default="*"/>
