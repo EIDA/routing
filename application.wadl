@@ -12,13 +12,6 @@
 				</response>
 			</method>
 		</resource>
-		<resource path="globalconfig">
-			<method name="GET">
-				<response>
-					<representation mediaType="text/xml"/>
-				</response>
-			</method>
-		</resource>
 		<resource path="version">
 			<method name="GET">
 				<response>
@@ -43,8 +36,11 @@
 			<param name="station" style="query" type="xsd:string" default="*"/>
 			<param name="location" style="query" type="xsd:string" default="*"/>
 			<param name="channel" style="query" type="xsd:string" default="*"/>
-			<param name="format" style="query" type="xsd:string" default="json">
-				<option value="json"/>
+			<param name="format" style="query" type="xsd:string" default="xml">
+  			<option value="xml"/>
+	  		<option value="json"/>
+		  	<option value="get"/>
+			  <option value="post"/>
 			</param>
 		</request>
 		<response status="200">
