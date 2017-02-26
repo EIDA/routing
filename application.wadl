@@ -1,6 +1,6 @@
 <application xmlns="http://wadl.dev.java.net/2009/02"
 		xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-	<resources base="http://localhost/fdsnws/routing">
+	<resources base="%s">
 		<resource path="query">
 			<method href="#queryGET"/>
 			<method href="#queryPOST"/>
@@ -29,9 +29,14 @@
 	</resources>
 	<method name="GET" id="queryGET">
 		<request>
-			<param name="service" style="query" type="xsd:string" default="dataselect"/>
-			<param name="starttime" style="query" type="xsd:dateTime" default="1908-01-01T00:00:00"/>
-			<param name="endtime" style="query" type="xsd:dateTime" default="tomorrow"/>
+			<param name="service" style="query" type="xsd:string" default="dataselect">
+			  <option value="xml"/>
+			  <option value="json"/>
+		  	<option value="get"/>
+	  		<option value="post"/>
+  		</param>
+			<param name="starttime" style="query" type="xsd:dateTime" default="1980-01-01T00:00:00"/>
+			<param name="endtime" style="query" type="xsd:dateTime" default="%s"/>
 			<param name="network" style="query" type="xsd:string" default="*"/>
 			<param name="station" style="query" type="xsd:string" default="*"/>
 			<param name="location" style="query" type="xsd:string" default="*"/>

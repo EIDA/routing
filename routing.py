@@ -20,12 +20,9 @@ any later version.
 import os
 import cgi
 import datetime
-import xml.etree.cElementTree as ET
-import json
 import logging
 from routeutils.wsgicomm import WIContentError
 from routeutils.wsgicomm import WIClientError
-from routeutils.wsgicomm import WIURIError
 from routeutils.wsgicomm import WIError
 from routeutils.wsgicomm import send_plain_response
 from routeutils.wsgicomm import send_xml_response
@@ -298,16 +295,15 @@ def makeQueryPOST(postText):
         raise WIContentError()
     return result
 
+
 # This variable will be treated as GLOBAL by all the other functions
 routes = None
 
 
 def application(environ, start_response):
-    """Main WSGI handler that processes client requests and calls
-    the proper functions.
+    """Main WSGI handler. Processes client requests and calls proper functions.
 
     """
-
     global routes
     fname = environ['PATH_INFO']
 
@@ -373,6 +369,7 @@ def application(environ, start_response):
     here = os.path.dirname(__file__)
     config.read(os.path.join(here, 'routing.cfg'))
     verbo = config.get('Service', 'verbosity')
+    baseURL = config.get('Service', 'baseURL')
     # Warning is the default value
     verboNum = getattr(logging, verbo.upper(), 30)
     logging.info('Verbosity configured with %s' % verboNum)
@@ -397,7 +394,8 @@ def application(environ, start_response):
         appWadl = os.path.join(here, 'application.wadl')
         with open(appWadl, 'r') \
                 as appFile:
-            iterObj = appFile.read()
+            tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+            iterObj = appFile.read() % (baseURL, tomorrow)
             status = '200 OK'
             return send_xml_response(status, iterObj, start_response)
 
@@ -438,6 +436,7 @@ def application(environ, start_response):
 
 
 def main():
+    global routes
     routes = RoutingCache("./routing.xml", "./masterTable.xml")
 
 
