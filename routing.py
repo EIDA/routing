@@ -369,6 +369,7 @@ def application(environ, start_response):
     here = os.path.dirname(__file__)
     config.read(os.path.join(here, 'routing.cfg'))
     verbo = config.get('Service', 'verbosity')
+    baseURL = config.get('Service', 'baseURL')
     # Warning is the default value
     verboNum = getattr(logging, verbo.upper(), 30)
     logging.info('Verbosity configured with %s' % verboNum)
@@ -394,7 +395,7 @@ def application(environ, start_response):
         with open(appWadl, 'r') \
                 as appFile:
             tomorrow = datetime.date.today() + datetime.timedelta(days=1)
-            iterObj = appFile.read() % tomorrow
+            iterObj = appFile.read() % (baseURL, tomorrow)
             status = '200 OK'
             return send_xml_response(status, iterObj, start_response)
 
