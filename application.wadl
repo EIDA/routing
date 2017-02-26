@@ -29,7 +29,12 @@
 	</resources>
 	<method name="GET" id="queryGET">
 		<request>
-			<param name="service" style="query" type="xsd:string" default="dataselect"/>
+			<param name="service" style="query" type="xsd:string" default="dataselect">
+			  <option value="xml"/>
+			  <option value="json"/>
+		  	<option value="get"/>
+	  		<option value="post"/>
+  		</param>
 			<param name="starttime" style="query" type="xsd:dateTime" default="1980-01-01T00:00:00"/>
 			<param name="endtime" style="query" type="xsd:dateTime" default="%s"/>
 			<param name="network" style="query" type="xsd:string" default="*"/>
