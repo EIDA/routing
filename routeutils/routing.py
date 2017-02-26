@@ -117,8 +117,12 @@ def applyFormat(resultRM, outFormat='xml'):
             iterObj.append(datacenter['url'])
             for item in datacenter['params']:
                 item['loc'] = item['loc'] if len(item['loc']) else '--'
+                item['start'] = item['start'] if isinstance(item['start'],
+                                                            basestring) \
+                    else item['start'].isoformat()
                 item['end'] = item['end'] if len(item['end']) \
-                    else now.isoformat()
+                    else (datetime.date.today() +
+                          datetime.timedelta(days=1)).isoformat()
                 iterObj.append(item['net'] + ' ' + item['sta'] + ' ' +
                                item['loc'] + ' ' + item['cha'] + ' ' +
                                item['start'] + ' ' + item['end'])
