@@ -111,7 +111,6 @@ def applyFormat(resultRM, outFormat='xml'):
         iterObj = '\n'.join(iterObj)
         return iterObj
     elif outFormat == 'post':
-        now = datetime.datetime.utcnow()
         iterObj = []
         for datacenter in resultRM:
             iterObj.append(datacenter['url'])
@@ -120,7 +119,13 @@ def applyFormat(resultRM, outFormat='xml'):
                 item['start'] = item['start'] if isinstance(item['start'],
                                                             basestring) \
                     else item['start'].isoformat()
-                item['end'] = item['end'] if len(item['end']) \
+
+                # If endtime is a datetime get it in isoformat (string)
+                if isinstance(item['end'], datetime.datetime):
+                    item['end'] = item['end'].isoformat()
+                # If endtime is not a string use a default value (tomorrow)
+                item['end'] = item['end'] if isinstance(item['end'],
+                                                        basestring) \
                     else (datetime.date.today() +
                           datetime.timedelta(days=1)).isoformat()
                 iterObj.append(item['net'] + ' ' + item['sta'] + ' ' +
