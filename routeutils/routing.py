@@ -124,10 +124,10 @@ def applyFormat(resultRM, outFormat='xml'):
                 if isinstance(item['end'], datetime.datetime):
                     item['end'] = item['end'].isoformat()
                 # If endtime is not a string use a default value (tomorrow)
-                item['end'] = item['end'] if isinstance(item['end'],
-                                                        basestring) \
-                    else (datetime.date.today() +
-                          datetime.timedelta(days=1)).isoformat()
+                if ((not isinstance(item['end'], basestring)) or
+                    (isinstance(item['end'], basestring) and not len(item['end']))):
+                    item['end'] = (datetime.date.today() +
+                                   datetime.timedelta(days=1)).isoformat()
                 iterObj.append(item['net'] + ' ' + item['sta'] + ' ' +
                                item['loc'] + ' ' + item['cha'] + ' ' +
                                item['start'] + ' ' + item['end'])
