@@ -25,20 +25,20 @@ class Logs(object):
 
     :Platform: Linux
 
-"""
+    """
 
     def __init__(self, level=2, outstr=sys.stdout):
+        """Constructor of Logs class."""
         self.setLevel(level)
         self.outstr = outstr
 
     def setLevel(self, level):
-        """Set the level of the log
+        """Set the level of the log.
 
-:param level: Log level (1: Error, 2: Warning, 3: Info, 4: Debug)
-:type level: int
+        :param level: Log level (1: Error, 2: Warning, 3: Info, 4: Debug)
+        :type level: int
 
         """
-
         # Remap the functions in agreement with the output level
         # Default values are the following
         self.error = self.__pass
@@ -95,7 +95,7 @@ class WIError(Exception):
     """
 
     def __init__(self, status, body, verbosity=1):
-        """WIError constructor.
+        """Constructor of the WIError class.
 
         :param status: HTTP code number and short description associated to it
         :type status: str
@@ -122,7 +122,7 @@ class WIURIError(WIError):
     """
 
     def __init__(self, *args, **kwargs):
-        """WIURIError constructor.
+        """Constructor of WIURIError.
 
         If some parameter is given it will be passed to WIError as body.
 
@@ -138,7 +138,7 @@ class WIContentError(WIError):
     """
 
     def __init__(self, *args, **kwargs):
-        """WIContentError constructor.
+        """Constructor of WIContentError.
 
         If some parameter is given it will be passed to WIError as body.
 
@@ -154,7 +154,7 @@ class WIClientError(WIError):
     """
 
     def __init__(self, *args, **kwargs):
-        """WIClientError constructor.
+        """Constructor of WIClientError.
 
         If some parameter is given it will be passed to WIError as body.
 
@@ -170,7 +170,7 @@ class WIInternalError(WIError):
     """
 
     def __init__(self, *args, **kwargs):
-        """WIInternalError constructor.
+        """Constructor of WIInternalError.
 
         If some parameter is given it will be passed to WIError as body.
 
@@ -186,7 +186,7 @@ class WIServiceError(WIError):
     """
 
     def __init__(self, *args, **kwargs):
-        """WIServiceError constructor.
+        """Constructor of WIServiceError.
 
         If some parameter is given it will be passed to WIError as body.
 

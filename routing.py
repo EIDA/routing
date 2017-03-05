@@ -40,6 +40,7 @@ except ImportError:
 
 
 def makeQueryGET(parameters):
+    """Process a request made via a GET method."""
     global routes
 
     # List all the accepted parameters
@@ -214,6 +215,7 @@ def makeQueryGET(parameters):
 
 
 def makeQueryPOST(postText):
+    """Process a request made via a POST method."""
     global routes
 
     # This are the parameters accepted appart from N.S.L.C
@@ -301,9 +303,7 @@ routes = None
 
 
 def application(environ, start_response):
-    """Main WSGI handler. Processes client requests and calls proper functions.
-
-    """
+    """Main WSGI handler. Process requests and calls proper functions."""
     global routes
     fname = environ['PATH_INFO']
 
@@ -421,7 +421,7 @@ def application(environ, start_response):
                                  start_response)
 
     elif fname == 'version':
-        text = "1.0.3"
+        text = "1.0.4"
         return send_plain_response('200 OK', text, start_response)
 
     elif fname == 'info':
@@ -436,6 +436,7 @@ def application(environ, start_response):
 
 
 def main():
+    """Main function in case of calling the script from the command line."""
     global routes
     routes = RoutingCache("./routing.xml", "./masterTable.xml")
 

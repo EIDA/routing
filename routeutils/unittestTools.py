@@ -29,11 +29,11 @@ class WITestRunner(object):
         self.write(self.HEADER + '\nRunning test...\n' + self.ENDC)
 
     def write(self, message):
-        """Redirect output to the stream"""
+        """Redirect output to the stream."""
         self.outStream.write(message)
 
     def run(self, test):
-        """Run the given test case"""
+        """Run the given test case."""
         result = WITestResult(self, self.mode)
         test(result)
 
@@ -46,8 +46,7 @@ class WITestRunner(object):
 
 
 class WITestResult(unittest.TestResult):
-    """A test result class that prints in colours to the console
-    """
+    """A test result class that prints in colours to the console."""
 
     def __init__(self, testRunner, mode=1):
         unittest.TestResult.__init__(self)

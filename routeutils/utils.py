@@ -812,6 +812,7 @@ class Route(namedtuple('Route', ['service', 'address', 'tw', 'priority'])):
             pass
         return False
 
+
 Route.__eq__ = lambda self, other: self.priority == other.priority
 Route.__ne__ = lambda self, other: self.priority != other.priority
 Route.__lt__ = lambda self, other: self.priority < other.priority
@@ -835,7 +836,7 @@ class RoutingCache(object):
 
     def __init__(self, routingFile=None, masterFile=None,
                  config='routing.cfg'):
-        """RoutingCache constructor.
+        """Constructor of RoutingCache.
 
         :param routingFile: XML file with routing information
         :type routingFile: str
@@ -934,18 +935,19 @@ class RoutingCache(object):
             return f.read()
 
     def configArclink(self):
-        """Connects via telnet to an Arclink server to get routing information.
-The address and port of the server are read from the configuration file.
-The data is saved in the file ``routing.xml``. Generally used to start
-operating with an EIDA default configuration.
+        """Connect via telnet to an Arclink server to get routing information.
 
-.. deprecated:: 1.1
+        Address and port of the server are read from the configuration file.
+        The data is saved in the file ``routing.xml``. Generally used to start
+        operating with an EIDA default configuration.
 
-    This method should not be used and the configuration should be independent
-    from Arclink. Namely, the ``routing.xml`` file must exist in advance.
+        .. deprecated:: 1.1
+
+        This method should not be used and the configuration should be
+        independent from Arclink. Namely, the ``routing.xml`` file must exist
+        in advance.
 
         """
-
         # Functionality moved away from this module. Check updateAll.py.
 
         return
