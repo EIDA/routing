@@ -41,6 +41,28 @@ class RouteCacheTests(unittest.TestCase):
         "Setting up test"
         cls.host = host
 
+    def test_issue_11(self):
+        "dynamic creation of application.wadl"
+
+        req = urllib2.Request('%s/application.wadl' % self.host)
+        try:
+            u = urllib2.urlopen(req)
+            buf = u.read()
+        except urllib2.URLError as e:
+            msg = 'The file application.wadl cannot be built (missing ' + \
+                '"baseUrl" in config file?)'
+            self.assertTrue(False, msg)
+            return
+
+        msg = 'The baseURL in the application.wadl is not the same as ' + \
+            'the one used to do the query. (Old version? See Issue 11: ' + \
+            'https://github.com/EIDA/routing/issues/11 ).'
+
+        dom = parseString(buf)
+        for res in dom.getElementsByTagName('resources'):
+            self.assertTrue(self.host.startswith(res.getAttribute('base')),
+                            msg)
+
     def test_long_URI(self):
         "very large URI"
 
@@ -55,6 +77,48 @@ class RouteCacheTests(unittest.TestCase):
             return
 
         self.assertTrue(False, msg)
+        return
+
+    def test_issue_2(self):
+        "proper POST format when enddate is missing"
+
+        msg = 'Found a bug which has already been fixed (see Issue 2: '
+        msg = msg + 'https://github.com/EIDA/routing/issues/2 ).'
+        req = urllib2.Request('%s?start=2000-01-01&format=post' % self.host)
+        try:
+            u = urllib2.urlopen(req)
+            u.read()
+        except urllib2.URLError as e:
+            self.assertTrue(False, msg)
+
+        return
+
+    def test_issue_8(self):
+        "proper parsing of start and end dates"
+
+        msg = 'Found a bug which has already been fixed (see Issue 8: '
+        msg = msg + 'https://github.com/EIDA/routing/issues/8 ).'
+        req = urllib2.Request('%s?start=2000-01-01&end=2016-12-31' % self.host)
+        try:
+            u = urllib2.urlopen(req)
+            u.read()
+        except urllib2.URLError as e:
+            self.assertTrue(False, msg)
+
+        return
+
+    def test_issue_16(self):
+        "wrong data type (datetime) when format=post"
+
+        msg = 'Found a bug which has already been fixed (see Issue 16: '
+        msg = msg + 'https://github.com/EIDA/routing/issues/16 ).'
+        req = urllib2.Request('%s?format=post' % self.host)
+        try:
+            u = urllib2.urlopen(req)
+            u.read()
+        except urllib2.URLError as e:
+            self.assertTrue(False, msg)
+
         return
 
     def test_wrong_parameter(self):
