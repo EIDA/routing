@@ -137,10 +137,10 @@ class RouteCacheTests(unittest.TestCase):
         self.assertTrue(False, msg)
         return
 
-    def testDS_XX(self):
-        "non-existing network XX"
+    def testDS_XXX(self):
+        "non-existing network XXX"
 
-        req = urllib2.Request('%s?net=XX' % self.host)
+        req = urllib2.Request('%s?net=XXX' % self.host)
         msg = 'An error code 204 No Content is expected for an unknown network'
         try:
             u = urllib2.urlopen(req)
