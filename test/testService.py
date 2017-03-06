@@ -8,7 +8,7 @@ the Free Software Foundation, either version 3 of the License, or
 any later version.
 
    :Copyright:
-       2014-2016 Javier Quinteros, GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
+       2014-2017 Javier Quinteros, GEOFON, GFZ Potsdam <geofon@gfz-potsdam.de>
    :License:
        GPLv3
    :Platform:
