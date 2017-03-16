@@ -23,7 +23,6 @@ import datetime
 import fnmatch
 import telnetlib
 import xml.etree.cElementTree as ET
-import glob
 from time import sleep
 from collections import namedtuple
 # from operator import add
@@ -1594,7 +1593,7 @@ class RoutingCache(object):
         """
         self.logs.debug('Entering update()\n')
 
-        here = os.path.dirname(__file__)
+        # here = os.path.dirname(__file__)
 
         # Otherwise, default value
         synchroList = ''
@@ -1625,13 +1624,12 @@ class RoutingCache(object):
 
         # Clear all previous information
         ptRT.clear()
-        ptRT = addRoutes(self.routingFile, allowOverlaps=allowOverlaps)
-
-        binFile = self.routingFile + '.bin'
         try:
+            binFile = self.routingFile + '.bin'
             with open(binFile) as rMerged:
                 self.routingTable = pickle.load(rMerged)
         except:
+            ptRT = addRoutes(self.routingFile, allowOverlaps=allowOverlaps)
             # Loop for the datacenters which should be integrated
             for line in synchroList.splitlines():
                 if not len(line):
@@ -1639,14 +1637,15 @@ class RoutingCache(object):
                 self.logs.debug(str(line.split(',')))
                 dcid, url = line.split(',')
 
-                if os.path.exists(os.path.join(here, 'data', 'routing-%s.xml' %
-                                  dcid.strip())):
+                if os.path.exists(os.path.join(os.getcwd(), 'data',
+                                               'routing-%s.xml' %
+                                               dcid.strip())):
                     # FIXME addRoutes should return no Exception ever and skip
                     # a problematic file returning a coherent version of the
                     # routes
                     self.logs.debug('Routes in table: %s' % len(ptRT))
                     self.logs.debug('Adding REMOTE %s' % dcid)
-                    ptRT = addRoutes(os.path.join(here, 'data',
+                    ptRT = addRoutes(os.path.join(os.getcwd(), 'data',
                                                   'routing-%s.xml' %
                                                   dcid.strip()),
                                      routingTable=ptRT,
