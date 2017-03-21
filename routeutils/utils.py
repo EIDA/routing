@@ -376,6 +376,9 @@ def addRemote(fileName, url):
             elif hasattr(e, 'code'):
                 logs.error('The server couldn\'t fulfill the request.')
                 logs.error('Error code: %s\n', e.code)
+            # I have to return because there is no data. Otherwise, the old
+            # data will be removed (see below).
+            return
 
     name = fileName[:- len('.download')]
     try:
