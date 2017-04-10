@@ -38,6 +38,7 @@ sys.path.append('..')
 
 from routeutils.utils import addRemote
 from routeutils.utils import addRoutes
+from routeutils.utils import cacheStations
 from routeutils.utils import Route
 from routeutils.utils import RoutingCache
 import logging
@@ -411,9 +412,15 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
     except:
         pass
 
+    stationTable = dict()
+    cacheStations(ptRT, stationTable)
+
     with open('./%s.bin' % fileRoutes, 'wb') as finalRoutes:
-        pickle.dump(ptRT, finalRoutes)
+        pickle.dump((ptRT, stationTable), finalRoutes)
         logs.info('Routes in main Routing Table: %s\n' % len(ptRT))
+        logs.info('Stations cached: %s\n' %
+                  sum([len(stationTable[dc][st]) for dc in stationTable
+                       for st in stationTable[dc]]))
 
 
 def main():

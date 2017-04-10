@@ -48,6 +48,18 @@ except ImportError:
     import urllib2 as ul
 
 
+def str2date(dStr):
+    """Transform a string to a datetime."""
+    # In case of empty string
+    if not len(dStr):
+        return None
+
+    dateParts = dStr.replace('-', ' ').replace('T', ' ')
+    dateParts = dateParts.replace(':', ' ').replace('.', ' ')
+    dateParts = dateParts.replace('Z', '').split()
+    return datetime.datetime(*map(int, dateParts))
+
+
 def checkOverlap(str1, routeList, str2, route):
     """Check overlap of routes from stream str1 and a route from str2."""
     if str1.overlap(str2):
@@ -56,6 +68,60 @@ def checkOverlap(str1, routeList, str2, route):
                 return True
 
     return False
+
+
+def getStationCache(st, rt):
+    """Retrieve station name and location from a particular station service."""
+    query = '%s?format=text&net=%s&sta=%s&start=%s' % \
+            (rt.address, st.n, st.s, rt.tw.start.isoformat())
+    if rt.tw.end is not None:
+        query = query + '&end=%s' % rt.tw.end.isoformat()
+
+    print(query)
+    req = ul.Request(query)
+    try:
+        u = ul.urlopen(req)
+        buf = u.read()
+    except ul.URLError as e:
+        logging.warning('The URL does not seem to be a valid Station-WS')
+        if hasattr(e, 'reason'):
+            logging.warning('%s - Reason: %s\n' % (rt.address, e.reason))
+        elif hasattr(e, 'code'):
+            logging.warning('The server couldn\'t fulfill the request.')
+            logging.warning('Error code: %s\n', e.code)
+
+    result = list()
+    for line in buf.splitlines():
+        if line.startswith('#'):
+            continue
+        lSplit = line.split('|')
+        try:
+            start = str2date(lSplit[6])
+            endt = str2date(lSplit[7])
+            result.append(Station(lSplit[1], float(lSplit[2]),
+                          float(lSplit[3]), start, endt))
+        except:
+            logging.error('Error trying to add station: (%s, %s, %s, %s, %s)' %
+                          (lSplit[1], lSplit[2], lSplit[3], lSplit[6],
+                           lSplit[7]))
+    # print(result)
+    if not len(result):
+        logging.warning('No stations found for streams %s in %s' %
+                        (st, rt.address))
+    return result
+
+
+def cacheStations(routingTable, stationTable):
+    """Loop for all station-WS and cache all station names and locations."""
+    ptRT = routingTable
+    for st in ptRT.keys():
+        for rt in ptRT[st]:
+            if rt.service == 'station':
+                try:
+                    stationTable[rt.address][st] = getStationCache(st, rt)
+                except KeyError:
+                    stationTable[rt.address] = dict()
+                    stationTable[rt.address][st] = getStationCache(st, rt)
 
 
 def addRoutes(fileName, **kwargs):
@@ -492,6 +558,24 @@ class RequestMerge(list):
                 self[pos]['params'].extend(r['params'])
             except:
                 super(RequestMerge, self).append(r)
+
+
+class Station(namedtuple('Station', ['name', 'latitude', 'longitude', 'start',
+                                     'end'])):
+    """Namedtuple representing a Station.
+
+    This is the minimum information which needs to be cached from a station in
+    order to be able to apply a proper filter to the inventory when queries
+    f.i. do not include the network name.
+           name: station name
+           latitude: latitude
+           longitude: longitude
+
+    :platform: Any
+
+    """
+
+    __slots__ = ()
 
 
 class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
@@ -1630,7 +1714,7 @@ class RoutingCache(object):
         try:
             binFile = self.routingFile + '.bin'
             with open(binFile) as rMerged:
-                self.routingTable = pickle.load(rMerged)
+                self.routingTable, self.stationTable = pickle.load(rMerged)
         except:
             ptRT = addRoutes(self.routingFile, allowOverlaps=allowOverlaps)
             # Loop for the datacenters which should be integrated
@@ -1654,8 +1738,12 @@ class RoutingCache(object):
                                      routingTable=ptRT,
                                      allowOverlaps=allowOverlaps)
 
+            # FIXME Set here self.stationTable
+            self.stationTable = dict()
+            cacheStations(ptRT, self.stationTable)
+
             with open(binFile, 'wb') \
                     as finalRoutes:
                 self.logs.debug('Writing %s\n' % binFile)
-                pickle.dump(ptRT, finalRoutes)
+                pickle.dump((ptRT, self.stationTable), finalRoutes)
                 self.routingTable = ptRT
