@@ -52,6 +52,14 @@ def mapArcFDSN(route):
 :rtype: str
 :raises: Exception
 
+.. deprecated:: since version 1.0.2
+
+.. warning::
+
+    In the future this method should not be used and the configuration should
+    be independent from Arclink. Namely, the ``routing.xml`` file must exist in
+    advance.
+
     """
 
     gfz = 'http://geofon.gfz-potsdam.de'
@@ -104,6 +112,15 @@ file passed in the second parameter.
 :param fileout: Output file with all routes from the input file plus new
                 Station and Dataselect routes based on the Arclink route.
 :type fileout: str
+
+.. deprecated:: since version 1.0.2
+
+.. warning::
+
+    In the future this method should not be used and the configuration should
+    be independent from Arclink. Namely, the ``routing.xml`` file must exist in
+    advance.
+
 """
     rc = RoutingCache(filein, config=config)
     rOut = RoutingCache()
@@ -139,6 +156,8 @@ operating with an EIDA default configuration.
 :type arcPort: int
 :param foutput: Filename where the output must be saved
 :type foutput: str
+
+.. deprecated:: since version 1.0.2
 
 .. warning::
 
@@ -301,7 +320,7 @@ start operating with an EIDA default configuration.
 
     with open(os.path.join(here, 'Arclink-inventory.xml.download'), 'w') \
             as fout:
-        #try:
+        # try:
         fd = tn.get_socket().makefile('rb+')
         # Read the size of the inventory
         length = fd.readline(100).strip()
@@ -330,7 +349,7 @@ start operating with an EIDA default configuration.
         buf = fd.readline(100).strip()
         if buf != "END" or bytesRead != length:
             raise Exception('Wrong length!')
-        #finally:
+        # finally:
         #    tn.write('PURGE %d\n' % reqID)
 
     try:
@@ -400,7 +419,7 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
 def main():
     # FIXME logLevel must be used via argparser
     # Check verbosity in the output
-    msg = 'Get EIDA routing configuration and "export" it to the FDSN-WS style.'
+    msg = 'Get EIDA routing configuration and export it to the FDSN-WS style.'
     parser = argparse.ArgumentParser(description=msg)
     parser.add_argument('-l', '--loglevel',
                         help='Verbosity in the output.',
