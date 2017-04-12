@@ -118,13 +118,12 @@ def cacheStations(routingTable, stationTable):
     for st in ptRT.keys():
         for rt in ptRT[st]:
             if rt.service == 'station':
+                result = getStationCache(st, rt)
                 try:
-                    stationTable[urlparse(rt.address).netloc][st] = \
-                        getStationCache(st, rt)
+                    stationTable[urlparse(rt.address).netloc][st] = result
                 except KeyError:
                     stationTable[urlparse(rt.address).netloc] = dict()
-                    stationTable[urlparse(rt.address).netloc][st] = \
-                        getStationCache(st, rt)
+                    stationTable[urlparse(rt.address).netloc][st] = result
 
 
 def addRoutes(fileName, **kwargs):
@@ -1399,49 +1398,32 @@ class RoutingCache(object):
                         self.logs.debug('Adding %s\n' % str(auxTW))
                         setTW.add(auxTW)
 
-                    try:
-                        auxSt, auxEn = toProc.intersection(ro.tw)
-                        result.append(service, ro.address,
-                                      ro.priority if ro.priority is not
-                                      None else '', stream.strictMatch(st),
-                                      auxSt if auxSt is not None else '',
-                                      auxEn if auxEn is not None else '')
-                    except:
-                        pass
+                    # Check here that the final result is compatible with the
+                    # stations in cache
+                    ptST = self.stationTable[urlparse(ro.address).netloc]
+                    for cacheSt in ptST[st]:
+                        # Trying to catch cases like (APE, AP*)
+                        if fnmatch.fnmatch(cacheSt.name, stream.s):
+                            # print('Add %s' % str(stream.strictMatch(st)))
 
-                    # FIXME This below seems to be wrong!
+                            try:
+                                auxSt, auxEn = toProc.intersection(ro.tw)
+                                result.append(service, ro.address,
+                                              ro.priority if ro.priority is not
+                                              None else '', stream.strictMatch(st),
+                                              auxSt if auxSt is not None else '',
+                                              auxEn if auxEn is not None else '')
+                            except:
+                                pass
 
-                    # Unless alternative routes are needed I can stop here
-                    # and go for the next route
-                    # if not alternative:
-                    #     break
-                    # To look for alternative routes do not look in the whole
-                    # period once we found a principal route. Try only to look
-                    # for alternative routes for THIS timewindow
-                    # else:
-                    #     toProc = TW(auxSt, auxEn)
-
+                            break
+                    else:
+                        msg = "Skipping %s as station %s not in its cache"
+                        logging.debug(msg % (str(stream.strictMatch(st)), stream.s))
+                
         # Check the coherency of the routes to set the return code
         if len(result) == 0:
             raise RoutingException('No routes have been found!')
-
-        # FIXME Check here that the final result is compatible with the
-        # stations in cache
-        for r in result:
-            ptST = self.stationTable[urlparse(r['url']).netloc]
-            # Loop through all items in params backwards (just in case that it
-            # is necessary to delete one of them)
-            rp = r['params']
-            for ind in range(len(rp-1, -1, -1)):
-                for st in ptST[Stream(rp[ind]['net'], rp[ind]['sta'],
-                                      rp[ind]['loc'], rp[ind]['cha'])]:
-                    # Trying to catch cases like (APE, AP*)
-                    if fnmatch.fnmatch(st.name, stream.s):
-                        break
-                else:
-                    # If there is no match with any station name, delete the
-                    # route
-                    del rp[ind]
 
         return result
 
