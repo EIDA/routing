@@ -22,6 +22,7 @@ import sys
 import datetime
 import fnmatch
 import telnetlib
+from urlparse import urlparse
 import xml.etree.cElementTree as ET
 from time import sleep
 from collections import namedtuple
@@ -118,10 +119,12 @@ def cacheStations(routingTable, stationTable):
         for rt in ptRT[st]:
             if rt.service == 'station':
                 try:
-                    stationTable[rt.address][st] = getStationCache(st, rt)
+                    stationTable[urlparse(rt.address).netloc][st] = \
+                        getStationCache(st, rt)
                 except KeyError:
-                    stationTable[rt.address] = dict()
-                    stationTable[rt.address][st] = getStationCache(st, rt)
+                    stationTable[urlparse(rt.address).netloc] = dict()
+                    stationTable[urlparse(rt.address).netloc][st] = \
+                        getStationCache(st, rt)
 
 
 def addRoutes(fileName, **kwargs):
@@ -1268,15 +1271,6 @@ class RoutingCache(object):
             # Through an exception if there is an error
             raise RoutingException('Unknown service: %s' % service)
 
-        # FIXME This could be done in the function that calls getRoute
-        # That would be more clear.
-        # for r in result:
-        #     for p in r['params']:
-        #         if isinstance(p['start'], datetime.datetime):
-        #             p['start'] = p['start'].isoformat('T')
-        #         if isinstance(p['end'], datetime.datetime):
-        #             p['end'] = p['end'].isoformat('T')
-
         return result
 
     def getRouteDS(self, service, stream, tw, alternative=False):
@@ -1430,6 +1424,24 @@ class RoutingCache(object):
         # Check the coherency of the routes to set the return code
         if len(result) == 0:
             raise RoutingException('No routes have been found!')
+
+        # FIXME Check here that the final result is compatible with the
+        # stations in cache
+        for r in result:
+            ptST = self.stationTable[urlparse(r['url']).netloc]
+            # Loop through all items in params backwards (just in case that it
+            # is necessary to delete one of them)
+            rp = r['params']
+            for ind in range(len(rp-1, -1, -1)):
+                for st in ptST[Stream(rp[ind]['net'], rp[ind]['sta'],
+                                      rp[ind]['loc'], rp[ind]['cha'])]:
+                    # Trying to catch cases like (APE, AP*)
+                    if fnmatch.fnmatch(st.name, stream.s):
+                        break
+                else:
+                    # If there is no match with any station name, delete the
+                    # route
+                    del rp[ind]
 
         return result
 
@@ -1727,7 +1739,7 @@ class RoutingCache(object):
                 if os.path.exists(os.path.join(os.getcwd(), 'data',
                                                'routing-%s.xml' %
                                                dcid.strip())):
-                    # FIXME addRoutes should return no Exception ever and skip
+                    # addRoutes should return no Exception ever and skip
                     # a problematic file returning a coherent version of the
                     # routes
                     self.logs.debug('Routes in table: %s' % len(ptRT))
@@ -1738,7 +1750,7 @@ class RoutingCache(object):
                                      routingTable=ptRT,
                                      allowOverlaps=allowOverlaps)
 
-            # FIXME Set here self.stationTable
+            # Set here self.stationTable
             self.stationTable = dict()
             cacheStations(ptRT, self.stationTable)
 
