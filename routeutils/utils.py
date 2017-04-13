@@ -50,7 +50,13 @@ except ImportError:
 
 
 def str2date(dStr):
-    """Transform a string to a datetime."""
+    """Transform a string to a datetime.
+
+    :param dStr: A datetime in ISO format.
+    :type dStr: string
+    :return: A datetime represented the converted input.
+    :rtype: datetime
+    """
     # In case of empty string
     if not len(dStr):
         return None
@@ -62,7 +68,19 @@ def str2date(dStr):
 
 
 def checkOverlap(str1, routeList, str2, route):
-    """Check overlap of routes from stream str1 and a route from str2."""
+    """Check overlap of routes from stream str1 and a route from str2.
+
+    :param str1: First stream
+    :type str1: Stream
+    :param routeList: List of routes already present
+    :type routeList: list
+    :param str2: Second stream
+    :type str2: Stream
+    :param route: Route to be checked
+    :type route: Route
+    :rtype: boolean
+    :returns: Value indicating if routes overlap for both streams
+    """
     if str1.overlap(str2):
         for auxRoute in routeList:
             if auxRoute.overlap(route):
@@ -72,7 +90,15 @@ def checkOverlap(str1, routeList, str2, route):
 
 
 def getStationCache(st, rt):
-    """Retrieve station name and location from a particular station service."""
+    """Retrieve station name and location from a particular station service.
+
+    :param st: Stream for which a cache should be saved.
+    :type st: Stream
+    :param rt: Route where this stream is archived.
+    :type rt: Route
+    :returns: Stations found in this route for this stream pattern.
+    :rtype: list
+    """
     query = '%s?format=text&net=%s&sta=%s&start=%s' % \
             (rt.address, st.n, st.s, rt.tw.start.isoformat())
     if rt.tw.end is not None:
@@ -113,7 +139,13 @@ def getStationCache(st, rt):
 
 
 def cacheStations(routingTable, stationTable):
-    """Loop for all station-WS and cache all station names and locations."""
+    """Loop for all station-WS and cache all station names and locations.
+
+    :param routingTable: Routing table.
+    :type routingTable: list
+    :param stationTable: Cache with names and locations of stations.
+    :type stationTable: list
+    """
     ptRT = routingTable
     for st in ptRT.keys():
         for rt in ptRT[st]:
@@ -275,34 +307,36 @@ def addRoutes(fileName, **kwargs):
                             continue
 
                         try:
-                            startD = att.get('start', None)
-                            if len(startD):
-                                startParts = startD.replace('-', ' ')
-                                startParts = startParts.replace('T', ' ')
-                                startParts = startParts.replace(':', ' ')
-                                startParts = startParts.replace('.', ' ')
-                                startParts = startParts.replace('Z', '')
-                                startParts = startParts.split()
-                                startD = datetime.datetime(*map(int,
-                                                                startParts))
-                            else:
-                                startD = None
+                            auxStart = att.get('start', None)
+                            startD = str2date(auxStart)
+                            # if len(startD):
+                            #     startParts = startD.replace('-', ' ')
+                            #     startParts = startParts.replace('T', ' ')
+                            #     startParts = startParts.replace(':', ' ')
+                            #     startParts = startParts.replace('.', ' ')
+                            #     startParts = startParts.replace('Z', '')
+                            #     startParts = startParts.split()
+                            #     startD = datetime.datetime(*map(int,
+                            #                                     startParts))
+                            # else:
+                            #     startD = None
                         except:
                             startD = None
 
                         # Extract the end datetime
                         try:
-                            endD = att.get('end', None)
-                            if len(endD):
-                                endParts = endD.replace('-', ' ')
-                                endParts = endParts.replace('T', ' ')
-                                endParts = endParts.replace(':', ' ')
-                                endParts = endParts.replace('.', ' ')
-                                endParts = endParts.replace('Z', '').split()
-                                endD = datetime.datetime(*map(int,
-                                                              endParts))
-                            else:
-                                endD = None
+                            auxEnd = att.get('end', None)
+                            endD = str2date(auxEnd)
+                            # if len(endD):
+                            #     endParts = endD.replace('-', ' ')
+                            #     endParts = endParts.replace('T', ' ')
+                            #     endParts = endParts.replace(':', ' ')
+                            #     endParts = endParts.replace('.', ' ')
+                            #     endParts = endParts.replace('Z', '').split()
+                            #     endD = datetime.datetime(*map(int,
+                            #                                   endParts))
+                            # else:
+                            #     endD = None
                         except:
                             endD = None
 
@@ -320,6 +354,7 @@ def addRoutes(fileName, **kwargs):
                         st = Stream(networkCode, stationCode, locationCode,
                                     streamCode)
                         tw = TW(startD, endD)
+                        rt = Route(service, address, tw, priority)
 
                         try:
                             # Check the overlap between the routes to import
@@ -331,8 +366,7 @@ def addRoutes(fileName, **kwargs):
                                 # This checks the overlap of Streams and also
                                 # of timewindows and priority
                                 if checkOverlap(testStr, ptRT[testStr], st,
-                                                Route(service, address, tw,
-                                                      priority)):
+                                                rt):
                                     msg = '%s: Overlap between %s and %s!\n'\
                                         % (fileName, st, testStr)
                                     logs.error(msg)
@@ -342,15 +376,12 @@ def addRoutes(fileName, **kwargs):
                                     break
 
                             if addIt:
-                                ptRT[st].append(Route(service, address, tw,
-                                                      priority))
+                                ptRT[st].append(rt)
                             else:
-                                logs.warning('Skip %s - %s\n' %
-                                             (st, Route(service, address, tw,
-                                                        priority)))
+                                logs.warning('Skip %s - %s\n' % (st, rt))
 
                         except KeyError:
-                            ptRT[st] = [Route(service, address, tw, priority)]
+                            ptRT[st] = [rt]
                         serv.clear()
 
                     route.clear()
@@ -379,13 +410,12 @@ def addRemote(fileName, url):
 
     """
     logs = logging.getLogger('addRemote')
-    logs.debug('Entering addRemote(%s)\n' %
-               os.path.basename(fileName))
+    logs.debug('Entering addRemote(%s)\n' % os.path.basename(fileName))
 
     # Prepare Request
     req = ul.Request(url + '/localconfig')
 
-    blockSize = 4096
+    blockSize = 4096 * 100
 
     fileName = fileName + '.download'
 
@@ -478,6 +508,7 @@ class RequestMerge(list):
 
     __slots__ = ()
 
+    # FIXME Probably it would be better to replace start and end for a TW
     def append(self, service, url, priority, stream, start=None,
                end=None):
         """Append a new :class:`~Route` without repeating the datacenter.
@@ -562,6 +593,7 @@ class RequestMerge(list):
                 super(RequestMerge, self).append(r)
 
 
+# FIXME Should I replace start and end for a TW?
 class Station(namedtuple('Station', ['name', 'latitude', 'longitude', 'start',
                                      'end'])):
     """Namedtuple representing a Station.
@@ -1205,6 +1237,7 @@ class RoutingCache(object):
         # No update should be made
         return None
 
+    # FIXME Stream and TW should probably be built before calling this method
     def getRoute(self, n='*', s='*', l='*', c='*', startD=None, endD=None,
                  service='dataselect', alternative=False):
         """Return routes to request data for the stream and timewindow provided.
@@ -1245,6 +1278,7 @@ class RoutingCache(object):
             self.nextUpd = t2u
             self.logs.debug('Update successful at: %s\n' % self.lastUpd)
 
+        # FIXME This should probably be made by the caller
         stream = Stream(n, s, l, c)
         tw = TW(startD, endD)
 
@@ -1408,19 +1442,22 @@ class RoutingCache(object):
 
                             try:
                                 auxSt, auxEn = toProc.intersection(ro.tw)
-                                result.append(service, ro.address,
-                                              ro.priority if ro.priority is not
-                                              None else '', stream.strictMatch(st),
-                                              auxSt if auxSt is not None else '',
-                                              auxEn if auxEn is not None else '')
+                                result.append(service, ro.address, ro.priority
+                                              if ro.priority is not None
+                                              else '', stream.strictMatch(st),
+                                              auxSt if auxSt is not None
+                                              else '',
+                                              auxEn if auxEn is not None
+                                              else '')
                             except:
                                 pass
 
                             break
                     else:
                         msg = "Skipping %s as station %s not in its cache"
-                        logging.debug(msg % (str(stream.strictMatch(st)), stream.s))
-                
+                        logging.debug(msg % (str(stream.strictMatch(st)),
+                                             stream.s))
+
         # Check the coherency of the routes to set the return code
         if len(result) == 0:
             raise RoutingException('No routes have been found!')
@@ -1434,11 +1471,11 @@ class RoutingCache(object):
         override the normal configuration.
 
         :param n: Network code
-        :type n: str
+        :type n: string
         :param tw: Timewindow
         :type tw: :class:`~TW`
         :param service: Service (e.g. dataselect)
-        :type service: str
+        :type service: string
         :param alternative: Specifies whether alternative routes should be
             included
         :type alternative: Bool
@@ -1600,42 +1637,44 @@ class RoutingCache(object):
                             prio = None
 
                         try:
-                            startD = arcl.get('start')
-                            if len(startD):
-                                startParts = startD.replace('-', ' ')
-                                startParts = startParts.replace('T', ' ')
-                                startParts = startParts.replace(':', ' ')
-                                startParts = startParts.replace('.', ' ')
-                                startParts = startParts.replace('Z', '')
-                                startParts = startParts.split()
-                                startD = datetime.datetime(*map(int,
-                                                                startParts))
-                            else:
-                                startD = None
+                            auxStart = arcl.get('start')
+                            startD = str2date(auxStart)
+                            # if len(startD):
+                            #     startParts = startD.replace('-', ' ')
+                            #     startParts = startParts.replace('T', ' ')
+                            #     startParts = startParts.replace(':', ' ')
+                            #     startParts = startParts.replace('.', ' ')
+                            #     startParts = startParts.replace('Z', '')
+                            #     startParts = startParts.split()
+                            #     startD = datetime.datetime(*map(int,
+                            #                                     startParts))
+                            # else:
+                            #     startD = None
                         except:
                             startD = None
                             msg = 'Error while converting START attribute.\n'
                             self.logs.error(msg)
 
                         # Extract the end datetime
+                        # try:
+                        #     endD = arcl.get('end')
+                        #     if len(endD) == 0:
+                        #         endD = None
+                        # except:
+                        #     endD = None
+                        #
                         try:
-                            endD = arcl.get('end')
-                            if len(endD) == 0:
-                                endD = None
-                        except:
-                            endD = None
-
-                        try:
-                            endD = arcl.get('end')
-                            if len(endD):
-                                endParts = endD.replace('-', ' ')
-                                endParts = endParts.replace('T', ' ')
-                                endParts = endParts.replace(':', ' ')
-                                endParts = endParts.replace('.', ' ')
-                                endParts = endParts.replace('Z', '').split()
-                                endD = datetime.datetime(*map(int, endParts))
-                            else:
-                                endD = None
+                            auxEnd = arcl.get('end')
+                            endD = str2date(auxEnd)
+                            # if len(endD):
+                            #     endParts = endD.replace('-', ' ')
+                            #     endParts = endParts.replace('T', ' ')
+                            #     endParts = endParts.replace(':', ' ')
+                            #     endParts = endParts.replace('.', ' ')
+                            #     endParts = endParts.replace('Z', '').split()
+                            #     endD = datetime.datetime(*map(int, endParts))
+                            # else:
+                            #     endD = None
                         except:
                             endD = None
                             msg = 'Error while converting END attribute.\n'
@@ -1645,14 +1684,12 @@ class RoutingCache(object):
                         st = Stream(networkCode, stationCode, locationCode,
                                     streamCode)
                         tw = TW(startD, endD)
+                        rt = Route(service, address, tw, prio)
 
                         if st not in ptMT:
-                            # ptMT[st] = [RouteMT(address, tw, prio, service)]
-                            ptMT[st] = [Route(service, address, tw, prio)]
+                            ptMT[st] = [rt]
                         else:
-                            # ptMT[st].append(RouteMT(address, tw, prio,
-                            #                         service))
-                            ptMT[st].append(Route(service, address, tw, prio))
+                            ptMT[st].append(rt)
 
                         arcl.clear()
 
@@ -1673,8 +1710,6 @@ class RoutingCache(object):
 
         """
         self.logs.debug('Entering update()\n')
-
-        # here = os.path.dirname(__file__)
 
         # Otherwise, default value
         synchroList = ''

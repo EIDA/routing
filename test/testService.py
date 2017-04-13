@@ -32,23 +32,20 @@ from routeutils.unittestTools import WITestRunner
 
 
 class RouteCacheTests(unittest.TestCase):
-    """Test the functionality of routing.py
-
-    """
+    """Test the functionality of routing.py."""
 
     @classmethod
     def setUp(cls):
-        "Setting up test"
+        """Setting up test."""
         cls.host = host
 
     def test_issue_11(self):
-        "dynamic creation of application.wadl"
-
+        """Dynamic creation of application.wadl."""
         req = urllib2.Request('%s/application.wadl' % self.host)
         try:
             u = urllib2.urlopen(req)
             buf = u.read()
-        except urllib2.URLError as e:
+        except urllib2.URLError:
             msg = 'The file application.wadl cannot be built (missing ' + \
                 '"baseUrl" in config file?)'
             self.assertTrue(False, msg)
@@ -64,10 +61,9 @@ class RouteCacheTests(unittest.TestCase):
                             msg)
 
     def test_long_URI(self):
-        "very large URI"
-
-        msg = 'A URI of more than 2000 characters is not allowed and should ' +\
-            'return a 414 erro code'
+        """Very large URI."""
+        msg = 'A URI of more than 2000 characters is not allowed and ' + \
+            'should return a 414 erro code'
         req = urllib2.Request('%s?net=GE%s' % (self.host, '&net=GE' * 500))
         try:
             u = urllib2.urlopen(req)
@@ -80,50 +76,46 @@ class RouteCacheTests(unittest.TestCase):
         return
 
     def test_issue_2(self):
-        "proper POST format when enddate is missing"
-
+        """Proper POST format when enddate is missing."""
         msg = 'Found a bug which has already been fixed (see Issue 2: '
         msg = msg + 'https://github.com/EIDA/routing/issues/2 ).'
         req = urllib2.Request('%s?start=2000-01-01&format=post' % self.host)
         try:
             u = urllib2.urlopen(req)
             u.read()
-        except urllib2.URLError as e:
+        except urllib2.URLError:
             self.assertTrue(False, msg)
 
         return
 
     def test_issue_8(self):
-        "proper parsing of start and end dates"
-
+        """Proper parsing of start and end dates."""
         msg = 'Found a bug which has already been fixed (see Issue 8: '
         msg = msg + 'https://github.com/EIDA/routing/issues/8 ).'
         req = urllib2.Request('%s?start=2000-01-01&end=2016-12-31' % self.host)
         try:
             u = urllib2.urlopen(req)
             u.read()
-        except urllib2.URLError as e:
+        except urllib2.URLError:
             self.assertTrue(False, msg)
 
         return
 
     def test_issue_16(self):
-        "wrong data type (datetime) when format=post"
-
+        """Wrong data type (datetime) when format=post."""
         msg = 'Found a bug which has already been fixed (see Issue 16: '
         msg = msg + 'https://github.com/EIDA/routing/issues/16 ).'
         req = urllib2.Request('%s?format=post' % self.host)
         try:
             u = urllib2.urlopen(req)
             u.read()
-        except urllib2.URLError as e:
+        except urllib2.URLError:
             self.assertTrue(False, msg)
 
         return
 
     def test_wrong_parameter(self):
-        "unknown parameter"
-
+        """Unknown parameter."""
         msg = 'An error code 400 Bad Request is expected for an unknown ' + \
             'parameter'
         req = urllib2.Request('%s?net=GE&wrongparam=1' % self.host)
@@ -138,8 +130,7 @@ class RouteCacheTests(unittest.TestCase):
         return
 
     def testDS_XXX(self):
-        "non-existing network XXX"
-
+        """Non-existing network XXX."""
         req = urllib2.Request('%s?net=XXX' % self.host)
         msg = 'An error code 204 No Content is expected for an unknown network'
         try:
@@ -163,8 +154,7 @@ class RouteCacheTests(unittest.TestCase):
         return
 
     def test_wrong_alternative(self):
-        "wrong values in alternative parameter"
-
+        """Wrong values in alternative parameter."""
         # Test with an integer > 1
         value = 2
         msg = 'A %s in the alternative parameter is expected' % type(value) + \
@@ -228,8 +218,7 @@ class RouteCacheTests(unittest.TestCase):
         return
 
     def test_alternative_format_get(self):
-        "incompatibility between alternative=true and format=get"
-
+        """Incompatibility between alternative=true and format=get."""
         req = urllib2.Request('%s?net=GE&format=get&alternative=true' %
                               self.host)
         msg = 'When a wrong format is specified an error code 400 is expected!'
@@ -244,8 +233,7 @@ class RouteCacheTests(unittest.TestCase):
         return
 
     def test_wrong_format(self):
-        "wrong format option"
-
+        """Wrong format option."""
         req = urllib2.Request('%s?net=GE&format=WRONGFORMAT' %
                               self.host)
         msg = 'When a wrong format is specified an error code 400 is expected!'
@@ -264,8 +252,7 @@ class RouteCacheTests(unittest.TestCase):
         return
 
     def test_wrong_datetime(self):
-        "swap start and end time"
-
+        """Swap start and end time."""
         d1 = datetime.datetime(2004, 1, 1)
         d2 = d1 - datetime.timedelta(days=1)
         req = urllib2.Request('%s?net=GE&start=%s&end=%s' % (self.host,
@@ -283,8 +270,7 @@ class RouteCacheTests(unittest.TestCase):
         return
 
     def test_application_wadl(self):
-        "the 'application.wadl' method"
-
+        """'application.wadl' method."""
         if self.host.endswith('query'):
             appmethod = '%sapplication.wadl' % self.host[:-len('query')]
         else:
@@ -304,15 +290,14 @@ class RouteCacheTests(unittest.TestCase):
         self.assertIn('<', buffer, msg)
 
         # Check that the returned value is a valid xml file
-        msg = 'Error "application.wadl" method does not return a valid xml file'
+        msg = 'Error! application.wadl method does not return a valid xml file'
         try:
             parseString(buffer)
         except:
             self.assertTrue(False, msg)
 
     def test_info(self):
-        "the 'info' method"
-
+        """'info' method."""
         if self.host.endswith('query'):
             infomethod = '%sinfo' % self.host[:-len('query')]
         else:
@@ -331,8 +316,7 @@ class RouteCacheTests(unittest.TestCase):
         self.assertGreater(len(buffer), 0, msg)
 
     def test_version(self):
-        "the 'version' method"
-
+        """'version' method."""
         if self.host.endswith('query'):
             vermethod = '%sversion' % self.host[:-len('query')]
         else:
@@ -357,8 +341,7 @@ class RouteCacheTests(unittest.TestCase):
             self.assertEqual(1, 0, msg)
 
     def testDS_GE(self):
-        "Dataselect GE.*.*.*"
-
+        """Dataselect GE.*.*.* ."""
         req = urllib2.Request(self.host + '?net=GE&format=json')
         try:
             u = urllib2.urlopen(req)
@@ -385,10 +368,11 @@ class RouteCacheTests(unittest.TestCase):
             self.assertEqual(0, 1, 'Error in %d lines' % len(errors))
 
     def testDS_GE_RO(self):
-        "Dataselect GE,RO.*.*.*"
-
-        expec = {'RO': 'http://eida-sc3.infp.ro/fdsnws/dataselect/1/query',
-                 'GE': 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'}
+        """Dataselect GE,RO.*.*.* ."""
+        expec = {
+                 'RO': 'http://eida-sc3.infp.ro/fdsnws/dataselect/1/query',
+                 'GE': 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
+                }
 
         req = urllib2.Request(self.host + '?net=GE,RO&format=json')
         try:
@@ -414,8 +398,7 @@ class RouteCacheTests(unittest.TestCase):
                               expec[node['params'][0]['net']]))
 
     def testDS_GE_APE(self):
-        "Dataselect GE.APE.*.*"
-
+        """Dataselect GE.APE.*.* ."""
         req = urllib2.Request(self.host + '?net=GE&sta=APE&format=json')
         try:
             u = urllib2.urlopen(req)
@@ -426,7 +409,7 @@ class RouteCacheTests(unittest.TestCase):
         expected = '[{"url": ' + \
             '"http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query", ' + \
             '"params": [{"loc": "*", "end": "", "sta": "APE", "cha": "*", ' + \
-            '"priority": 1, "start": "1993-01-01T00:00:00", "net": "GE"}], ' + \
+            '"priority": 1, "start": "1993-01-01T00:00:00", "net": "GE"}], ' +\
             '"name": "dataselect"}]'
 
         numErrors = 0
@@ -442,8 +425,7 @@ class RouteCacheTests(unittest.TestCase):
             self.assertEqual(0, 1, 'Error in %d lines' % len(errors))
 
     def testDS_CH_LIENZ_HHZ(self):
-        "Dataselect CH.LIENZ.*.HHZ"
-
+        """Dataselect CH.LIENZ.*.HHZ ."""
         req = urllib2.Request('%s?net=CH&sta=LIENZ&cha=HHZ&format=json' %
                               self.host)
         try:
@@ -455,7 +437,7 @@ class RouteCacheTests(unittest.TestCase):
         expected = '[{"url": ' + \
             '"http://eida.ethz.ch/fdsnws/dataselect/1/query", "params": ' + \
             '[{"loc": "*", "end": "", "sta": "LIENZ", "cha": "HHZ", ' + \
-            '"priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}], ' + \
+            '"priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}], ' +\
             '"name": "dataselect"}]'
 
         numErrors = 0
@@ -471,8 +453,7 @@ class RouteCacheTests(unittest.TestCase):
             self.assertEqual(0, 1, 'Error in %d lines' % len(errors))
 
     def testDS_CH_LIENZ_BHZ(self):
-        "Dataselect CH.LIENZ.*.BHZ"
-
+        """Dataselect CH.LIENZ.*.BHZ ."""
         req = urllib2.Request('%s?net=CH&sta=LIENZ&cha=BHZ&format=json' %
                               self.host)
         try:
@@ -484,7 +465,7 @@ class RouteCacheTests(unittest.TestCase):
         expected = '[{"url": ' + \
             '"http://eida.ethz.ch/fdsnws/dataselect/1/query", "params": ' + \
             '[{"loc": "*", "end": "", "sta": "LIENZ", "cha": "BHZ", ' + \
-            '"priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}], ' + \
+            '"priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}], ' +\
             '"name": "dataselect"}]'
         # expected = '[{"url": ' + \
         #     '"http://www.orfeus-eu.org/fdsnws/dataselect/1/query", ' + \
@@ -524,7 +505,7 @@ class RouteCacheTests(unittest.TestCase):
     #         '[{"loc": "*", "end": "", "sta": "LIENZ", "cha": "LHZ", ' + \
     #         '"priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}, ' +
     #         '{"loc": "*", "end": "", "sta": "LIENZ", "cha": "HHZ", ' + \
-    #         '"priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}], ' +
+    #         '"priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}], '+
     #         '"name": "dataselect"}]'
 
     #     numErrors = 0
@@ -540,8 +521,7 @@ class RouteCacheTests(unittest.TestCase):
     #         self.assertEqual(0, 1, 'Error in %d lines' % len(errors))
 
     def testDS_RO_BZS_BHZ(self):
-        "Dataselect RO.BZS.*.BHZ"
-
+        """Dataselect RO.BZS.*.BHZ ."""
         req = urllib2.Request('%s?net=RO&sta=BZS&cha=BHZ&format=json' %
                               self.host)
         try:
@@ -571,7 +551,9 @@ class RouteCacheTests(unittest.TestCase):
 
 # ----------------------------------------------------------------------
 def usage():
+    """Print how to use the service test."""
     print 'testService [-h] [-p]\ntestService [-u http://server/path]'
+
 
 global host
 

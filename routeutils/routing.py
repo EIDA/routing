@@ -17,27 +17,11 @@ any later version.
 .. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
 """
 
-import os
-import cgi
 import datetime
 import xml.etree.cElementTree as ET
 import json
-from wsgicomm import WIContentError
 from wsgicomm import WIClientError
-from wsgicomm import WIURIError
-from wsgicomm import WIError
-from wsgicomm import send_plain_response
-from wsgicomm import send_xml_response
-from wsgicomm import send_error_response
-import logging
 from utils import RequestMerge
-from utils import RoutingCache
-from utils import RoutingException
-
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
 
 
 def _ConvertDictToXmlRecurse(parent, dictitem):
@@ -62,10 +46,13 @@ def _ConvertDictToXmlRecurse(parent, dictitem):
 
 
 def ConvertDictToXml(listdict):
-    """
-    Converts a list with dictionaries to an XML ElementTree Element
-    """
+    """Convert a list with dictionaries to an XML ElementTree Element.
 
+    :param listdict: Dictionaries
+    :type listdict: list
+    :returns: XML Tree with the dictionaries received as parameter.
+    :rtype: xml.etree.cElementTree.Element
+    """
     r = ET.Element('service')
     for di in listdict:
         d = {'datacenter': di}
@@ -77,6 +64,19 @@ def ConvertDictToXml(listdict):
 
 # Important to support the comma-syntax from FDSN (f.i. GE,RO,XX)
 def lsNSLC(net, sta, loc, cha):
+    """Iterator providing NSLC tuples from comma separated components.
+
+    :param net: Network code(s) in comma-separated format.
+    :type net: string
+    :param sta: Station code(s) in comma-separated format.
+    :type sta: string
+    :param loc: Location code(s) in comma-separated format.
+    :type loc: string
+    :param cha: Channel code(s) in comma-separated format.
+    :type cha: string
+    :rtype: tuple
+    :returns: NSLC tuples
+    """
     for n in net:
         for s in sta:
             for l in loc:
@@ -87,10 +87,13 @@ def lsNSLC(net, sta, loc, cha):
 def applyFormat(resultRM, outFormat='xml'):
     """Apply the format specified to the RequestMerge object received.
 
-    :rtype: str
+    :param resultRM: List with the result of a query.
+    :type resultRM: RequestMerge
+    :param outFormat: Output format for the result.
+    :type outFormat: string
+    :rtype: string
     :returns: Transformed version of the input in the desired format
     """
-
     if not isinstance(resultRM, RequestMerge):
         raise Exception('applyFormat expects a RequestMerge object!')
 
@@ -103,10 +106,9 @@ def applyFormat(resultRM, outFormat='xml'):
             for item in datacenter['params']:
                 iterObj.append(datacenter['url'] + '?' +
                                '&'.join([k + '=' + (str(item[k]) if
-                                         type(item[k]) is not
-                                         type(datetime.datetime.now())
-                                         else item[k].isoformat()) for k in item
-                                         if item[k] not in ('', '*') and
+                                         isinstance(item[k], datetime.datetime)
+                                         else item[k].isoformat()) for k in
+                                         item if item[k] not in ('', '*') and
                                          k != 'priority']))
         iterObj = '\n'.join(iterObj)
         return iterObj
@@ -125,7 +127,8 @@ def applyFormat(resultRM, outFormat='xml'):
                     item['end'] = item['end'].isoformat()
                 # If endtime is not a string use a default value (tomorrow)
                 if ((not isinstance(item['end'], basestring)) or
-                    (isinstance(item['end'], basestring) and not len(item['end']))):
+                        (isinstance(item['end'], basestring) and
+                         not len(item['end']))):
                     item['end'] = (datetime.date.today() +
                                    datetime.timedelta(days=1)).isoformat()
                 iterObj.append(item['net'] + ' ' + item['sta'] + ' ' +
