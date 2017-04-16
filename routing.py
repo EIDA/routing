@@ -27,9 +27,12 @@ from routeutils.wsgicomm import WIError
 from routeutils.wsgicomm import send_plain_response
 from routeutils.wsgicomm import send_xml_response
 from routeutils.wsgicomm import send_error_response
+from routeutils.utils import Stream
+from routeutils.utils import TW
 from routeutils.utils import RequestMerge
 from routeutils.utils import RoutingCache
 from routeutils.utils import RoutingException
+from routeutils.utils import str2date
 from routeutils.routing import lsNSLC
 from routeutils.routing import applyFormat
 
@@ -115,20 +118,11 @@ def makeQueryGET(parameters):
             start = None
 
         if start is not None:
-            startParts = start.replace('-', ' ').replace('T', ' ')
-            startParts = startParts.replace(':', ' ').replace('.', ' ')
-            startParts = startParts.replace('Z', '').split()
-            start = datetime.datetime(*map(int, startParts))
-        # if 'starttime' in parameters:
-        #     start = datetime.datetime.strptime(
-        #         parameters['starttime'].value[:19].upper(),
-        #         '%Y-%m-%dT%H:%M:%S')
-        # elif 'start' in parameters:
-        #     start = datetime.datetime.strptime(
-        #         parameters['start'].value[:19].upper(),
-        #         '%Y-%m-%dT%H:%M:%S')
-        # else:
-        #     start = None
+            # startParts = start.replace('-', ' ').replace('T', ' ')
+            # startParts = startParts.replace(':', ' ').replace('.', ' ')
+            # startParts = startParts.replace('Z', '').split()
+            # start = datetime.datetime(*map(int, startParts))
+            start = str2date(start)
     except:
         msg = 'Error while converting starttime parameter.'
         raise WIClientError(msg)
@@ -142,20 +136,11 @@ def makeQueryGET(parameters):
             endt = None
 
         if endt is not None:
-            endParts = endt.replace('-', ' ').replace('T', ' ')
-            endParts = endParts.replace(':', ' ').replace('.', ' ')
-            endParts = endParts.replace('Z', '').split()
-            endt = datetime.datetime(*map(int, endParts))
-        # if 'endtime' in parameters:
-        #     endt = datetime.datetime.strptime(
-        #         parameters['endtime'].value[:19].upper(),
-        #         '%Y-%m-%dT%H:%M:%S')
-        # elif 'end' in parameters:
-        #     endt = datetime.datetime.strptime(
-        #         parameters['end'].value[:19].upper(),
-        #         '%Y-%m-%dT%H:%M:%S')
-        # else:
-        #     endt = None
+            # endParts = endt.replace('-', ' ').replace('T', ' ')
+            # endParts = endParts.replace(':', ' ').replace('.', ' ')
+            # endParts = endParts.replace('Z', '').split()
+            # endt = datetime.datetime(*map(int, endParts))
+            endt = str2date(endt)
     except:
         msg = 'Error while converting endtime parameter.'
         raise WIClientError(msg)
@@ -205,7 +190,9 @@ def makeQueryGET(parameters):
     # values
     for (n, s, l, c) in lsNSLC(net, sta, loc, cha):
         try:
-            result.extend(routes.getRoute(n, s, l, c, start, endt, ser, alt))
+            st = Stream(n, s, l, c)
+            tw = TW(start, endt)
+            result.extend(routes.getRoute(st, tw, ser, alt))
         except RoutingException:
             pass
 
@@ -264,32 +251,29 @@ def makeQueryPOST(postText):
         sta = sta.upper()
         loc = loc.upper()
         try:
-            startParts = start.replace('-', ' ').replace('T', ' ')
-            startParts = startParts.replace(':', ' ').replace('.', ' ')
-            startParts = startParts.replace('Z', '').split()
-            start = datetime.datetime(*map(int, startParts))
-            # start = None if start in ("''", '""') else \
-            #     datetime.datetime.strptime(start[:19].upper(),
-            #                                '%Y-%m-%dT%H:%M:%S')
+            # startParts = start.replace('-', ' ').replace('T', ' ')
+            # startParts = startParts.replace(':', ' ').replace('.', ' ')
+            # startParts = startParts.replace('Z', '').split()
+            # start = datetime.datetime(*map(int, startParts))
+            start = str2date(start)
         except:
             msg = 'Error while converting %s to datetime' % start
             raise WIClientError(msg)
 
         try:
-            endParts = endt.replace('-', ' ').replace('T', ' ')
-            endParts = endParts.replace(':', ' ').replace('.', ' ')
-            endParts = endParts.replace('Z', '').split()
-            endt = datetime.datetime(*map(int, endParts))
-            # endt = None if endt in ("''", '""') else \
-            #     datetime.datetime.strptime(endt[:19].upper(),
-            #                                '%Y-%m-%dT%H:%M:%S')
+            # endParts = endt.replace('-', ' ').replace('T', ' ')
+            # endParts = endParts.replace(':', ' ').replace('.', ' ')
+            # endParts = endParts.replace('Z', '').split()
+            # endt = datetime.datetime(*map(int, endParts))
+            endt = str2date(endt)
         except:
             msg = 'Error while converting %s to datetime' % endt
             raise WIError(msg)
 
         try:
-            result.extend(routes.getRoute(net, sta, loc, cha,
-                                          start, endt, ser, alt))
+            st = Stream(net, sta, loc, cha)
+            tw = TW(start, endt)
+            result.extend(routes.getRoute(st, tw, ser, alt))
         except RoutingException:
             pass
 

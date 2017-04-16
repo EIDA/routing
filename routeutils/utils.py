@@ -509,8 +509,7 @@ class RequestMerge(list):
     __slots__ = ()
 
     # FIXME Probably it would be better to replace start and end for a TW
-    def append(self, service, url, priority, stream, start=None,
-               end=None):
+    def append(self, service, url, priority, stream, tw):
         """Append a new :class:`~Route` without repeating the datacenter.
 
         Overrides the *append* method of the inherited list. If another route
@@ -536,7 +535,7 @@ class RequestMerge(list):
             pos = self.index(service, url)
             self[pos]['params'].append({'net': stream.n, 'sta': stream.s,
                                         'loc': stream.l, 'cha': stream.c,
-                                        'start': start, 'end': end,
+                                        'start': tw.start, 'end': tw.end,
                                         'priority': priority if priority
                                         is not None else ''})
         except:
@@ -546,7 +545,7 @@ class RequestMerge(list):
             listPar.append({'name': service, 'url': url,
                             'params': [{'net': stream.n, 'sta': stream.s,
                                         'loc': stream.l, 'cha': stream.c,
-                                        'start': start, 'end': end,
+                                        'start': tw.start, 'end': tw.end,
                                         'priority': priority if priority
                                         is not None else ''}]})
 
@@ -1238,8 +1237,7 @@ class RoutingCache(object):
         return None
 
     # FIXME Stream and TW should probably be built before calling this method
-    def getRoute(self, n='*', s='*', l='*', c='*', startD=None, endD=None,
-                 service='dataselect', alternative=False):
+    def getRoute(self, stream, tw, service='dataselect', alternative=False):
         """Return routes to request data for the stream and timewindow provided.
 
         Based on a stream(s) and a timewindow returns all the needed
@@ -1247,18 +1245,10 @@ class RoutingCache(object):
         datacenters (if needed) and be able to merge the returned data avoiding
         duplication.
 
-        :param n: Network code
-        :type n: str
-        :param s: Station code
-        :type s: str
-        :param l: Location code
-        :type l: str
-        :param c: Channel code
-        :type c: str
-        :param startD: Start date and time
-        :type startD: datetime
-        :param endD: End date and time
-        :type endD: datetime
+        :param stream: :class:`~Stream` definition including wildcards
+        :type stream: :class:`~Stream`
+        :param tw: Timewindow
+        :type tw: :class:`~TW`
         :param service: Service from which you want to get information
         :type service: str
         :param alternative: Specifies whether alternative routes should be
@@ -1278,19 +1268,15 @@ class RoutingCache(object):
             self.nextUpd = t2u
             self.logs.debug('Update successful at: %s\n' % self.lastUpd)
 
-        # FIXME This should probably be made by the caller
-        stream = Stream(n, s, l, c)
-        tw = TW(startD, endD)
-
         # Give priority to the masterTable!
         try:
-            masterRoute = self.getRouteMaster(n, tw=tw, service=service,
+            masterRoute = self.getRouteMaster(stream.n, tw=tw, service=service,
                                               alternative=alternative)
             for mr in masterRoute:
                 for reqL in mr['params']:
-                    reqL['sta'] = s
-                    reqL['loc'] = l
-                    reqL['cha'] = c
+                    reqL['sta'] = stream.s
+                    reqL['loc'] = stream.l
+                    reqL['cha'] = stream.c
             return masterRoute
         except:
             pass
@@ -1442,13 +1428,12 @@ class RoutingCache(object):
 
                             try:
                                 auxSt, auxEn = toProc.intersection(ro.tw)
+                                twAux = TW(auxSt if auxSt is not None else '',
+                                           auxEn if auxEn is not None else '')
                                 result.append(service, ro.address, ro.priority
                                               if ro.priority is not None
                                               else '', stream.strictMatch(st),
-                                              auxSt if auxSt is not None
-                                              else '',
-                                              auxEn if auxEn is not None
-                                              else '')
+                                              twAux)
                             except:
                                 pass
 
@@ -1511,11 +1496,11 @@ class RoutingCache(object):
 
         result2 = RequestMerge()
         for r in result:
+            twAux = TW(tw.start if tw.start is not None else '',
+                       tw.end if tw.end is not None else '')
             result2.append(service, r.address, r.priority if r.priority
                            is not None else '', Stream(n, None, None,
-                                                       None),
-                           tw.start if tw.start is not None else '',
-                           tw.end if tw.end is not None else '')
+                                                       None), twAux)
 
         return result2
 
@@ -1639,42 +1624,14 @@ class RoutingCache(object):
                         try:
                             auxStart = arcl.get('start')
                             startD = str2date(auxStart)
-                            # if len(startD):
-                            #     startParts = startD.replace('-', ' ')
-                            #     startParts = startParts.replace('T', ' ')
-                            #     startParts = startParts.replace(':', ' ')
-                            #     startParts = startParts.replace('.', ' ')
-                            #     startParts = startParts.replace('Z', '')
-                            #     startParts = startParts.split()
-                            #     startD = datetime.datetime(*map(int,
-                            #                                     startParts))
-                            # else:
-                            #     startD = None
                         except:
                             startD = None
                             msg = 'Error while converting START attribute.\n'
                             self.logs.error(msg)
 
-                        # Extract the end datetime
-                        # try:
-                        #     endD = arcl.get('end')
-                        #     if len(endD) == 0:
-                        #         endD = None
-                        # except:
-                        #     endD = None
-                        #
                         try:
                             auxEnd = arcl.get('end')
                             endD = str2date(auxEnd)
-                            # if len(endD):
-                            #     endParts = endD.replace('-', ' ')
-                            #     endParts = endParts.replace('T', ' ')
-                            #     endParts = endParts.replace(':', ' ')
-                            #     endParts = endParts.replace('.', ' ')
-                            #     endParts = endParts.replace('Z', '').split()
-                            #     endD = datetime.datetime(*map(int, endParts))
-                            # else:
-                            #     endD = None
                         except:
                             endD = None
                             msg = 'Error while converting END attribute.\n'
