@@ -67,13 +67,13 @@ def lsNSLC(net, sta, loc, cha):
     """Iterator providing NSLC tuples from comma separated components.
 
     :param net: Network code(s) in comma-separated format.
-    :type net: string
+    :type net: list
     :param sta: Station code(s) in comma-separated format.
-    :type sta: string
+    :type sta: list
     :param loc: Location code(s) in comma-separated format.
-    :type loc: string
+    :type loc: list
     :param cha: Channel code(s) in comma-separated format.
-    :type cha: string
+    :type cha: list
     :rtype: tuple
     :returns: NSLC tuples
     """
@@ -104,6 +104,8 @@ def applyFormat(resultRM, outFormat='xml'):
         iterObj = []
         for datacenter in resultRM:
             for item in datacenter['params']:
+                # All parameters are passed in the GET format with exception of
+                # priority which is consumed here.
                 iterObj.append(datacenter['url'] + '?' +
                                '&'.join([k + '=' + (str(item[k]) if
                                          isinstance(item[k], datetime.datetime)
