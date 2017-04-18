@@ -22,6 +22,7 @@ import os
 import datetime
 import unittest
 import urllib2
+from urlparse import urlparse
 import json
 from difflib import Differ
 from xml.dom.minidom import parseString
@@ -39,9 +40,37 @@ class RouteCacheTests(unittest.TestCase):
         """Setting up test."""
         cls.host = host
 
+    def test_issue_19(self):
+        """Caching of station names."""
+        req = urllib2.Request('%s?sta=BNDI&format=post' % self.host)
+        try:
+            u = urllib2.urlopen(req)
+            buf = u.read()
+        except urllib2.URLError:
+            msg = 'Error while requesting routes based on a station name.'
+            self.assertTrue(False, msg)
+            return
+
+        msg = 'The usage of a cache (station names and geographical ' + \
+              'locations) to further filter the routes based on a station ' + \
+              'was not successful (Old version? See Issue 19: ' + \
+              'https://github.com/EIDA/routing/issues/19 ).'
+
+        lines = buf.splitlines()
+        dc = lines.pop(0)
+        self.assertTrue(urlparse(dc).netloc.endswith('gfz-potsdam.de'), msg)
+
+        msg = 'Error: GE must be the network of the station!'
+
+        for line in lines:
+            if not len(line):
+                continue
+            self.assertEqual(line.split()[0], 'GE', msg)
+            self.assertEqual(line.split()[1], 'BNDI', 'Wrong station name!')
+
     def test_issue_11(self):
         """Dynamic creation of application.wadl."""
-        req = urllib2.Request('%s/application.wadl' % self.host)
+        req = urllib2.Request('%sapplication.wadl' % self.host[:-len('query')])
         try:
             u = urllib2.urlopen(req)
             buf = u.read()
@@ -63,7 +92,7 @@ class RouteCacheTests(unittest.TestCase):
     def test_long_URI(self):
         """Very large URI."""
         msg = 'A URI of more than 2000 characters is not allowed and ' + \
-            'should return a 414 erro code'
+            'should return a 414 error code'
         req = urllib2.Request('%s?net=GE%s' % (self.host, '&net=GE' * 500))
         try:
             u = urllib2.urlopen(req)
