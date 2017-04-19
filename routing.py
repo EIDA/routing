@@ -222,7 +222,11 @@ def makeQueryGET(parameters):
         msg = 'Start datetime cannot be greater than end datetime'
         raise WIClientError(msg)
 
-    geoLoc = geoRectangle(minlat, maxlat, minlon, maxlon)
+    if ((minlat is -90.0) and (maxlat is 90.0) and (minlon is -180.0) and
+            (maxlon is 180.0)):
+        geoLoc = None
+    else:
+        geoLoc = geoRectangle(minlat, maxlat, minlon, maxlon)
 
     result = RequestMerge()
     # Expand lists in parameters (f.i., cha=BHZ,HHN) and yield all possible

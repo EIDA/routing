@@ -1241,7 +1241,7 @@ class RoutingCache(object):
         return None
 
     # FIXME Stream and TW should probably be built before calling this method
-    def getRoute(self, stream, tw, service='dataselect', geoLoc=defRectangle,
+    def getRoute(self, stream, tw, service='dataselect', geoLoc=None,
                  alternative=False):
         """Return routes to request data for the stream and timewindow provided.
 
@@ -1299,7 +1299,7 @@ class RoutingCache(object):
 
         return result
 
-    def getRouteDS(self, service, stream, tw, geoLocation=defRectangle,
+    def getRouteDS(self, service, stream, tw, geoLocation=None,
                    alternative=False):
         """Return routes to request data for the parameters specified.
 
@@ -1434,8 +1434,9 @@ class RoutingCache(object):
                     for cacheSt in ptST[st]:
                         # Trying to catch cases like (APE, AP*)
                         if (fnmatch.fnmatch(cacheSt.name, stream.s) and
-                            geoLocation.contains(cacheSt.latitude,
-                                                 cacheSt.longitude)):
+                                ((geoLocation is None) or
+                                 (geoLocation.contains(cacheSt.latitude,
+                                                       cacheSt.longitude)))):
                             # print('Add %s' % str(stream.strictMatch(st)))
 
                             try:
