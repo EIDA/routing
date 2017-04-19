@@ -1434,8 +1434,8 @@ class RoutingCache(object):
                     for cacheSt in ptST[st]:
                         # Trying to catch cases like (APE, AP*)
                         if (fnmatch.fnmatch(cacheSt.name, stream.s) and
-                            geoLocation.contains(stream.latitude,
-                                                 stream.longitude)):
+                            geoLocation.contains(cacheSt.latitude,
+                                                 cacheSt.longitude)):
                             # print('Add %s' % str(stream.strictMatch(st)))
 
                             try:
