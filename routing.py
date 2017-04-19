@@ -29,6 +29,7 @@ from routeutils.wsgicomm import send_xml_response
 from routeutils.wsgicomm import send_error_response
 from routeutils.utils import Stream
 from routeutils.utils import TW
+from routeutils.utils import geoRectangle
 from routeutils.utils import RequestMerge
 from routeutils.utils import RoutingCache
 from routeutils.utils import RoutingException
@@ -221,6 +222,8 @@ def makeQueryGET(parameters):
         msg = 'Start datetime cannot be greater than end datetime'
         raise WIClientError(msg)
 
+    geoLoc = geoRectangle(minlat, maxlat, minlon, maxlon)
+
     result = RequestMerge()
     # Expand lists in parameters (f.i., cha=BHZ,HHN) and yield all possible
     # values
@@ -228,7 +231,7 @@ def makeQueryGET(parameters):
         try:
             st = Stream(n, s, l, c)
             tw = TW(start, endt)
-            result.extend(routes.getRoute(st, tw, ser, alt))
+            result.extend(routes.getRoute(st, tw, ser, geoLoc, alt))
         except RoutingException:
             pass
 
