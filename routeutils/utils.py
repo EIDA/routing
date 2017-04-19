@@ -104,7 +104,7 @@ def getStationCache(st, rt):
     if rt.tw.end is not None:
         query = query + '&end=%s' % rt.tw.end.isoformat()
 
-    print(query)
+    logging.debug(query)
     req = ul.Request(query)
     try:
         u = ul.urlopen(req)
@@ -309,17 +309,6 @@ def addRoutes(fileName, **kwargs):
                         try:
                             auxStart = att.get('start', None)
                             startD = str2date(auxStart)
-                            # if len(startD):
-                            #     startParts = startD.replace('-', ' ')
-                            #     startParts = startParts.replace('T', ' ')
-                            #     startParts = startParts.replace(':', ' ')
-                            #     startParts = startParts.replace('.', ' ')
-                            #     startParts = startParts.replace('Z', '')
-                            #     startParts = startParts.split()
-                            #     startD = datetime.datetime(*map(int,
-                            #                                     startParts))
-                            # else:
-                            #     startD = None
                         except:
                             startD = None
 
@@ -327,16 +316,6 @@ def addRoutes(fileName, **kwargs):
                         try:
                             auxEnd = att.get('end', None)
                             endD = str2date(auxEnd)
-                            # if len(endD):
-                            #     endParts = endD.replace('-', ' ')
-                            #     endParts = endParts.replace('T', ' ')
-                            #     endParts = endParts.replace(':', ' ')
-                            #     endParts = endParts.replace('.', ' ')
-                            #     endParts = endParts.replace('Z', '').split()
-                            #     endD = datetime.datetime(*map(int,
-                            #                                   endParts))
-                            # else:
-                            #     endD = None
                         except:
                             endD = None
 
@@ -609,6 +588,27 @@ class Station(namedtuple('Station', ['name', 'latitude', 'longitude', 'start',
     """
 
     __slots__ = ()
+
+
+class geoRectangle(namedtuple('geoRectangle', ['minlat', 'maxlat', 'minlon',
+                   'maxlon'])):
+    """Namedtuple representing a geographical rectangle.
+
+           minlat: minimum latitude
+           maxlat: maximum latitude
+           minlon: minimum longitude
+           maxlon: maximum longitude
+
+    :platform: Any
+
+    """
+
+    __slots__ = ()
+
+    def contains(self, lat, lon):
+        """Check if the point belongs to the rectangle."""
+        return True if ((self.minlat <= lat <= self.maxlat) and
+                        (self.minlon <= lon <= self.maxlon)) else False
 
 
 class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
@@ -946,6 +946,10 @@ class RoutingException(Exception):
     pass
 
 
+# Define this just to shorten the notation
+defRectangle = geoRectangle(-90, 90, -180, 180)
+
+
 class RoutingCache(object):
     """Manage routing information of streams read from an Arclink-XML file.
 
@@ -1237,7 +1241,8 @@ class RoutingCache(object):
         return None
 
     # FIXME Stream and TW should probably be built before calling this method
-    def getRoute(self, stream, tw, service='dataselect', alternative=False):
+    def getRoute(self, stream, tw, service='dataselect', geoLoc=defRectangle,
+                 alternative=False):
         """Return routes to request data for the stream and timewindow provided.
 
         Based on a stream(s) and a timewindow returns all the needed
@@ -1254,6 +1259,8 @@ class RoutingCache(object):
         :param alternative: Specifies whether alternative routes should be
             included
         :type alternative: bool
+        :param geoLoc: Rectangle to filter stations
+        :type geoLoc: :class:`~geoRectangle`
         :returns: URLs and parameters to request the data
         :rtype: :class:`~RequestMerge`
         :raises: RoutingException
@@ -1282,7 +1289,7 @@ class RoutingCache(object):
             pass
 
         try:
-            result = self.getRouteDS(service, stream, tw, alternative)
+            result = self.getRouteDS(service, stream, tw, geoLoc, alternative)
         except ValueError as e:
             raise RoutingException(e)
 
@@ -1292,7 +1299,8 @@ class RoutingCache(object):
 
         return result
 
-    def getRouteDS(self, service, stream, tw, alternative=False):
+    def getRouteDS(self, service, stream, tw, geoLocation=defRectangle,
+                   alternative=False):
         """Return routes to request data for the parameters specified.
 
         Based on a :class:`~Stream` and a timewindow (:class:`~TW`) returns
@@ -1306,6 +1314,8 @@ class RoutingCache(object):
         :type stream: :class:`~Stream`
         :param tw: Timewindow
         :type tw: :class:`~TW`
+        :param geoLocation: Rectangle restricting the location of the station
+        :type geoLocation: :class:`~geoRectangle`
         :param alternative: Specifies whether alternative routes should be
             included
         :type alternative: bool
@@ -1423,7 +1433,9 @@ class RoutingCache(object):
                     ptST = self.stationTable[urlparse(ro.address).netloc]
                     for cacheSt in ptST[st]:
                         # Trying to catch cases like (APE, AP*)
-                        if fnmatch.fnmatch(cacheSt.name, stream.s):
+                        if (fnmatch.fnmatch(cacheSt.name, stream.s) and
+                            geoLocation.contains(stream.latitude,
+                                                 stream.longitude)):
                             # print('Add %s' % str(stream.strictMatch(st)))
 
                             try:

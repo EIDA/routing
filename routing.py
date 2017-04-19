@@ -53,6 +53,10 @@ def makeQueryGET(parameters):
                      'cha', 'channel',
                      'start', 'starttime',
                      'end', 'endtime',
+                     'minlat', 'minlatitude',
+                     'maxlat', 'maxlatitude',
+                     'minlon', 'minlongitude',
+                     'maxlon', 'maxlongitude',
                      'service', 'format',
                      'alternative']
 
@@ -118,10 +122,6 @@ def makeQueryGET(parameters):
             start = None
 
         if start is not None:
-            # startParts = start.replace('-', ' ').replace('T', ' ')
-            # startParts = startParts.replace(':', ' ').replace('.', ' ')
-            # startParts = startParts.replace('Z', '').split()
-            # start = datetime.datetime(*map(int, startParts))
             start = str2date(start)
     except:
         msg = 'Error while converting starttime parameter.'
@@ -136,14 +136,50 @@ def makeQueryGET(parameters):
             endt = None
 
         if endt is not None:
-            # endParts = endt.replace('-', ' ').replace('T', ' ')
-            # endParts = endParts.replace(':', ' ').replace('.', ' ')
-            # endParts = endParts.replace('Z', '').split()
-            # endt = datetime.datetime(*map(int, endParts))
             endt = str2date(endt)
     except:
         msg = 'Error while converting endtime parameter.'
         raise WIClientError(msg)
+
+    try:
+        if 'minlat' in parameters:
+            minlat = float(parameters['minlat'])
+        elif 'minlatitude' in parameters:
+            minlat = float(parameters['minlatitude'])
+        else:
+            minlat = -90.0
+    except:
+        minlat = -90.0
+
+    try:
+        if 'maxlat' in parameters:
+            maxlat = float(parameters['maxlat'])
+        elif 'maxlatitude' in parameters:
+            maxlat = float(parameters['maxlatitude'])
+        else:
+            maxlat = 90.0
+    except:
+        maxlat = 90.0
+
+    try:
+        if 'minlon' in parameters:
+            minlon = float(parameters['minlon'])
+        elif 'minlongitude' in parameters:
+            minlon = float(parameters['minlongitude'])
+        else:
+            minlon = -180.0
+    except:
+        minlon = -180.0
+
+    try:
+        if 'maxlon' in parameters:
+            maxlon = float(parameters['maxlon'])
+        elif 'maxlongitude' in parameters:
+            maxlon = float(parameters['maxlongitude'])
+        else:
+            maxlon = 180.0
+    except:
+        maxlon = 180.0
 
     try:
         if 'service' in parameters:
@@ -205,7 +241,7 @@ def makeQueryPOST(postText):
     """Process a request made via a POST method."""
     global routes
 
-    # This are the parameters accepted appart from N.S.L.C
+    # These are the parameters accepted appart from N.S.L.C
     extraParams = ['format', 'service', 'alternative']
 
     # Defualt values
@@ -251,20 +287,12 @@ def makeQueryPOST(postText):
         sta = sta.upper()
         loc = loc.upper()
         try:
-            # startParts = start.replace('-', ' ').replace('T', ' ')
-            # startParts = startParts.replace(':', ' ').replace('.', ' ')
-            # startParts = startParts.replace('Z', '').split()
-            # start = datetime.datetime(*map(int, startParts))
             start = str2date(start)
         except:
             msg = 'Error while converting %s to datetime' % start
             raise WIClientError(msg)
 
         try:
-            # endParts = endt.replace('-', ' ').replace('T', ' ')
-            # endParts = endParts.replace(':', ' ').replace('.', ' ')
-            # endParts = endParts.replace('Z', '').split()
-            # endt = datetime.datetime(*map(int, endParts))
             endt = str2date(endt)
         except:
             msg = 'Error while converting %s to datetime' % endt
