@@ -64,7 +64,6 @@ class RouteCacheTests(unittest.TestCase):
         msg = 'Error: GE must be the network of the station!'
 
         for line in lines:
-            print line
             if not len(line):
                 continue
             self.assertEqual(line.split()[0], 'ZP', msg)
