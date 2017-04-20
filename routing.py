@@ -144,9 +144,9 @@ def makeQueryGET(parameters):
 
     try:
         if 'minlat' in parameters:
-            minlat = float(parameters['minlat'])
+            minlat = float(parameters['minlat'].value)
         elif 'minlatitude' in parameters:
-            minlat = float(parameters['minlatitude'])
+            minlat = float(parameters['minlatitude'].value)
         else:
             minlat = -90.0
     except:
@@ -154,9 +154,9 @@ def makeQueryGET(parameters):
 
     try:
         if 'maxlat' in parameters:
-            maxlat = float(parameters['maxlat'])
+            maxlat = float(parameters['maxlat'].value)
         elif 'maxlatitude' in parameters:
-            maxlat = float(parameters['maxlatitude'])
+            maxlat = float(parameters['maxlatitude'].value)
         else:
             maxlat = 90.0
     except:
@@ -164,9 +164,9 @@ def makeQueryGET(parameters):
 
     try:
         if 'minlon' in parameters:
-            minlon = float(parameters['minlon'])
+            minlon = float(parameters['minlon'].value)
         elif 'minlongitude' in parameters:
-            minlon = float(parameters['minlongitude'])
+            minlon = float(parameters['minlongitude'].value)
         else:
             minlon = -180.0
     except:
@@ -174,9 +174,9 @@ def makeQueryGET(parameters):
 
     try:
         if 'maxlon' in parameters:
-            maxlon = float(parameters['maxlon'])
+            maxlon = float(parameters['maxlon'].value)
         elif 'maxlongitude' in parameters:
-            maxlon = float(parameters['maxlongitude'])
+            maxlon = float(parameters['maxlongitude'].value)
         else:
             maxlon = 180.0
     except:
