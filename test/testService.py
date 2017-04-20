@@ -40,6 +40,37 @@ class RouteCacheTests(unittest.TestCase):
         """Setting up test."""
         cls.host = host
 
+    def test_issue_5(self):
+        """Filter stations by location."""
+        q = '%s?minlat=-31&maxlat=-25.2&minlon=-71.88&maxlon=-70.2&format=post'
+        req = urllib2.Request(q % self.host)
+        try:
+            u = urllib2.urlopen(req)
+            buf = u.read()
+        except urllib2.URLError:
+            msg = 'Error while filtering routes by location.'
+            self.assertTrue(False, msg)
+            return
+
+        msg = 'The usage of a cache (station names and geographical ' + \
+              'locations) to further filter the routes based on a station ' + \
+              'was not successful (Old version? See Issue 5: ' + \
+              'https://github.com/EIDA/routing/issues/5 ).'
+
+        lines = buf.splitlines()
+        dc = lines.pop(0)
+        self.assertTrue(urlparse(dc).netloc.endswith('gfz-potsdam.de'), msg)
+
+        msg = 'Error: GE must be the network of the station!'
+
+        for line in lines:
+            print line
+            if not len(line):
+                continue
+            self.assertEqual(line.split()[0], 'ZP', msg)
+            self.assertTrue(line.split()[1] in ('CHAN', 'LASE', 'TOTO'),
+                            'Wrong station name! CHAN, LASE or TOTO expected.')
+
     def test_issue_19(self):
         """Caching of station names."""
         req = urllib2.Request('%s?sta=BNDI&format=post' % self.host)
@@ -108,7 +139,7 @@ class RouteCacheTests(unittest.TestCase):
         """Proper POST format when enddate is missing."""
         msg = 'Found a bug which has already been fixed (see Issue 2: '
         msg = msg + 'https://github.com/EIDA/routing/issues/2 ).'
-        req = urllib2.Request('%s?start=2000-01-01&format=post' % self.host)
+        req = urllib2.Request('%s?start=2015-01-01&format=post' % self.host)
         try:
             u = urllib2.urlopen(req)
             u.read()
@@ -121,7 +152,7 @@ class RouteCacheTests(unittest.TestCase):
         """Proper parsing of start and end dates."""
         msg = 'Found a bug which has already been fixed (see Issue 8: '
         msg = msg + 'https://github.com/EIDA/routing/issues/8 ).'
-        req = urllib2.Request('%s?start=2000-01-01&end=2016-12-31' % self.host)
+        req = urllib2.Request('%s?start=2013-01-01&end=2016-12-31' % self.host)
         try:
             u = urllib2.urlopen(req)
             u.read()
@@ -134,7 +165,8 @@ class RouteCacheTests(unittest.TestCase):
         """Wrong data type (datetime) when format=post."""
         msg = 'Found a bug which has already been fixed (see Issue 16: '
         msg = msg + 'https://github.com/EIDA/routing/issues/16 ).'
-        req = urllib2.Request('%s?format=post' % self.host)
+        q = '%s?format=post&start=2013-01-01T00:00:00&end=2016-12-31T00:00:00'
+        req = urllib2.Request(q % self.host)
         try:
             u = urllib2.urlopen(req)
             u.read()
