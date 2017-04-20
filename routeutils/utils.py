@@ -1433,24 +1433,34 @@ class RoutingCache(object):
                     ptST = self.stationTable[urlparse(ro.address).netloc]
                     for cacheSt in ptST[st]:
                         # Trying to catch cases like (APE, AP*)
+                        # print st
+			# print cacheSt
+
                         if (fnmatch.fnmatch(cacheSt.name, stream.s) and
                                 ((geoLocation is None) or
                                  (geoLocation.contains(cacheSt.latitude,
                                                        cacheSt.longitude)))):
-                            # print('Add %s' % str(stream.strictMatch(st)))
-
                             try:
                                 auxSt, auxEn = toProc.intersection(ro.tw)
                                 twAux = TW(auxSt if auxSt is not None else '',
                                            auxEn if auxEn is not None else '')
+				st2add = stream.strictMatch(st)
+				# In case that routes have to be finter by location, station names have to be expanded
+				if geoLocation is not None:
+					st2add = st2add.strictMatch(Stream('*', cacheSt.name, '*', '*'))
+
+                            	# print('Add %s' % str(st2add))
+
                                 result.append(service, ro.address, ro.priority
                                               if ro.priority is not None
-                                              else '', stream.strictMatch(st),
-                                              twAux)
+                                              else '', st2add, twAux)
                             except:
                                 pass
 
-                            break
+			    # If we don't filter by location, one route covers everything
+                            # but if we do filter by location, we need to keep adding stations
+			    if geoLocation is None:
+                            	break
                     else:
                         msg = "Skipping %s as station %s not in its cache"
                         logging.debug(msg % (str(stream.strictMatch(st)),
