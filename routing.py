@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-
-"""Routing Service for EIDA
+"""Routing Service for EIDA.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -452,13 +450,13 @@ def application(environ, start_response):
         return send_plain_response('200 OK', text, start_response)
 
     raise Exception('This point should have never been reached!')
-
-
-def main():
-    """Main function in case of calling the script from the command line."""
-    global routes
-    routes = RoutingCache("./routing.xml", "./masterTable.xml")
-
-
-if __name__ == "__main__":
-    main()
+#
+#
+# def main():
+#     """Main function in case of calling the script from the command line."""
+#     global routes
+#     routes = RoutingCache("./routing.xml", "./masterTable.xml")
+#
+#
+# if __name__ == "__main__":
+#     main()
