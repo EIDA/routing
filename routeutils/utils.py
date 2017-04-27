@@ -1446,7 +1446,7 @@ class RoutingCache(object):
                                 twAux = TW(auxSt if auxSt is not None else '',
                                            auxEn if auxEn is not None else '')
                                 st2add = stream.strictMatch(st)
-                                # In case that routes have to be finter by
+                                # In case that routes have to be filter by
                                 # location, station names have to be expanded
                                 if geoLocation is not None:
                                     st2add = st2add.strictMatch(
@@ -1700,10 +1700,10 @@ class RoutingCache(object):
 
         vnHandle = None
         try:
-            vnHandle = open(self.configFile, 'r')
+            vnHandle = open(self.routingFile, 'r')
         except:
             msg = 'Error: %s could not be opened.\n'
-            self.logs.error(msg % self.configFile)
+            self.logs.error(msg % self.routingFile)
             return
 
         # Traverse through the virtual networks
