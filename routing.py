@@ -152,7 +152,7 @@ def makeQueryGET(parameters):
         msg = 'Error while converting starttime parameter.'
         raise WIClientError(msg)
 
-    endt = getParam(parameters, ['endt', 'endtime'], None)
+    endt = getParam(parameters, ['end', 'endtime'], None)
     # try:
     #     if 'endtime' in parameters:
     #         endt = parameters['endtime'].value.upper()
@@ -283,6 +283,7 @@ def makeQueryGET(parameters):
         msg = 'alternative=true and format=get are incompatible parameters'
         raise WIClientError(msg)
 
+    # print start, type(start), endt, type(endt), (start > endt)
     if ((start is not None) and (endt is not None) and (start > endt)):
         msg = 'Start datetime cannot be greater than end datetime'
         raise WIClientError(msg)
