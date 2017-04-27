@@ -24,7 +24,6 @@ from urlparse import urlparse
 import xml.etree.cElementTree as ET
 from time import sleep
 from collections import namedtuple
-# from operator import add
 from operator import itemgetter
 import logging
 
@@ -1021,15 +1020,19 @@ class RoutingCache(object):
         # Check for masterTable
         if masterFile is None:
             self.logs.warning('No masterTable selected')
-            return
+        else:
+            # Master routing file in XML format
+            self.masterFile = masterFile
 
-        # Master routing file in XML format
-        self.masterFile = masterFile
+            # Dictionary with list of highest priority routes
+            self.masterTable = dict()
 
-        # Dictionary with list of highest priority routes
-        self.masterTable = dict()
+            self.updateMT()
 
-        self.updateMT()
+        # Dictionary with list of stations inside each virtual network
+        self.vnTable = dict()
+
+        self.updateVN()
 
     def toXML(self, foutput, nameSpace='ns0'):
         """Export the RoutingCache to an XML representation."""
@@ -1254,11 +1257,11 @@ class RoutingCache(object):
         :type tw: :class:`~TW`
         :param service: Service from which you want to get information
         :type service: str
+        :param geoLoc: Rectangle to filter stations
+        :type geoLoc: :class:`~geoRectangle`
         :param alternative: Specifies whether alternative routes should be
             included
         :type alternative: bool
-        :param geoLoc: Rectangle to filter stations
-        :type geoLoc: :class:`~geoRectangle`
         :returns: URLs and parameters to request the data
         :rtype: :class:`~RequestMerge`
         :raises: RoutingException
@@ -1681,6 +1684,115 @@ class RoutingCache(object):
         # Order the routes by priority
         for keyDict in ptMT:
             ptMT[keyDict] = sorted(ptMT[keyDict])
+
+    def updateVN(self):
+        """Read the virtual networks defined.
+
+        Stations listed in each virtual network are read into a dictionary.
+        Only the necessary attributes are stored. This relies on the idea
+        that some other agent should update the routing file at
+        a regular period of time.
+
+        """
+        self.logs.debug('Entering updateVN()\n')
+        # Just to shorten notation
+        ptVN = self.vnTable
+
+        vnHandle = None
+        try:
+            vnHandle = open(self.configFile, 'r')
+        except:
+            msg = 'Error: %s could not be opened.\n'
+            self.logs.error(msg % self.configFile)
+            return
+
+        # Traverse through the virtual networks
+        # get an iterable
+        try:
+            context = ET.iterparse(vnHandle, events=("start", "end"))
+        except IOError as e:
+            self.logs.error(str(e))
+            return
+
+        # turn it into an iterator
+        context = iter(context)
+
+        # get the root element
+        if hasattr(context, 'next'):
+            event, root = context.next()
+        else:
+            event, root = next(context)
+
+        # Check that it is really an inventory
+        if root.tag[-len('routing'):] != 'routing':
+            msg = 'The file parsed seems not to be a routing file (XML).\n'
+            self.logs.error(msg)
+            return
+
+        # Extract the namespace from the root node
+        namesp = root.tag[:-len('routing')]
+
+        ptVN.clear()
+
+        for event, vnet in context:
+            # The tag of this node should be "route".
+            # Now it is not being checked because
+            # we need all the data, but if we need to filter, this
+            # is the place.
+            #
+            if event == "end":
+                if vnet.tag == namesp + 'vnetwork':
+
+                    # Extract the network code
+                    try:
+                        networkCode = vnet.get('networkCode')
+                        if len(networkCode) == 0:
+                            networkCode = None
+                    except:
+                        networkCode = None
+
+                    try:
+                        auxStart = vnet.get('start')
+                        startD = str2date(auxStart)
+                    except:
+                        startD = None
+                        msg = 'Error while converting START attribute.\n'
+                        self.logs.error(msg)
+
+                    try:
+                        auxEnd = vnet.get('end')
+                        endD = str2date(auxEnd)
+                    except:
+                        endD = None
+                        msg = 'Error while converting END attribute.\n'
+                        self.logs.error(msg)
+
+                    # Traverse through the sources
+                    # for arcl in route.findall(namesp + 'dataselect'):
+                    for station in vnet:
+                        # Extract the networkCode
+                        try:
+                            net = station.get('network')
+                        except:
+                            continue
+
+                        # Extract the stationCode
+                        try:
+                            sta = station.get('station')
+                        except:
+                            continue
+
+                        if networkCode not in ptVN:
+                            ptVN[networkCode] = (startD, endD, [(net, sta)])
+                        else:
+                            ptVN[networkCode][2].append((net, sta))
+
+                        station.clear()
+
+                    vnet.clear()
+
+                # FIXME Probably the indentation below is wrong.
+                root.clear()
 
     def update(self):
         """Read the routing data from the file saved by the off-line process.
