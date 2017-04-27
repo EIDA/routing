@@ -47,6 +47,7 @@ def getParam(parameters, names, default, csv=False):
         for n in names:
             if n in parameters:
                 result = parameters[n].value.upper()
+		break
         else:
             result = default
 
@@ -166,10 +167,10 @@ def makeQueryGET(parameters):
     #     msg = 'Error while converting endtime parameter.'
     #     raise WIClientError(msg)
     try:
-        if start is not None:
-            start = str2date(start)
+        if endt is not None:
+            endt = str2date(endt)
     except:
-        msg = 'Error while converting starttime parameter.'
+        msg = 'Error while converting endtime parameter.'
         raise WIClientError(msg)
 
     try:
@@ -286,8 +287,8 @@ def makeQueryGET(parameters):
         msg = 'Start datetime cannot be greater than end datetime'
         raise WIClientError(msg)
 
-    if ((minlat is -90.0) and (maxlat is 90.0) and (minlon is -180.0) and
-            (maxlon is 180.0)):
+    if ((minlat == -90.0) and (maxlat == 90.0) and (minlon == -180.0) and
+            (maxlon == 180.0)):
         geoLoc = None
     else:
         geoLoc = geoRectangle(minlat, maxlat, minlon, maxlon)
