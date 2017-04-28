@@ -47,7 +47,7 @@ def getParam(parameters, names, default, csv=False):
         for n in names:
             if n in parameters:
                 result = parameters[n].value.upper()
-		break
+                break
         else:
             result = default
 
@@ -83,68 +83,10 @@ def makeQueryGET(parameters):
             raise WIClientError(msg)
 
     net = getParam(parameters, ['net', 'network'], '*', csv=True)
-    # try:
-    #     if 'network' in parameters:
-    #         net = parameters['network'].value.upper()
-    #     elif 'net' in parameters:
-    #         net = parameters['net'].value.upper()
-    #     else:
-    #         net = '*'
-    #
-    #     net = net.split(',')
-    # except:
-    #     net = ['*']
-
     sta = getParam(parameters, ['sta', 'station'], '*', csv=True)
-    # try:
-    #     if 'station' in parameters:
-    #         sta = parameters['station'].value.upper()
-    #     elif 'sta' in parameters:
-    #         sta = parameters['sta'].value.upper()
-    #     else:
-    #         sta = '*'
-    #
-    #     sta = sta.split(',')
-    # except:
-    #     sta = ['*']
-
     loc = getParam(parameters, ['loc', 'location'], '*', csv=True)
-    # try:
-    #     if 'location' in parameters:
-    #         loc = parameters['location'].value.upper()
-    #     elif 'loc' in parameters:
-    #         loc = parameters['loc'].value.upper()
-    #     else:
-    #         loc = '*'
-    #
-    #     loc = loc.split(',')
-    # except:
-    #     loc = ['*']
-
     cha = getParam(parameters, ['cha', 'channel'], '*', csv=True)
-    # try:
-    #     if 'channel' in parameters:
-    #         cha = parameters['channel'].value.upper()
-    #     elif 'cha' in parameters:
-    #         cha = parameters['cha'].value.upper()
-    #     else:
-    #         cha = '*'
-    #
-    #     cha = cha.split(',')
-    # except:
-    #     cha = ['*']
-
     start = getParam(parameters, ['start', 'starttime'], None)
-    # try:
-    #     if 'starttime' in parameters:
-    #         start = parameters['starttime'].value.upper()
-    #     elif 'start' in parameters:
-    #         start = parameters['start'].value.upper()
-    #     else:
-    #         start = None
-    #
-    #     if start is not None:
-    #         start = str2date(start)
     try:
         if start is not None:
             start = str2date(start)
@@ -153,19 +95,6 @@ def makeQueryGET(parameters):
         raise WIClientError(msg)
 
     endt = getParam(parameters, ['end', 'endtime'], None)
-    # try:
-    #     if 'endtime' in parameters:
-    #         endt = parameters['endtime'].value.upper()
-    #     elif 'end' in parameters:
-    #         endt = parameters['end'].value.upper()
-    #     else:
-    #         endt = None
-    #
-    #     if endt is not None:
-    #         endt = str2date(endt)
-    # except:
-    #     msg = 'Error while converting endtime parameter.'
-    #     raise WIClientError(msg)
     try:
         if endt is not None:
             endt = str2date(endt)
@@ -179,15 +108,6 @@ def makeQueryGET(parameters):
     except:
         msg = 'Error while converting the minlatitude parameter.'
         raise WIClientError(msg)
-    # try:
-    #     if 'minlat' in parameters:
-    #         minlat = float(parameters['minlat'].value)
-    #     elif 'minlatitude' in parameters:
-    #         minlat = float(parameters['minlatitude'].value)
-    #     else:
-    #         minlat = -90.0
-    # except:
-    #     minlat = -90.0
 
     try:
         maxlat = float(getParam(parameters, ['maxlat', 'maxlatitude'],
@@ -195,15 +115,6 @@ def makeQueryGET(parameters):
     except:
         msg = 'Error while converting the maxlatitude parameter.'
         raise WIClientError(msg)
-    # try:
-    #     if 'maxlat' in parameters:
-    #         maxlat = float(parameters['maxlat'].value)
-    #     elif 'maxlatitude' in parameters:
-    #         maxlat = float(parameters['maxlatitude'].value)
-    #     else:
-    #         maxlat = 90.0
-    # except:
-    #     maxlat = 90.0
 
     try:
         minlon = float(getParam(parameters, ['minlon', 'minlongitude'],
@@ -211,15 +122,6 @@ def makeQueryGET(parameters):
     except:
         msg = 'Error while converting the minlongitude parameter.'
         raise WIClientError(msg)
-    # try:
-    #     if 'minlon' in parameters:
-    #         minlon = float(parameters['minlon'].value)
-    #     elif 'minlongitude' in parameters:
-    #         minlon = float(parameters['minlongitude'].value)
-    #     else:
-    #         minlon = -180.0
-    # except:
-    #     minlon = -180.0
 
     try:
         maxlon = float(getParam(parameters, ['maxlon', 'maxlongitude'],
@@ -227,25 +129,8 @@ def makeQueryGET(parameters):
     except:
         msg = 'Error while converting the maxlongitude parameter.'
         raise WIClientError(msg)
-    # try:
-    #     if 'maxlon' in parameters:
-    #         maxlon = float(parameters['maxlon'].value)
-    #     elif 'maxlongitude' in parameters:
-    #         maxlon = float(parameters['maxlongitude'].value)
-    #     else:
-    #         maxlon = 180.0
-    # except:
-    #     maxlon = 180.0
 
     ser = getParam(parameters, ['service'], 'dataselect').lower()
-    # try:
-    #     if 'service' in parameters:
-    #         ser = parameters['service'].value.lower()
-    #     else:
-    #         ser = 'dataselect'
-    # except:
-    #     ser = 'dataselect'
-
     aux = getParam(parameters, ['alternative'], 'false').lower()
     if aux == 'true':
         alt = True
@@ -254,30 +139,8 @@ def makeQueryGET(parameters):
     else:
         msg = 'Wrong value passed in parameter "alternative"'
         raise WIClientError(msg)
-    # try:
-    #     if 'alternative' in parameters:
-    #         if parameters['alternative'].value.lower() == 'true':
-    #             alt = True
-    #         elif parameters['alternative'].value.lower() == 'false':
-    #             alt = False
-    #         else:
-    #             msg = 'Wrong value passed in parameter "alternative"'
-    #             raise WIClientError(msg)
-    #     else:
-    #         alt = False
-    # except WIClientError:
-    #     raise
-    # except:
-    #     alt = False
 
     form = getParam(parameters, ['format'], 'xml').lower()
-    # try:
-    #     if 'format' in parameters:
-    #         form = parameters['format'].value.lower()
-    #     else:
-    #         form = 'xml'
-    # except:
-    #     form = 'xml'
 
     if ((alt) and (form == 'get')):
         msg = 'alternative=true and format=get are incompatible parameters'
@@ -518,13 +381,3 @@ def application(environ, start_response):
         return send_plain_response('200 OK', text, start_response)
 
     raise Exception('This point should have never been reached!')
-#
-#
-# def main():
-#     """Main function in case of calling the script from the command line."""
-#     global routes
-#     routes = RoutingCache("./routing.xml", "./masterTable.xml")
-#
-#
-# if __name__ == "__main__":
-#     main()
