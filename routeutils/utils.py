@@ -1745,49 +1745,63 @@ class RoutingCache(object):
 
                     # Extract the network code
                     try:
-                        networkCode = vnet.get('networkCode')
-                        if len(networkCode) == 0:
-                            networkCode = None
+                        vnCode = vnet.get('networkCode')
+                        if len(vnCode) == 0:
+                            vnCode = None
                     except:
-                        networkCode = None
-
-                    try:
-                        auxStart = vnet.get('start')
-                        startD = str2date(auxStart)
-                    except:
-                        startD = None
-                        msg = 'Error while converting START attribute.\n'
-                        self.logs.error(msg)
-
-                    try:
-                        auxEnd = vnet.get('end')
-                        endD = str2date(auxEnd)
-                    except:
-                        endD = None
-                        msg = 'Error while converting END attribute.\n'
-                        self.logs.error(msg)
+                        vnCode = None
 
                     # Traverse through the sources
                     # for arcl in route.findall(namesp + 'dataselect'):
-                    for station in vnet:
+                    for stream in vnet:
                         # Extract the networkCode
                         try:
-                            net = station.get('network')
+                            net = stream.get('networkCode')
                         except:
                             continue
 
                         # Extract the stationCode
                         try:
-                            sta = station.get('station')
+                            sta = stream.get('stationCode')
                         except:
                             continue
 
-                        if networkCode not in ptVN:
-                            ptVN[networkCode] = (startD, endD, [(net, sta)])
-                        else:
-                            ptVN[networkCode][2].append((net, sta))
+                        # Extract the locationCode
+                        try:
+                            loc = stream.get('locationCode')
+                        except:
+                            continue
 
-                        station.clear()
+                        # Extract the streamCode
+                        try:
+                            cha = stream.get('streamCode')
+                        except:
+                            continue
+
+                        try:
+                            auxStart = vnet.get('start')
+                            startD = str2date(auxStart)
+                        except:
+                            startD = None
+                            msg = 'Error while converting START attribute.\n'
+                            self.logs.error(msg)
+
+                        try:
+                            auxEnd = vnet.get('end')
+                            endD = str2date(auxEnd)
+                        except:
+                            endD = None
+                            msg = 'Error while converting END attribute.\n'
+                            self.logs.error(msg)
+
+                        if vnCode not in ptVN:
+                            ptVN[vnCode] = [(Stream(net, sta, loc, cha),
+                                             TW(startD, endD))]
+                        else:
+                            ptVN[vnCode].append((Stream(net, sta, loc, cha),
+                                                 TW(startD, endD)))
+
+                        stream.clear()
 
                     vnet.clear()
 
