@@ -400,6 +400,34 @@ class RouteCacheTests(unittest.TestCase):
             msg = 'Components of the version number seem not to be integers.'
             self.assertEqual(1, 0, msg)
 
+    def testDS_VirtualNetwork(self):
+        """Dataselect _GEALL.*.*.* ."""
+        expec = {
+                 'GE': 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
+                }
+        req = urllib2.Request(self.host + '?net=_GEALL&format=json')
+        try:
+            u = urllib2.urlopen(req)
+            buffer = u.read()
+        except:
+            raise Exception('Error retrieving data for _GEALL.*.*.*')
+
+        result = json.loads(buffer)
+
+        for node in result:
+            self.assertEqual(node['name'], 'dataselect',
+                             'Service of node is not dataselect!')
+
+            self.assertTrue(node['params'][0]['net'] == 'GE',
+                            '%s is not the expected network' %
+                            node['params'][0]['net'])
+
+            self.assertEqual(expec[node['params'][0]['net']],
+                             node['url'],
+                             'URL for network %s is not from %s!' %
+                             (node['params'][0]['net'],
+                              expec[node['params'][0]['net']]))
+
     def testDS_GE(self):
         """Dataselect GE.*.*.* ."""
         req = urllib2.Request(self.host + '?net=GE&format=json')
