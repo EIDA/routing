@@ -1318,14 +1318,23 @@ class RoutingCache(object):
         :rtype: list
         """
         if stream.n in self.vnTable.keys():
-            # FIXME If virtual networks are defined with open start or end
-            # dates, this will not work (I guess)
-            
-            # twAux = TW(auxSt if auxSt is not None else '',
-            #            auxEn if auxEn is not None else '')
-            #
-            return [(x[0].strictMatch(stream), x[1].intersection(tw))
-                    for x in self.vnTable[stream.n]]
+
+            # If virtual networks are defined with open start or end dates
+            # or if there is no intersection, that is resolved in the try
+
+            result = list()
+            for strtw in self.vnTable[stream.n]:
+                s = strtw[0].strictMatch(stream)
+                try:
+                    auxSt, auxEn = strtw[1].intersection(tw)
+                    t = TW(auxSt if auxSt is not None else '',
+                           auxEn if auxEn is not None else '')
+                except:
+                    continue
+
+                result.append((s, t))
+
+            return result
 
         return [(stream, tw)]
 
