@@ -1291,17 +1291,22 @@ class RoutingCache(object):
 
         # Convert from virtual network to real networks (if needed)
         strtwList = self.vn2real(stream, tw)
+        if not len(strtwList):
+            msg = 'No routes found after resolving virtual network code.'
+            raise RoutingException(msg)
         # print strtwList
 
-        try:
-            # result = self.getRouteDS(service, stream, tw, geoLoc,
-            #                          alternative)
-            result = self.getRouteDS(service, strtwList[0][0], strtwList[0][1],
-                                     geoLoc, alternative)
-        except ValueError as e:
-            raise RoutingException(e)
+        result = list()
+        for st, tw in strtwList:
+            try:
+                # result = self.getRouteDS(service, stream, tw, geoLoc,
+                #                          alternative)
+                result.extend(self.getRouteDS(service, st, tw, geoLoc,
+                                              alternative))
+            except ValueError:
+                pass
 
-        if result is None:
+        if ((result is None) or (not len(result))):
             # Through an exception if there is an error
             raise RoutingException('Unknown service: %s' % service)
 
