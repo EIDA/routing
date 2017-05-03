@@ -42,7 +42,7 @@ class RouteCacheTests(unittest.TestCase):
 
     def test_issue_5(self):
         """Filter stations by location."""
-        q = '%s?minlat=-31&maxlat=-25.2&minlon=-71.88&maxlon=-70.2&format=post'
+        q = '%s?minlat=-31&maxlat=0&minlon=-70&maxlon=0&net=GE&format=post'
         req = urllib2.Request(q % self.host)
         try:
             u = urllib2.urlopen(req)
@@ -66,9 +66,9 @@ class RouteCacheTests(unittest.TestCase):
         for line in lines:
             if not len(line):
                 continue
-            self.assertEqual(line.split()[0], 'ZP', msg)
-            self.assertTrue(line.split()[1] in ('CHAN', 'LASE', 'TOTO'),
-                            'Wrong station name! CHAN, LASE or TOTO expected.')
+            self.assertEqual(line.split()[0], 'GE', msg)
+            self.assertTrue(line.split()[1] in ('LVC', 'RIOB'),
+                            'Wrong station name! LVC or RIOB expected.')
 
     def test_issue_19(self):
         """Caching of station names."""
