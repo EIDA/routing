@@ -1291,11 +1291,12 @@ class RoutingCache(object):
 
         # Convert from virtual network to real networks (if needed)
         strtwList = self.vn2real(stream, tw)
+        # print strtwList
 
         try:
             # result = self.getRouteDS(service, stream, tw, geoLoc,
             #                          alternative)
-            result = self.getRouteDS(service, strtwList[0][0], strtwList[0][0],
+            result = self.getRouteDS(service, strtwList[0][0], strtwList[0][1],
                                      geoLoc, alternative)
         except ValueError as e:
             raise RoutingException(e)
@@ -1317,7 +1318,7 @@ class RoutingCache(object):
         :rtype: list
         """
         if stream.n in self.vnTable.keys():
-            return [(x, tw) for x in self.vnTable[stream.n]]
+            return self.vnTable[stream.n]
 
         return [(stream, tw)]
 
@@ -1352,7 +1353,6 @@ class RoutingCache(object):
 
         # Filter by stream
         for stRT in self.routingTable.keys():
-            # print stRT, stream
             if stRT.overlap(stream):
                 subs.append(stRT)
 
@@ -1817,7 +1817,7 @@ class RoutingCache(object):
                             cha = '*'
 
                         try:
-                            auxStart = vnet.get('start')
+                            auxStart = stream.get('start')
                             startD = str2date(auxStart)
                         except:
                             startD = None
@@ -1825,7 +1825,7 @@ class RoutingCache(object):
                             self.logs.error(msg)
 
                         try:
-                            auxEnd = vnet.get('end')
+                            auxEnd = stream.get('end')
                             endD = str2date(auxEnd)
                         except:
                             endD = None
