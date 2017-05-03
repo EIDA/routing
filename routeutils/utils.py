@@ -1289,8 +1289,14 @@ class RoutingCache(object):
         except:
             pass
 
+        # Convert from virtual network to real networks (if needed)
+        strtwList = self.vn2real(stream, tw)
+
         try:
-            result = self.getRouteDS(service, stream, tw, geoLoc, alternative)
+            # result = self.getRouteDS(service, stream, tw, geoLoc,
+            #                          alternative)
+            result = self.getRouteDS(service, strtwList[0][0], strtwList[0][0],
+                                     geoLoc, alternative)
         except ValueError as e:
             raise RoutingException(e)
 
@@ -1299,6 +1305,21 @@ class RoutingCache(object):
             raise RoutingException('Unknown service: %s' % service)
 
         return result
+
+    def vn2real(self, stream, tw):
+        """Transform from a virtual network code to a list of streams.
+
+        :param stream: virtual network code.
+        :type stream: Stream
+        :param tw: time window requested.
+        :type tw: TW
+        :returns: Streams and time windows of real network-station codes.
+        :rtype: list
+        """
+        if stream.n in self.vnTable.keys():
+            return [(x, tw) for x in self.vnTable[stream.n]]
+
+        return [(stream, tw)]
 
     def getRouteDS(self, service, stream, tw, geoLocation=None,
                    alternative=False):
@@ -1755,28 +1776,45 @@ class RoutingCache(object):
                     # for arcl in route.findall(namesp + 'dataselect'):
                     for stream in vnet:
                         # Extract the networkCode
+                        msg = 'Only the * wildcard is allowed in virtual nets.'
                         try:
                             net = stream.get('networkCode')
+                            if (('?' in net) or
+                                    (('*' in net) and (len(net) > 1))):
+                                self.logs.warning(msg)
+                                continue
                         except:
-                            continue
+                            net = '*'
 
                         # Extract the stationCode
                         try:
                             sta = stream.get('stationCode')
+                            if (('?' in sta) or
+                                    (('*' in sta) and (len(sta) > 1))):
+                                self.logs.warning(msg)
+                                continue
                         except:
-                            continue
+                            sta = '*'
 
                         # Extract the locationCode
                         try:
                             loc = stream.get('locationCode')
+                            if (('?' in loc) or
+                                    (('*' in loc) and (len(loc) > 1))):
+                                self.logs.warning(msg)
+                                continue
                         except:
-                            continue
+                            loc = '*'
 
                         # Extract the streamCode
                         try:
                             cha = stream.get('streamCode')
+                            if (('?' in cha) or
+                                    (('*' in cha) and (len(cha) > 1))):
+                                self.logs.warning(msg)
+                                continue
                         except:
-                            continue
+                            cha = '*'
 
                         try:
                             auxStart = vnet.get('start')
