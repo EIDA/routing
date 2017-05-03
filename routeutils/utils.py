@@ -1310,7 +1310,7 @@ class RoutingCache(object):
     def vn2real(self, stream, tw):
         """Transform from a virtual network code to a list of streams.
 
-        :param stream: virtual network code.
+        :param stream: requested stream including virtual network code.
         :type stream: Stream
         :param tw: time window requested.
         :type tw: TW
@@ -1318,7 +1318,14 @@ class RoutingCache(object):
         :rtype: list
         """
         if stream.n in self.vnTable.keys():
-            return self.vnTable[stream.n]
+            # FIXME If virtual networks are defined with open start or end
+            # dates, this will not work (I guess)
+            
+            # twAux = TW(auxSt if auxSt is not None else '',
+            #            auxEn if auxEn is not None else '')
+            #
+            return [(x[0].strictMatch(stream), x[1].intersection(tw))
+                    for x in self.vnTable[stream.n]]
 
         return [(stream, tw)]
 
