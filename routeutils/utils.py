@@ -484,7 +484,6 @@ class RequestMerge(list):
 
     __slots__ = ()
 
-    # FIXME Probably it would be better to replace start and end for a TW
     def append(self, service, url, priority, stream, tw):
         """Append a new :class:`~Route` without repeating the datacenter.
 
@@ -1296,14 +1295,16 @@ class RoutingCache(object):
             raise RoutingException(msg)
         # print strtwList
 
-        result = list()
+        result = RequestMerge()
         for st, tw in strtwList:
             try:
-                # result = self.getRouteDS(service, stream, tw, geoLoc,
-                #                          alternative)
                 result.extend(self.getRouteDS(service, st, tw, geoLoc,
                                               alternative))
+                # print 'result', result
             except ValueError:
+                pass
+
+            except RoutingException:
                 pass
 
         if ((result is None) or (not len(result))):
