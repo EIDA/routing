@@ -428,6 +428,37 @@ class RouteCacheTests(unittest.TestCase):
                              (node['params'][0]['net'],
                               expec[node['params'][0]['net']]))
 
+    def testDS_VirtualNetwork2(self):
+        """Dataselect _GEALL.AP*.*.* ."""
+        expec = {
+                 'GE': 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
+                }
+        req = urllib2.Request(self.host + '?net=_GEALL&format=json')
+        try:
+            u = urllib2.urlopen(req)
+            buffer = u.read()
+        except:
+            raise Exception('Error retrieving data for _GEALL.*.*.*')
+
+        result = json.loads(buffer)
+
+        for node in result:
+            self.assertEqual(node['name'], 'dataselect',
+                             'Service of node is not dataselect!')
+
+            for params in node['params']:
+                self.assertEqual(params['net'], 'GE',
+                                 '%s is not the expected network' %
+                                 params['net'])
+
+                self.assertEqual(params['sta'], 'APE',
+                                 '%s is not the expected station' %
+                                 params['sta'])
+
+                self.assertEqual(expec[params['net']], node['url'],
+                                 'URL for network %s is not from %s!' %
+                                 (params['net'], expec[params['net']]))
+
     def testDS_GE(self):
         """Dataselect GE.*.*.* ."""
         req = urllib2.Request(self.host + '?net=GE&format=json')
