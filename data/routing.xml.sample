@@ -3,7 +3,7 @@
  <ns0:vnetwork networkCode="_GEALL">
   <ns0:stream networkCode="GE" stationCode="APE" locationCode="*" streamCode="*" start="2015-01-01T00:00:00" end="2015-12-31T00:00:00" />
   <ns0:stream networkCode="GE" stationCode="BNDI" locationCode="*" streamCode="*" start="2015-01-01T00:00:00" end="2015-12-31T00:00:00" />
-  <ns0:stream networkCode="GE" stationCode="RUD" locationCode="*" streamCode="*" start="2015-01-01T00:00:00" end="2015-12-31T00:00:00" />
+  <ns0:stream networkCode="GE" stationCode="RUE" locationCode="*" streamCode="*" start="2015-01-01T00:00:00" end="2015-12-31T00:00:00" />
  </ns0:vnetwork>
  <ns0:route networkCode="RO" stationCode="*" locationCode="*" streamCode="*">
   <ns0:station address="http://eida-sc3.infp.ro/fdsnws/station/1/query" priority="1" start="1980-01-01T00:00:00" end="" />
