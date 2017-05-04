@@ -433,7 +433,7 @@ class RouteCacheTests(unittest.TestCase):
         expec = {
                  'GE': 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
                 }
-        req = urllib2.Request(self.host + '?net=_GEALL&format=json')
+        req = urllib2.Request(self.host + '?net=_GEALL&sta=AP*&format=json')
         try:
             u = urllib2.urlopen(req)
             buffer = u.read()
