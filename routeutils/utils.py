@@ -1293,10 +1293,10 @@ class RoutingCache(object):
 
         # Convert from virtual network to real networks (if needed)
         strtwList = self.vn2real(stream, tw)
+
         if not len(strtwList):
             msg = 'No routes found after resolving virtual network code.'
             raise RoutingException(msg)
-        # print strtwList
 
         result = RequestMerge()
         for st, tw in strtwList:
@@ -1326,31 +1326,33 @@ class RoutingCache(object):
         :returns: Streams and time windows of real network-station codes.
         :rtype: list
         """
-        if stream.n in self.vnTable.keys():
+        if stream.n not in self.vnTable.keys():
+	    return [(stream, tw)]
 
-            # If virtual networks are defined with open start or end dates
-            # or if there is no intersection, that is resolved in the try
+        # If virtual networks are defined with open start or end dates
+        # or if there is no intersection, that is resolved in the try
 
-            result = list()
-            for strtw in self.vnTable[stream.n]:
-                try:
-                    s = strtw[0].strictMatch(stream)
-                except:
-                    # Overlap or match cannot be calculated between streams
-                    continue
+	# Remove the virtual network code to avoid problems in strictMatch
+        auxStr = ('*', stream.s, stream.l, stream.c)
 
-                try:
-                    auxSt, auxEn = strtw[1].intersection(tw)
-                    t = TW(auxSt if auxSt is not None else '',
-                           auxEn if auxEn is not None else '')
-                except:
-                    continue
+        result = list()
+        for strtw in self.vnTable[stream.n]:
+            try:
+                s = strtw[0].strictMatch(auxStr)
+            except:
+                # Overlap or match cannot be calculated between streams
+                continue
 
-                result.append((s, t))
+            try:
+                auxSt, auxEn = strtw[1].intersection(tw)
+                t = TW(auxSt if auxSt is not None else '',
+                       auxEn if auxEn is not None else '')
+            except:
+                continue
 
-            return result
+            result.append((s, t))
 
-        return [(stream, tw)]
+        return result
 
     def getRouteDS(self, service, stream, tw, geoLocation=None,
                    alternative=False):
