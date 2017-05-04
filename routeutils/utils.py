@@ -665,14 +665,17 @@ class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
         :returns: *reduced* version of this :class:`~Stream` to match the one
             passed in the parameter
         :rtype: :class:`~Stream`
+        :raises: Exception
 
         """
         res = list()
         for i in range(len(other)):
             if (self[i] is None) or (fnmatch.fnmatch(other[i], self[i])):
                 res.append(other[i])
-            else:
+            elif (other[i] is None) or (fnmatch.fnmatch(self[i], other[i])):
                 res.append(self[i])
+            else:
+                raise Exception('No overlap or match between streams.')
 
         return Stream(*tuple(res))
 
@@ -1330,7 +1333,12 @@ class RoutingCache(object):
 
             result = list()
             for strtw in self.vnTable[stream.n]:
-                s = strtw[0].strictMatch(stream)
+                try:
+                    s = strtw[0].strictMatch(stream)
+                except:
+                    # Overlap or match cannot be calculated between streams
+                    continue
+
                 try:
                     auxSt, auxEn = strtw[1].intersection(tw)
                     t = TW(auxSt if auxSt is not None else '',
