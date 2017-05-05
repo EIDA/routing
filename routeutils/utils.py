@@ -1327,12 +1327,12 @@ class RoutingCache(object):
         :rtype: list
         """
         if stream.n not in self.vnTable.keys():
-	    return [(stream, tw)]
+            return [(stream, tw)]
 
         # If virtual networks are defined with open start or end dates
         # or if there is no intersection, that is resolved in the try
 
-	# Remove the virtual network code to avoid problems in strictMatch
+        # Remove the virtual network code to avoid problems in strictMatch
         auxStr = ('*', stream.s, stream.l, stream.c)
 
         result = list()

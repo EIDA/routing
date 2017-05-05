@@ -1,4 +1,4 @@
-.. Routing Service specification (v1.0) master file, created by
+.. Routing Service specification (v1.1) master file, created by
    sphinx-quickstart on Wed Oct  1 16:09:29 2014.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
@@ -25,7 +25,7 @@ This service provides routing information for distributed data centers, in the
 case where multiple different seismic data centres offer access to data and
 products using compatible types of services. Examples of the data and product
 objects are seismic timeseries waveforms, station inventory, or earthquake
-catalogue event data. The 
+catalogue event data. The
 `European Integrated Data Archive <http://www.orfeus-eu.org/eida/eida.html>`_
 (EIDA) is an example of a set of distributed data centres (the EIDA „nodes“).
 EIDA have offered Arclink and Seedlink services for many years, and now offer
@@ -86,7 +86,7 @@ service: ::
   <site>/<relative-path>/routing/<majorversion>/
 
 where relative-path is optional (it will be necessary when the service does
-not run at the top level inside the site) and majorversion is an integer value
+not run at the top level inside the site) and `majorversion` is an integer value
 that determines the major specification version supported by the service. An
 example could be: ::
 
@@ -149,8 +149,8 @@ that `SpecMajor` version numbers across services (from EIDA or FDSN) are
 related.
 
 
-Quering the service
-'''''''''''''''''''
+Querying the service
+''''''''''''''''''''
 
 The `query` method is how the users access the main functionality of the
 service. Both `GET` and `POST` methods must be supported.
@@ -191,12 +191,12 @@ needed, which the service must translate to an empty string.
  starttime (start) Required ISO 8601 Limit results to routes
                                      valid on or after
                                      the specified start time.      Any
- endtime (end)     Required ISO 8601 Limit results to routes 
+ endtime (end)     Required ISO 8601 Limit results to routes
                                      valid on or before the
                                      specified end time.            Any
  network (net)     Required char     Select one network code.
                                      This can be either SEED
-                                     network codes or data center 
+                                     network codes or data center
                                      defined codes.                  ``*``
  station (sta)     Required char     Select one station code.        ``*``
  location (loc)    Required char     Select one location
@@ -206,6 +206,18 @@ needed, which the service must translate to an empty string.
                                      string to match blank
                                      location IDs.                   ``*``
  channel (cha)     Required char     Select one channel code.        ``*``
+ minlatitude       Required float    Limit to stations with a
+ (minlat)                            latitude larger than or equal
+                                     to the specified minimum.       ``-90``
+ maxlatitude       Required float    Limit to stations with a
+ (maxlat)                            latitude smaller than or equal
+                                     to the specified maximum.       ``90``
+ minlongitude      Required float    Limit to stations with a
+ (minlon)                            longitude larger than or equal
+                                     to the specified minimum.       ``-180``
+ maxlongitude      Required float    Limit to stations with a
+ (maxlon)                            longitude smaller than or equal
+                                     to the specified maximum.       ``180``
  service           Required char     Specify which service will
                                      be queried (dataselect,
                                      station, etc).               dataselect
@@ -430,10 +442,10 @@ service. For instance, ::
   All Networks from XYZ institution
   Stations in Indonesia
   Stations in San Francisco
-  
+
   Other comments and descriptions that could be of interest of the user.
 
-Any parameter passed to this method will be ignored. 
+Any parameter passed to this method will be ignored.
 
 
 Examples
@@ -620,14 +632,14 @@ No routes can be found, because the network was operational between 2011 and
 http://server.org/routing/query?net=4C&start=2012-02-02T00:00:00&end=2012-03-02T00:00:00&format=post
 
 Answer [#f5]_: ::
-  
+
   http://ws.resif.fr/fdsnws/dataselect/1/query
   4C KES20 * HHE 2012-02-02T00:00:00 2012-03-02T00:00:00
   4C KES20 * HHN 2012-02-02T00:00:00 2012-03-02T00:00:00
   4C KES20 * HHZ 2012-02-02T00:00:00 2012-03-02T00:00:00
   4C KEA00 * * 2012-02-02T00:00:00 2012-03-02T00:00:00
   4C KEA01 * * 2012-02-02T00:00:00 2012-03-02T00:00:00
-  
+
   http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query
   4C KES20 * HNE 2012-02-02T00:00:00 2012-03-02T00:00:00
   4C KES20 * HNN 2012-02-02T00:00:00 2012-03-02T00:00:00
@@ -635,7 +647,7 @@ Answer [#f5]_: ::
   4C KEB10 -- HHZ 2012-02-02T00:00:00 2012-03-02T00:00:00
   4C KEB10 -- HHN 2012-02-02T00:00:00 2012-03-02T00:00:00
   4C KEB10 -- HHE 2012-02-02T00:00:00 2012-03-02T00:00:00
-  
+
   http://webservices.rm.ingv.it/fdsnws/dataselect/1/query
   4C KER02 * * 2012-02-02T00:00:00 2012-03-02T00:00:00
   4C KES02 * * 2012-02-02T00:00:00 2012-03-02T00:00:00

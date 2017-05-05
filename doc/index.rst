@@ -28,7 +28,7 @@ development of smart clients and/or services of higher level, which can offer
 the user an integrated view of the whole EIDA, hiding the complexity of its
 internal structure. However, the Routing Service need not be aware of the
 extent of the content offered by each service, avoiding the need for a large
-synchronised database at any place.
+synchronized database at any place.
 
 The service is intended to be open and able to be queried by anyone without
 the need of credentials or authentication.
@@ -66,10 +66,9 @@ Download
 --------
 
 Download the tar file / source from the GEOFON web page at http://geofon.gfz-potsdam.de/software.
-[Eventually it may be included in the SeisComP3 distribution.]
 
 .. note ::
-    Nightly builds can be downloaded from Github (https://github.com/GEOFON/routing.git).
+    Nightly builds can be downloaded from Github (https://github.com/EIDA/routing.git).
 
 Untar into a suitable directory visible to the web server,
 such as `/var/www/eidaws/routing/1/` ::
@@ -182,7 +181,7 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
    script there. ::
 
       $ cd /var/www/eidaws/routing/1/data
-      $ ./updateAll.py
+      $ ./updateAll.py -l DEBUG
 
    If you don't specify any parameters to the script, the information needed will be read from
    the configuration file at the default location `../routing.cfg`. You can use the switch `-h`
@@ -212,8 +211,7 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
    The working directory should have read-write permission
    for the user running Apache **and** the user who will do the regular metadata updates
    (see crontab configuration in the last point of this instruction list).
-   The system will also try to create and
-   write temporary information in this directory.
+   The system will also try to create and write temporary information in this directory.
 
    .. warning :: Wrong configuration in the permissions of the working directory could diminish the performance of the system.
 
@@ -254,8 +252,12 @@ The configuration file contains two sections up to this moment.
 Arclink
 """""""
 
+.. warning:: The capability to get routes from an Arclink server has been
+    deprecated and it should not be used at all. This functionality will be
+    removed from future versions!
+
 In the Arclink section an arclink server must be defined, from which the
-default routing table should be retrieved.
+default routing table could be retrieved.
 The default value is the Arclink server running at GEOFON, but this can be
 configured with the address of any Arclink server.
 
@@ -268,33 +270,46 @@ configured with the address of any Arclink server.
 Service
 """""""
 
-This section contains six variables. The variable `info` specifies the string
+`baseURL` should contain the basic URL of the current Routing Service in order
+to be used in the generation of the `application.wadl` method. For instance, ::
+
+    baseURL = http://mydomain.dom/eidaws/routing/1
+
+The variable `info` specifies the string
 that the ``config`` method from the service should return.
+
 The variable `updateTime` determines at which moment of the day should be
 updated all the routing information.
+
 The format for the update time should be ``HH:MM`` separated by a space. It is
 not necessary that the different time entries are in order. If no update is
 required, there should be nothing at the right side of the ``=`` character.
 
+.. deprecated:: This functionality was actually skipped and this options will
+    be removed in future releases. The usage of a cronjob is recommended to
+    run the `updateAll.py` script and generate the binary version of the routing
+    table.
+
 `ArclinkBased` determines whether the routing information should be retrieved
 from an Arclink server by the `updateAll.py` script. Usually, you want to set
-it to ``true`` if the automatic configuration is the selected one (all the data
-is read from an Arclink server). But if you decided to configure your own set
-of routes, then you should set it to ``false``, so that the update procedure
-will not delete your manual configuration.
+it to ``false`` in order to configure your own set of routes, so that the
+update procedure will not delete your manual configuration.
+
+.. deprecated:: This option will be removed in a future version, when the
+    capability to feed the service from an Arclink server disappears.
 
 `verbosity` controls the amount of output send to the logging system depending
-of the importance of the messages. The levels are: 1) Error, 2) Warning, 3)
-Info and 4) Debug.
+of the importance of the messages. A number is expected ranging from 1 to 4,
+meaning: 1: Error, 2: Warning, 3: Info and 4: Debug.
 
 `synchronize` specifies the remote servers from which more routes should be
 imported. This is explained in detail in
 :ref:`Importing remote routes<importing_remote_routes>`.
 
 `allowoverlap` determines whether the routes imported from other services can
-overlap the ones already present. In case this is set to ``true`` and an
+overlap the ones already present. In case this is set to ``false`` and an
 overlapping route is found, the Route will be discarded with an error message
-in the log. When it is set to ``false``, the Route will be still included, but
+in the log. When it is set to ``true``, the Route will be still included, but
 the resulting data could be inconsistent.
 
 .. _service_configuration:
@@ -320,9 +335,9 @@ Always check your web server log files (e.g. for Apache: ``access_log`` and
 If you visit http://localhost/eidaws/routing/1/version on your machine
 you should see the version information of the deployed service ::
 
-    1.0.1
+    1.1.0
 
-If this information cannot be retrieved, the installation was not successfull.
+If this information cannot be retrieved, the installation was not successful.
 If this **do** show up, check that the information there looks correct.
 
 Testing the service
@@ -354,21 +369,22 @@ of software (f.i. web server, firewall, etc.). ::
 A set of test cases have been implemented and the expected responses are
 compared with the ones returned by the service.
 
-.. note:: The test cases are related to the EIDA internal configuration and
-          could make no sense if the service is configured to route other set
-          of networks. In that case, the operator of the service should modify
-          scripts in order to test the coherence of the information provided
-          by the service.
+.. note:: The test cases are related to the sample routing data which is
+          provided in routing.xml.sample and will make no sense if the service
+          is configured to route other set of networks. In that case, the
+          operator of the service should modify scripts in order to test the
+          coherence of the information provided by the service.
 
 Service level
 ^^^^^^^^^^^^^
 
 The script called ``testService.py`` will try to connect to a Routing Service
-at a particular URL, which can be passed as a parameter. The default value
-will test the service at: http://localhost/eidaws/routing/1/query, what can be
-used to check the local installation. ::
+at a particular URL, which **must** be passed as a parameter. In previous
+versions the default value was http://localhost/eidaws/routing/1/query, but as
+the functionality of the Routing Service was much improved, real and resolvable
+addresses are needed. ::
 
-    $ ./testService.py -u http://server/path/query
+    $ ./testService.py http://server/path/query
     Running test...
     Checking Dataselect CH.LIENZ.*.BHZ... [OK]
     Checking Dataselect CH.LIENZ.*.HHZ... [OK]
@@ -397,13 +413,14 @@ Maintenance
 The Routing Table needs to be updated regularly due to the small but constant
 changes in the EIDA structure. You should always be able to run safely the
 ``updateAll.py`` script at any time you want.
-The Routing Service creates a binary version of the Arclink XML, but this
-will be automatically updated each time a new inventory XML file is detected.
+The Routing Service creates a binary version of the XML containing the routes,
+but this will be automatically updated each time a new inventory XML file is
+detected.
 
 Upgrade
 -------
 
-At this stage, it's best to back up and then remove the old installation
+At this stage, it's better to back up and then remove the old installation
 first. ::
 
     $ cd /var/www/eidaws/routing/ ; mv 1 1.old
@@ -415,6 +432,10 @@ At Steps 4-6, re-use your previous versions of ``routing.wsgi`` and ``routing.cf
     $ cp ../1.old/routing.wsgi routing.wsgi
     $ cp ../1.old/routing.cfg routing.cfg
 
+And of course, copy your local routing table also. ::
+
+    $ cp ../1.old/data/routing.xml data/routing.xml
+
 
 Using the Service
 =================
@@ -423,12 +444,11 @@ Default configuration
 ---------------------
 
 A script called ``updateAll.py`` is provided in the package, which can be
-found in the ``data`` folder. This script can download the routing and
-inventory information for EIDA from an Arclink Server. All necessary parameters
-will be read from the configuration file (``routing.cfg``). Namely, the
-hostname and port of the Arclink server and also a variable specifying whether
-the routing information should be periodically replaced by the one downloaded
-from Arclink.
+found in the ``data`` folder. This script can load the local routing information
+as well as synchronize the remote routes, which are provided by the other EIDA
+nodes. All necessary parameters will be read from the configuration file
+(``routing.cfg``). Namely, the list of data centres, which have data to
+synchronize.
 
 When the service starts, checks if there is a file called ``routing.xml`` in
 the ``data`` directory. This file is expected to contain all the information
@@ -467,13 +487,13 @@ routed, there is a *masterTable* that can be used. When the service starts, it
 checks if a file called ``masterTable.xml`` in the ``data`` folder exists. If
 this is the case, the file is read, the routes inside are loaded in a separate
 table and are given the maximum priority.
-This could be perfect to route requests to other datacenters, whose internal
+This could be perfect to route requests to other data centres, whose internal
 structure is not well known.
 
 
 .. note:: There are two main differences between the information provided in
           `routing.xml` and the one provided in `masterTable.xml`. The former
-          will be used to synchronized with other data centers if requested.
+          will be used to synchronize with other data centers if requested.
           On the other hand, the information added in `masterTable.xml` will
           be kept private and not take part in any synchronization process.
 
@@ -481,7 +501,7 @@ structure is not well known.
 .. warning:: Only the network level is used to calculate the
              routing for the routes in the master table. This makes sense if
              we consider that the main purpose of this *extra* information is
-             to be able to route requests to other datacenters who do **not**
+             to be able to route requests to other data centres who do **not**
              synchronize their routing information with you. Therefore, the
              internal and more specific structure of the distribution of data
              to levels deeper than the network are usually not known.
@@ -510,9 +530,6 @@ routing table.
 The idea is that the routes in the normal routing table is the local
 information that should be probably synchronized with other Routing Services.
 
-.. todo:: Test the method to synchronize among the nodes!
-
-
 .. _importing_remote_routes:
 
 Importing remote routes
@@ -522,15 +539,12 @@ In the case case that one datacenter decides to include routes from other
 datacenter (as in the EIDA case) , there is no need to define them locally.
 
 A normal use case would be that the datacenter `A` needs to provide routing
-information of datacenters `A` **and** `B` to its users. In order to allow
+information of data centres `A` **and** `B` to its users. In order to allow
 datacenter `B` to export its routes, a method called ``localconfig`` is
 defined. This method will return to the caller all the routing information
 locally defined in the ``routing.xml`` file. Every datacenter is free to
 restrict the access to this method to well-known IP addresses or to keep it
 completely open by means of access rules in the web server.
-
-.. todo:: A good idea would be to include these restrictions in the
-          configuration file!
 
 If the datacenter `A` has access to this method, it can import the routes
 automatically by means of the inclusion of the base URL of the service at
@@ -548,10 +562,39 @@ http://datacenter-b/path/routing/1/localconfig in a file called ``DC-B.xml``
 under the ``data`` folder. This file can be used for future reference in case
 that all the routes need to be updated and datacenter `B` is not available.
 
-.. todo:: Skip update if datacenter is down and use the old data.
-
 Once the file is saved, all the routes inside it will be added to the routing
 table in memory.
+
+.. _station_caching:
+
+Cache of station names and locations
+------------------------------------
+
+Once all the routes have been imported, all instances of Station-WS are queried
+with the available routes in order to get a list of stations and their
+locations. The main purpose of this is to improve the querying capabilities of
+the Routing Service in the following two use cases.
+
+  * Locations will be used to allow the usage of the FDSN parameters: `minlat`,
+    `maxlat`, `minlon`, and `maxlon`. These can be used to define a rectangular
+    area and **discover** all stations present. This functionality was not
+    possible with the previous version of the Service, as no information
+    related to the streams was saved.
+
+  * The case where the station names are needed is quite different. It had been
+    detected that some queries contained the station name (e.g. sta=XYZ) but no
+    information about the network. This could be usual when a user remembers
+    the name of the station, which is associated with a location or village,
+    but does not pay attention to the network to which it belongs. As many
+    routes have a configuration like NETCODE.*.*.*, there was no way to know
+    if the station belonged to that network or not. Meaning that in most of the
+    cases, this resulted in the Routing Service sending the user almost **all**
+    the available routes to further discover where the station is. This type of
+    routes are very practical for the Administrator of the service, but less
+    useful for the user in cases like this. The solution was to create an
+    automatic cache of the station names, so that the Administrator can still
+    configure very short routes, while the user can use more precise filters in
+    his/her request.
 
 
 Methods available
@@ -561,18 +604,18 @@ Description of the service
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``application.wadl`` method returns a WADL (web application description
-layer) conformant description of the interface using the MIME type
+layer) description of the interface using the MIME type
 `application/xml`. Any parameters submitted to the method will be ignored. The
 WADL describes all parameters supported by this implementation and can be used
 as an automatic way to determine methods and parameters supported by this
-service.
+service. This information is generated on the fly.
 
 Version of the software
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``version`` method returns the implementation version as a simple text
 string using the MIME type `text/plain`. Any parameters submitted to the method
-will be ignored. This scheme follows the FDSN webservices approach.
+will be ignored. This scheme follows the FDSN web services approach.
 
 The service is versioned according the following three-digit (x.y.z) pattern: ::
 
@@ -620,11 +663,12 @@ service. Both ``GET`` and ``POST`` methods must be supported.
 Input parameters
 """"""""""""""""
 
-The complete list of input parameters can be seen in :ref:`Table 2.1<Table_2.1>`. Parameter
-names must be in lowercase, and may be abbreviated as shown, following the FDSN
-style. Valid input values must have the format shown in the “Format” column.
-All the values passed as parameters will be case-insensitive strings composed
-of numbers and letters. No other symbols will be allowed with the exception of:
+The complete list of input parameters can be seen in :ref:`Table 2.1<Table_2.1>`.
+Parameter names must be in lowercase, and may be abbreviated as shown, following
+the FDSN style. Valid input values must have the format shown in the “Format”
+column. All the values passed as parameters will be case-insensitive strings
+composed of numbers and letters. No other symbols will be allowed with the
+exception of:
 
 * wildcards ("``*``" and "``?``"), which may be used to select the streams (for
   parameters `network`, `station`, `location` and `channel` only), and
@@ -674,6 +718,18 @@ if needed, which the service must translate to an empty string.
                                      string to match blank
                                      location IDs.                   ``*``
  channel (cha)     Required char     Select one channel code.        ``*``
+ minlatitude       Required float    Limit to stations with a
+ (minlat)                            latitude larger than or equal
+                                     to the specified minimum.       ``-90``
+ maxlatitude       Required float    Limit to stations with a
+ (maxlat)                            latitude smaller than or equal
+                                     to the specified maximum.       ``90``
+ minlongitude      Required float    Limit to stations with a
+ (minlon)                            longitude larger than or equal
+                                     to the specified minimum.       ``-180``
+ maxlongitude      Required float    Limit to stations with a
+ (maxlon)                            longitude smaller than or equal
+                                     to the specified maximum.       ``180``
  service           Required char     Specify which service will
                                      be queried (arclink,
                                      seedlink, station,
@@ -814,13 +870,13 @@ timewindow pair is expected per line and the format must be: ::
 
  net sta loc cha start end
 
-If there is no defined timewindow, an empty string should be given as '' or "".
+If there is no defined time window, an empty string should be given as '' or "".
 
 .. warning:: The separation of a request in more than one URL/parameters can be
              avoided by a client who performs an expansion of the wildcards
              before contacting this service. However, in some complex cases it
              could also happen that a stream is stored in two different data
-             centers depending on the timewindow. In this case, it is
+             centers depending on the time window. In this case, it is
              unavoidable to split the request in more than one data center.
 
 Abnormal responses
@@ -885,66 +941,68 @@ Routing module
 Utils module
 ------------
 
-.. automodule:: utils
+.. automodule:: routeutils.utils
 
 RoutingCache class
 ^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: utils.RoutingCache
+.. autoclass:: routeutils.utils.RoutingCache
    :members:
    :undoc-members:
 
 Route class
 ^^^^^^^^^^^
 
-.. autoclass:: utils.Route
+.. autoclass:: routeutils.utils.Route
    :members:
    :undoc-members:
 
 Stream class
 ^^^^^^^^^^^^
 
-.. autoclass:: utils.Stream
+.. autoclass:: routeutils.utils.Stream
    :members:
    :undoc-members:
+
+Station class
+^^^^^^^^^^^^^
+
+.. autoclass:: routeutils.utils.Station
+  :members:
+  :undoc-members:
+
+geoRectangle class
+^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: routeutils.utils.geoRectangle
+  :members:
+  :undoc-members:
 
 TW (timewindow)  class
 ^^^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: utils.TW
+.. autoclass:: routeutils.utils.TW
    :members:
    :undoc-members:
 
 RouteMT class
 ^^^^^^^^^^^^^
 
-.. autoclass:: utils.RouteMT
+.. autoclass:: routeutils.utils.RouteMT
    :members:
    :undoc-members:
 
 RequestMerge class
 ^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: utils.RequestMerge
-   :members:
-   :undoc-members:
-
-InventoryCache module
----------------------
-
-.. automodule:: inventorycache
-
-InventoryCache class
-^^^^^^^^^^^^^^^^^^^^
-
-.. autoclass:: inventorycache.InventoryCache
+.. autoclass:: routeutils.utils.RequestMerge
    :members:
    :undoc-members:
 
 Wsgicomm module
 ---------------
 
-.. automodule:: wsgicomm
+.. automodule:: routeutils.wsgicomm
    :members:
    :undoc-members:
 
