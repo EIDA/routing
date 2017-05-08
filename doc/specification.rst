@@ -185,56 +185,56 @@ needed, which the service must translate to an empty string.
 .. tabularcolumns:: |l|l|l|p{8cm}|c|
 .. table:: Input parameters description
 
- ================= ======== ======== ============================ ==========
- Parameter         Support  Format   Description                  Default
- ================= ======== ======== ============================ ==========
+ ================= ======== ======== ================================ ==========
+ Parameter         Support  Format   Description                      Default
+ ================= ======== ======== ================================ ==========
  starttime (start) Required ISO 8601 Limit results to routes
                                      valid on or after
-                                     the specified start time.      Any
+                                     the specified start time.        Any
  endtime (end)     Required ISO 8601 Limit results to routes
                                      valid on or before the
-                                     specified end time.            Any
+                                     specified end time.              Any
  network (net)     Required char     Select one network code.
                                      This can be either SEED
                                      network codes or data center
-                                     defined codes.                  ``*``
- station (sta)     Required char     Select one station code.        ``*``
+                                     defined codes.                   ``*``
+ station (sta)     Required char     Select one station code.         ``*``
  location (loc)    Required char     Select one location
                                      identifier. As a special
                                      case "--" (two dashes) will
                                      be translated to an empty
                                      string to match blank
-                                     location IDs.                   ``*``
- channel (cha)     Required char     Select one channel code.        ``*``
+                                     location IDs.                    ``*``
+ channel (cha)     Required char     Select one channel code.         ``*``
  minlatitude       Required float    Limit to stations with a
  (minlat)                            latitude larger than or equal
-                                     to the specified minimum.       ``-90``
+                                     to the specified minimum.        ``-90``
  maxlatitude       Required float    Limit to stations with a
  (maxlat)                            latitude smaller than or equal
-                                     to the specified maximum.       ``90``
+                                     to the specified maximum.        ``90``
  minlongitude      Required float    Limit to stations with a
  (minlon)                            longitude larger than or equal
-                                     to the specified minimum.       ``-180``
+                                     to the specified minimum.        ``-180``
  maxlongitude      Required float    Limit to stations with a
  (maxlon)                            longitude smaller than or equal
-                                     to the specified maximum.       ``180``
+                                     to the specified maximum.        ``180``
  service           Required char     Specify which service will
                                      be queried (dataselect,
-                                     station, etc).               dataselect
+                                     station, etc).                   dataselect
  format            Required char     Select the output format.
                                      Valid values for any service
                                      are: xml and json, while get
                                      and post are optional and
                                      only available for FDSN
-                                     web services.                  xml
+                                     web services.                    xml
  alternative       Optional boolean  Specify if the alternative
                                      routes should be also
                                      included in the answer (in
                                      the case that these are
                                      available). Route order is
                                      indicated by the `priority`
-                                     attribute.                     false
- ================= ======== ======== ============================ ==========
+                                     attribute.                       false
+ ================= ======== ======== ================================ ==========
 
 
 Output description and format
