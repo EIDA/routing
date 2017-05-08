@@ -26,8 +26,10 @@ sys.path.append(os.path.join(here, '..'))
 
 import unittest
 from routeutils.unittestTools import WITestRunner
-from routeutils.routing import RoutingCache
-from routeutils.routing import RequestMerge
+from routeutils.utils import RoutingCache
+from routeutils.utils import RequestMerge
+from routeutils.utils import Stream
+from routeutils.utils import TW
 from routeutils.utils import RoutingException
 
 
@@ -41,23 +43,37 @@ class RouteCacheTests(unittest.TestCase):
         "Setting up test"
         if hasattr(cls, 'rc'):
             return
-        cls.rc = RoutingCache('../data/routing.xml',
-                              '../data/masterTable.xml')
+        cls.rc = RoutingCache('../data/routing.xml.sample',
+                              '../data/masterTable.xml.sample')
 
-    def testDS_wrong_datetime(self):
-        "swap start and end time"
+    def testDS_XXX(self):
+        """Non-existing network XXX"""
+
+        try:
+            result = self.rc.getRoute(Stream('XXX', '*', '*', '*'), TW(None, None))
+        except RoutingException:
+            return
+
+        self.assertIsTrue(false, 'A RoutingException was expected!')
+
+    def test_wrong_datetime(self):
+        """Swap start and end time."""
 
         d1 = datetime.datetime(2004, 1, 1)
         d2 = d1 - datetime.timedelta(days=1)
 
-        self.assertRaises(RoutingException, self.rc.getRoute,
-                          'GE', '*', '*', '*', d1, d2)
+        try:
+            result = self.rc.getRoute(Stream('GE', '*', '*', '*'), TW(d1, d2))
+        except RoutingException:
+            return
+
+        self.assertIsTrue(false, 'A RoutingException was expected!')
 
     def testDS_GE(self):
-        "Dataselect GE.*.*.*"
+        """Dataselect GE.*.*.*"""
 
         expURL = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
-        result = self.rc.getRoute('GE')
+        result = self.rc.getRoute(Stream('GE', '*', '*', '*'), TW(None, None))
         self.assertIsInstance(result, RequestMerge,
                               'A RequestMerge object was expected!')
         self.assertEqual(len(result), 1,
@@ -68,11 +84,11 @@ class RouteCacheTests(unittest.TestCase):
                          'Wrong service name!')
 
     def testDS_GE_noEnd(self):
-        "Dataselect GE.*.*.* start=2010"
+        """Dataselect GE.*.*.* start=2010"""
 
         expURL = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
         startD = datetime.datetime(2010, 1, 1)
-        result = self.rc.getRoute('GE', startD=startD)
+        result = self.rc.getRoute(Stream('GE', '*', '*', '*'), TW(startD, None))
         self.assertIsInstance(result, RequestMerge,
                               'A RequestMerge object was expected!')
         self.assertEqual(len(result), 1,
@@ -83,13 +99,13 @@ class RouteCacheTests(unittest.TestCase):
                          'Wrong service name!')
 
     def testDS_GE_RO(self):
-        "Dataselect GE,RO.*.*.*"
+        """Dataselect GE,RO.*.*.*"""
 
         expURL_GE = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
         expURL_RO = 'http://eida-sc3.infp.ro/fdsnws/dataselect/1/query'
 
-        result = self.rc.getRoute('GE')
-        result.extend(self.rc.getRoute('RO'))
+        result = self.rc.getRoute(Stream('GE', '*', '*', '*'), TW(None, None))
+        result.extend(self.rc.getRoute(Stream('RO', '*', '*', '*'), TW(None, None)))
         self.assertIsInstance(result, RequestMerge,
                               'A RequestMerge object was expected!')
         self.assertEqual(len(result), 2,
@@ -107,7 +123,7 @@ class RouteCacheTests(unittest.TestCase):
         "Dataselect GE.APE.*.*"
 
         expURL = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
-        result = self.rc.getRoute('GE', 'APE')
+        result = self.rc.getRoute(Stream('GE', 'APE', '*', '*'), TW(None, None))
         self.assertIsInstance(result, RequestMerge,
                               'A RequestMerge object was expected!')
         self.assertEqual(len(result), 1,
@@ -118,10 +134,10 @@ class RouteCacheTests(unittest.TestCase):
                          'Wrong service name!')
 
     def testDS_CH_LIENZ_HHZ(self):
-        "Dataselect CH.LIENZ.*.HHZ"
+        """Dataselect CH.LIENZ.*.HHZ"""
 
         expURL = 'http://eida.ethz.ch/fdsnws/dataselect/1/query'
-        result = self.rc.getRoute('CH', 'LIENZ', '*', 'HHZ')
+        result = self.rc.getRoute(Stream('CH', 'LIENZ', '*', 'HHZ'), TW(None, None))
         self.assertIsInstance(result, RequestMerge,
                               'A RequestMerge object was expected!')
         self.assertEqual(len(result), 1,
@@ -132,11 +148,10 @@ class RouteCacheTests(unittest.TestCase):
                          'Wrong service name!')
 
     def testDS_CH_LIENZ_BHZ(self):
-        "Dataselect CH.LIENZ.*.BHZ"
+        """Dataselect CH.LIENZ.*.BHZ"""
 
         expURL = 'http://eida.ethz.ch/fdsnws/dataselect/1/query'
-        # expURL = 'http://www.orfeus-eu.org/fdsnws/dataselect/1/query'
-        result = self.rc.getRoute('CH', 'LIENZ', '*', 'BHZ')
+        result = self.rc.getRoute(Stream('CH', 'LIENZ', '*', 'BHZ'), TW(None, None))
         self.assertIsInstance(result, RequestMerge,
                               'A RequestMerge object was expected!')
         self.assertEqual(len(result), 1,
@@ -146,53 +161,11 @@ class RouteCacheTests(unittest.TestCase):
         self.assertEqual(result[0]['name'], 'dataselect',
                          'Wrong service name!')
 
-    # def testDS_CH_LIENZ_qHZ(self):
-    #     "Dataselect CH.LIENZ.*.?HZ"
-
-    #     odcURL = 'http://www.orfeus-eu.org/fdsnws/dataselect/1/query'
-    #     ethURL = 'http://eida.ethz.ch/fdsnws/dataselect/1/query'
-    #     result = self.rc.getRoute('CH', 'LIENZ', '*', '?HZ')
-    #     self.assertIsInstance(result, RequestMerge,
-    #                           'A RequestMerge object was expected!')
-    #     self.assertEqual(len(result), 2,
-    #                      'Wrong number of data centers for CH.LIENZ.*.?HZ!')
-
-    #     for res in result:
-    #         if 'eth' in res['url']:
-    #             self.assertEqual(res['url'], ethURL,
-    #                              'Wrong URL for CH.LIENZ.*.?HZ!')
-    #             self.assertEqual(res['name'], 'dataselect',
-    #                              'Wrong service name!')
-
-    #             myStreams = ['LHZ', 'HHZ']
-    #             self.assertEqual(len(res['params']), len(myStreams),
-    #                              'Wrong number of streams for ETH! %s'
-    #                              % res['params'])
-
-    #             for i in res['params']:
-    #                 self.assertIn(i['cha'], myStreams,
-    #                               '%s is not an expected channel for ETH!'
-    #                               % i['cha'])
-    #         elif 'orfeus' in res['url']:
-    #             self.assertEqual(res['url'], odcURL,
-    #                              'Wrong URL for CH.LIENZ.*.?HZ!')
-    #             self.assertEqual(res['name'], 'dataselect',
-    #                              'Wrong service name!')
-
-    #             self.assertEqual(len(res['params']), 1,
-    #                              'Wrong number of streams for ODC!')
-    #             self.assertIn(res['params'][0]['cha'], 'BHZ',
-    #                           '%s is not an expected channel for ETH!' %
-    #                           res['params'][0]['cha'])
-    #         else:
-    #             self.assertEqual(1, 0,
-    #                              'None of the URLs belong to Orfeus or ETH!')
-
     def testDS_RO_BZS_BHZ(self):
-        "Dataselect RO.BZS.*.BHZ"
+        """Dataselect RO.BZS.*.BHZ"""
 
         expURL = 'http://eida-sc3.infp.ro/fdsnws/dataselect/1/query'
-        result = self.rc.getRoute('RO', 'BZS', '*', 'BHZ')
+        result = self.rc.getRoute(Stream('RO', 'BZS', '*', 'BHZ'), TW(None, None))
         self.assertIsInstance(result, RequestMerge,
                               'A RequestMerge object was expected!')
         self.assertEqual(len(result), 1,
