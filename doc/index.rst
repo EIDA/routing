@@ -273,6 +273,8 @@ Service
 `baseURL` should contain the basic URL of the current Routing Service in order
 to be used in the generation of the `application.wadl` method. For instance, ::
 
+.. code-block:: ini
+
     baseURL = http://mydomain.dom/eidaws/routing/1
 
 The variable `info` specifies the string
@@ -317,6 +319,7 @@ the resulting data could be inconsistent.
 .. code-block:: ini
 
     [Service]
+    baseURL = http://mydomain.dom/eidaws/routing/1
     info = Routing information from the Arclink Server at GEOFON.
        All the routes related to EIDA are supposed to be available here.
     updateTime = 01:01 16:58
@@ -435,6 +438,7 @@ At Steps 4-6, re-use your previous versions of ``routing.wsgi`` and ``routing.cf
 And of course, copy your local routing table also. ::
 
     $ cp ../1.old/data/routing.xml data/routing.xml
+    $ cp ../1.old/data/masterTable.xml data/masterTable.xml
 
 
 Using the Service
@@ -460,14 +464,17 @@ The following is an example of an Arclink-XML file.
 
     <?xml version="1.0" encoding="utf-8"?>
     <ns0:routing xmlns:ns0="http://server/ns/Routing/1.0/">
-        <ns0:route locationCode="" networkCode="BE" stationCode="" streamCode="">
-            <ns0:arclink address="bhlsa02.knmi.nl:18002" end="" priority="1"
-                start="1980-01-01T00:00:00.0000Z" />
+        <ns0:route networkCode="GE" stationCode="" locationCode="" streamCode="">
+          <ns0:station address="http://domain/fdsnws/station/1/query"
+              priority="1" start="1993-01-01T00:00:00" end="" />
+          <ns0:dataselect address="http://domain/fdsnws/dataselect/1/query"
+              priority="1" start="1993-01-01T00:00:00" end="" />
         </ns0:route>
-        <ns0:route locationCode="" networkCode="BA" stationCode="" streamCode="">
-            <ns0:arclink address="eida.rm.ingv.it:18002" end="" priority="1"
-                start="1980-01-01T00:00:00.0000Z" />
-            <ns0:seedlink address="eida.rm.ingv.it:18000" priority="1" />
+        <ns0:route networkCode="CH" stationCode="*" locationCode="*" streamCode="*">
+          <ns0:station address="http://domain2/fdsnws/station/1/query"
+              priority="1" start="1980-01-01T00:00:00" end="" />
+          <ns0:dataselect address="http://domain2/fdsnws/dataselect/1/query"
+              priority="1" start="1980-01-01T00:00:00" end="" />
         </ns0:route>
     </ns0:routing>
 
