@@ -671,12 +671,10 @@ class RouteCacheTests(unittest.TestCase):
 # ----------------------------------------------------------------------
 def usage():
     """Print how to use the service test."""
-    print 'testService [-h] [-p]\ntestService [-u http://server/path]'
+    print 'testService [-h|--help] [-p|--plain] http://server/path'
 
 
 global host
-
-host = 'http://localhost/eidaws/routing/1/query'
 
 if __name__ == '__main__':
 
@@ -685,15 +683,16 @@ if __name__ == '__main__':
 
     # The default host is localhost
     for ind, arg in enumerate(sys.argv):
+        if ind == 0:
+            continue
         if arg in ('-p', '--plain'):
             del sys.argv[ind]
             mode = 0
-        elif arg == '-u':
-            host = sys.argv[ind + 1]
-            del sys.argv[ind + 1]
-            del sys.argv[ind]
         elif arg in ('-h', '--help'):
             usage()
             sys.exit(0)
+        else:
+            host = arg
+            del sys.argv[ind]
 
     unittest.main(testRunner=WITestRunner(mode=mode))
