@@ -417,10 +417,11 @@ containers, and other intermediate web technology.
        selection.
  400   Bad request due to improper specification, unrecognized parameter,
        parameter value out of range, etc.
- 413   Request would result in too much data being returned or the request
-       itself is too large. Returned error message should include the service
-       limitations in the detailed description. Service limits should also be
-       documented in the service WADL.
+ 413   | Request would result in too much data being returned or the request
+       itself is too large. Returned error
+       | message should include the service limitations in the detailed
+       description. Service limits should also be documented in the service
+       WADL.
  414   Request URI too large
  500   Internal server error
  503   Service temporarily unavailable, used in maintenance and error
