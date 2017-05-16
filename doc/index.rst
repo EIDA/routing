@@ -603,6 +603,53 @@ the Routing Service in the following two use cases.
     configure very short routes, while the user can use more precise filters in
     his/her request.
 
+.. _virtual_networks:
+
+Defining virtual networks
+-------------------------
+
+.. warning: This functionality has been just recently added and, therefore, not
+            tested as thoroughly as the rest of the code in the system. Feel
+            free to use it, but consider it in an **alpha** status.
+
+The concept of a collection of stations, different of the formal network, has
+existed since a long time. There are many reasons why this could result
+interesting. From creating a virtual network code which encompasses many
+networks, to defining a subset of stations from one or more networks.
+
+Since version 1.1.0 this new feature is supported in a way that the operator
+can define in the `routing.xml` file a virtual network code as a list of
+stations.
+
+For instance, an example is shown below where the _VN network is defined as the
+combination of stations ST1, ST2 from network RN1 and ST3 from network RN2.
+
+.. code-block:: xml
+
+    <?xml version="1.0" encoding="utf-8"?>
+    <ns0:routing xmlns:ns0="http://geofon.gfz-potsdam.de/ns/Routing/1.0/">
+      <ns0:vnetwork networkCode="_VN">
+        <ns0:stream networkCode="RN1" stationCode="ST1" locationCode="*" streamCode="*"
+          start="2015-01-01T00:00:00" end="2015-12-31T00:00:00" />
+        <ns0:stream networkCode="RN1" stationCode="ST2" locationCode="*" streamCode="*"
+          start="2015-01-01T00:00:00" end="2015-12-31T00:00:00" />
+        <ns0:stream networkCode="RN2" stationCode="ST3" locationCode="*" streamCode="*"
+          start="2015-01-01T00:00:00" end="2015-12-31T00:00:00" />
+      </ns0:vnetwork>
+    </ns0:routing>
+
+In the case that the synchronization is enabled, the virtual networks will also
+be synchronized and shared with the other Routing services. They will be treated
+in the same way as routes. Collisions with remote definitions will be checked
+and will not be allowed.
+
+The most important point to clarify when using virtual networks in the query is
+that the Routing Service will **always return real network and stations codes**.
+In this way, the returned codes can be always used with the downstream services,
+which most probably will not support virtual network codes, or at least it is
+not clear that will contain exactly the same definitions of the virtual
+networks.
+
 
 Methods available
 -----------------
