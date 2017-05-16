@@ -113,7 +113,8 @@ def getStationCache(st, rt):
         elif hasattr(e, 'code'):
             logging.warning('The server couldn\'t fulfill the request.')
             logging.warning('Error code: %s\n', e.code)
-
+        return list()
+            
     result = list()
     for line in buf.splitlines():
         if line.startswith('#'):
