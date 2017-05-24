@@ -237,7 +237,7 @@ def makeQueryPOST(postText):
         try:
             st = Stream(net, sta, loc, cha)
             tw = TW(start, endt)
-            result.extend(routes.getRoute(st, tw, ser, alt))
+            result.extend(routes.getRoute(st, tw, ser, None, alt))
         except RoutingException:
             pass
 
@@ -281,7 +281,7 @@ def application(environ, start_response):
                 length = 0
 
             # If there is a body to read
-            if length != 0:
+            if length:
                 form = environ['wsgi.input'].read(length)
             else:
                 form = environ['wsgi.input'].read()
