@@ -1294,6 +1294,7 @@ class RoutingCache(object):
 
         # Convert from virtual network to real networks (if needed)
         strtwList = self.vn2real(stream, tw)
+        self.logs.debug('Converting %s to %s' % (stream, strtwList))
 
         if not len(strtwList):
             msg = 'No routes found after resolving virtual network code.'
@@ -1346,8 +1347,8 @@ class RoutingCache(object):
 
             try:
                 auxSt, auxEn = strtw[1].intersection(tw)
-                t = TW(auxSt if auxSt is not None else '',
-                       auxEn if auxEn is not None else '')
+                t = TW(auxSt if auxSt is not None else None,
+                       auxEn if auxEn is not None else None)
             except:
                 continue
 
