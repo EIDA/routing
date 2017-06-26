@@ -150,12 +150,12 @@ def cacheStations(routingTable, stationTable):
         for rt in ptRT[st]:
             if rt.service == 'station':
                 result = getStationCache(st, rt)
-            for service in services:
-                try:
-                    stationTable[service][st] = result
-                except KeyError:
-                    stationTable[service] = dict()
-                    stationTable[service][st] = result
+        for service in services:
+            try:
+                stationTable[service][st] = result
+            except KeyError:
+                stationTable[service] = dict()
+                stationTable[service][st] = result
 
 
 def addRoutes(fileName, **kwargs):
