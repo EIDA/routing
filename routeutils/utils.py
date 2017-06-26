@@ -146,14 +146,16 @@ def cacheStations(routingTable, stationTable):
     """
     ptRT = routingTable
     for st in ptRT.keys():
+        services = set(urlparse(rt.address).netloc for rt in ptRT[st])
         for rt in ptRT[st]:
             if rt.service == 'station':
                 result = getStationCache(st, rt)
+            for service in services:
                 try:
-                    stationTable[urlparse(rt.address).netloc][st] = result
+                    stationTable[service][st] = result
                 except KeyError:
-                    stationTable[urlparse(rt.address).netloc] = dict()
-                    stationTable[urlparse(rt.address).netloc][st] = result
+                    stationTable[service] = dict()
+                    stationTable[service][st] = result
 
 
 def addRoutes(fileName, **kwargs):
