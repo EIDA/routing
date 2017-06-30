@@ -411,7 +411,8 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
             print 'Adding REMOTE %s' % dcid
             ptRT = addRoutes('./routing-%s.xml' % dcid.strip(),
                              routingTable=ptRT, allowOverlaps=allowOverlaps)
-            ptVN = addRoutes('./routing-%s.xml' % dcid.strip(), vnTable=ptVN)
+            ptVN = addVirtualNets('./routing-%s.xml' % dcid.strip(),
+                                  vnTable=ptVN)
 
     try:
         os.remove('./%s.bin' % fileRoutes)
