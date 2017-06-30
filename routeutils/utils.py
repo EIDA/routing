@@ -302,6 +302,8 @@ def addVirtualNets(fileName, **kwargs):
             # FIXME Probably the indentation below is wrong.
             root.clear()
 
+    return ptVN
+
 
 def addRoutes(fileName, **kwargs):
     """Read the routing file in XML format and store it in memory.
