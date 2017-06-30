@@ -114,7 +114,7 @@ def getStationCache(st, rt):
             logging.warning('The server couldn\'t fulfill the request.')
             logging.warning('Error code: %s\n', e.code)
         return list()
-            
+
     result = list()
     for line in buf.splitlines():
         if line.startswith('#'):
@@ -156,13 +156,160 @@ def cacheStations(routingTable, stationTable):
                     stationTable[urlparse(rt.address).netloc][st] = result
 
 
+def addVirtualNets(fileName, **kwargs):
+    """Read the routing file in XML format and store its VNs in memory.
+
+    All information related to virtual networks is read into a dictionary. Only
+    the necessary attributes are stored. This relies on the idea
+    that some other agent should update the routing file at
+    regular periods of time.
+
+    :param fileName: File with virtual networks to add to the routing table.
+    :type fileName: str
+    :param vnTable: Table with virtual networks where aliases should be added.
+    :type vnTable: dict
+    :returns: Updated table containing aliases from the input file.
+    :rtype: dict
+    """
+    # VN table is empty (default)
+    ptVN = kwargs.get('vnTable', dict())
+
+    logs = logging.getLogger('addVirtualNets')
+    logs.debug('Entering addVirtualNets()\n')
+
+    vnHandle = None
+    try:
+        vnHandle = open(fileName, 'r')
+    except:
+        msg = 'Error: %s could not be opened.\n'
+        logs.error(msg % fileName)
+        return
+
+    # Traverse through the virtual networks
+    # get an iterable
+    try:
+        context = ET.iterparse(vnHandle, events=("start", "end"))
+    except IOError as e:
+        logs.error(str(e))
+        return
+
+    # turn it into an iterator
+    context = iter(context)
+
+    # get the root element
+    if hasattr(context, 'next'):
+        event, root = context.next()
+    else:
+        event, root = next(context)
+
+    # Check that it is really an inventory
+    if root.tag[-len('routing'):] != 'routing':
+        msg = 'The file parsed seems not to be a routing file (XML).\n'
+        logs.error(msg)
+        return ptVN
+
+    # Extract the namespace from the root node
+    namesp = root.tag[:-len('routing')]
+
+    for event, vnet in context:
+        # The tag of this node should be "route".
+        # Now it is not being checked because
+        # we need all the data, but if we need to filter, this
+        # is the place.
+        #
+        if event == "end":
+            if vnet.tag == namesp + 'vnetwork':
+
+                # Extract the network code
+                try:
+                    vnCode = vnet.get('networkCode')
+                    if len(vnCode) == 0:
+                        vnCode = None
+                except:
+                    vnCode = None
+
+                # Traverse through the sources
+                # for arcl in route.findall(namesp + 'dataselect'):
+                for stream in vnet:
+                    # Extract the networkCode
+                    msg = 'Only the * wildcard is allowed in virtual nets.'
+                    try:
+                        net = stream.get('networkCode')
+                        if (('?' in net) or
+                                (('*' in net) and (len(net) > 1))):
+                            logs.warning(msg)
+                            continue
+                    except:
+                        net = '*'
+
+                    # Extract the stationCode
+                    try:
+                        sta = stream.get('stationCode')
+                        if (('?' in sta) or
+                                (('*' in sta) and (len(sta) > 1))):
+                            logs.warning(msg)
+                            continue
+                    except:
+                        sta = '*'
+
+                    # Extract the locationCode
+                    try:
+                        loc = stream.get('locationCode')
+                        if (('?' in loc) or
+                                (('*' in loc) and (len(loc) > 1))):
+                            logs.warning(msg)
+                            continue
+                    except:
+                        loc = '*'
+
+                    # Extract the streamCode
+                    try:
+                        cha = stream.get('streamCode')
+                        if (('?' in cha) or
+                                (('*' in cha) and (len(cha) > 1))):
+                            logs.warning(msg)
+                            continue
+                    except:
+                        cha = '*'
+
+                    try:
+                        auxStart = stream.get('start')
+                        startD = str2date(auxStart)
+                    except:
+                        startD = None
+                        msg = 'Error while converting START attribute.\n'
+                        logs.error(msg)
+
+                    try:
+                        auxEnd = stream.get('end')
+                        endD = str2date(auxEnd)
+                    except:
+                        endD = None
+                        msg = 'Error while converting END attribute.\n'
+                        logs.error(msg)
+
+                    if vnCode not in ptVN:
+                        ptVN[vnCode] = [(Stream(net, sta, loc, cha),
+                                         TW(startD, endD))]
+                    else:
+                        ptVN[vnCode].append((Stream(net, sta, loc, cha),
+                                             TW(startD, endD)))
+
+                    stream.clear()
+
+                vnet.clear()
+
+            # FIXME Probably the indentation below is wrong.
+            root.clear()
+
+
 def addRoutes(fileName, **kwargs):
     """Read the routing file in XML format and store it in memory.
 
     All the routing information is read into a dictionary. Only the
     necessary attributes are stored. This relies on the idea
     that some other agent should update the routing file at
-    a regular period of time.
+    regular periods of time.
 
     :param fileName: File with routes to add the the routing table.
     :type fileName: str
@@ -984,6 +1131,9 @@ class RoutingCache(object):
         self.logs.info('Reading configuration from %s' % self.configFile)
         self.logs.info('Reading masterTable from %s' % masterFile)
 
+        # Dictionary with list of stations inside each virtual network
+        self.vnTable = dict()
+
         if self.routingFile is not None:
             self.logs.info('Wait until the RoutingCache is updated...')
             self.update()
@@ -1031,11 +1181,6 @@ class RoutingCache(object):
             self.masterTable = dict()
 
             self.updateMT()
-
-        # Dictionary with list of stations inside each virtual network
-        self.vnTable = dict()
-
-        self.updateVN()
 
     def toXML(self, foutput, nameSpace='ns0'):
         """Export the RoutingCache to an XML representation."""
@@ -1916,15 +2061,19 @@ class RoutingCache(object):
 
         # Just to shorten notation
         ptRT = self.routingTable
+        ptVN = self.vnTable
 
         # Clear all previous information
         ptRT.clear()
+        ptVN.clear()
         try:
             binFile = self.routingFile + '.bin'
             with open(binFile) as rMerged:
-                self.routingTable, self.stationTable = pickle.load(rMerged)
+                self.routingTable, self.stationTable, self.vnTable = \
+                    pickle.load(rMerged)
         except:
             ptRT = addRoutes(self.routingFile, allowOverlaps=allowOverlaps)
+            ptVN = addVirtualNets(self.routingFile)
             # Loop for the datacenters which should be integrated
             for line in synchroList.splitlines():
                 if not len(line):
@@ -1945,6 +2094,10 @@ class RoutingCache(object):
                                                   dcid.strip()),
                                      routingTable=ptRT,
                                      allowOverlaps=allowOverlaps)
+                    ptVN = addRoutes(os.path.join(os.getcwd(), 'data',
+                                                  'routing-%s.xml' %
+                                                  dcid.strip()),
+                                     vnTable=ptVN)
 
             # Set here self.stationTable
             self.stationTable = dict()
@@ -1953,5 +2106,5 @@ class RoutingCache(object):
             with open(binFile, 'wb') \
                     as finalRoutes:
                 self.logs.debug('Writing %s\n' % binFile)
-                pickle.dump((ptRT, self.stationTable), finalRoutes)
+                pickle.dump((ptRT, self.stationTable, ptVN), finalRoutes)
                 self.routingTable = ptRT

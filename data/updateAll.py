@@ -23,6 +23,7 @@ import telnetlib
 import argparse
 from time import sleep
 import xml.etree.cElementTree as ET
+import logging
 
 try:
     import cPickle as pickle
@@ -36,30 +37,33 @@ except ImportError:
 
 sys.path.append('..')
 
-from routeutils.utils import addRemote
-from routeutils.utils import addRoutes
-from routeutils.utils import cacheStations
-from routeutils.utils import Route
-from routeutils.utils import RoutingCache
-import logging
+try:
+    from routeutils.utils import addRemote
+    from routeutils.utils import addRoutes
+    from routeutils.utils import addVirtualNets
+    from routeutils.utils import cacheStations
+    from routeutils.utils import Route
+    from routeutils.utils import RoutingCache
+except:
+    raise
 
 
 def mapArcFDSN(route):
     """Map from an Arclink address to a Dataselect one
 
-:param route: Arclink route
-:type route: str
-:returns: Base URL equivalent of the given Arclink route
-:rtype: str
-:raises: Exception
+    :param route: Arclink route
+    :type route: str
+    :returns: Base URL equivalent of the given Arclink route
+    :rtype: str
+    :raises: Exception
 
-.. deprecated:: since version 1.0.2
+    .. deprecated:: since version 1.0.2
 
-.. warning::
+    .. warning::
 
-    In the future this method should not be used and the configuration should
-    be independent from Arclink. Namely, the ``routing.xml`` file must exist in
-    advance.
+        In the future this method should not be used and the configuration
+        should be independent from Arclink. Namely, the ``routing.xml`` file
+        must exist in advance.
 
     """
 
@@ -387,6 +391,7 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
     logs.info('Synchronizing with: %s' % synchroList)
 
     ptRT = addRoutes(fileRoutes, allowOverlaps=allowOverlaps)
+    ptVN = addVirtualNets(fileRoutes)
 
     for line in synchroList.splitlines():
         if not len(line):
@@ -406,6 +411,7 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
             print 'Adding REMOTE %s' % dcid
             ptRT = addRoutes('./routing-%s.xml' % dcid.strip(),
                              routingTable=ptRT, allowOverlaps=allowOverlaps)
+            ptVN = addRoutes('./routing-%s.xml' % dcid.strip(), vnTable=ptVN)
 
     try:
         os.remove('./%s.bin' % fileRoutes)
@@ -416,11 +422,12 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
     cacheStations(ptRT, stationTable)
 
     with open('./%s.bin' % fileRoutes, 'wb') as finalRoutes:
-        pickle.dump((ptRT, stationTable), finalRoutes)
+        pickle.dump((ptRT, stationTable, ptVN), finalRoutes)
         logs.info('Routes in main Routing Table: %s\n' % len(ptRT))
         logs.info('Stations cached: %s\n' %
                   sum([len(stationTable[dc][st]) for dc in stationTable
                        for st in stationTable[dc]]))
+        logs.info('Virtual Networks defined: %s\n' % len(ptVN))
 
 
 def main():

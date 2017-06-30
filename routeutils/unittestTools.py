@@ -1,4 +1,4 @@
-"""Classes to be used in the tests
+"""Classes to be used in the tests.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,10 +20,10 @@ import unittest
 
 
 class WITestRunner(object):
+    """Class in charge of running the tests."""
 
     def __init__(self, outStream=sys.stderr, mode=1):
-        "Save the stream where the output will be printed"
-
+        """Save the stream where the output will be printed."""
         self.mode = mode
         if mode:
             # Colours escape command
@@ -66,6 +66,7 @@ class WITestResult(unittest.TestResult):
     """A test result class that prints in colours to the console."""
 
     def __init__(self, testRunner, mode=1):
+        """Constructor of the WITestResult class."""
         unittest.TestResult.__init__(self)
 
         if mode:
@@ -88,26 +89,32 @@ class WITestResult(unittest.TestResult):
         self.testRunner = testRunner
 
     def startTest(self, test):
+        """Wrapper to start the test and customize the output."""
         unittest.TestResult.startTest(self, test)
         self.testRunner.write('Checking %s... ' % test.shortDescription())
 
     def addSuccess(self, test):
+        """Wrapper to add a successful test and customize the output."""
         unittest.TestResult.addSuccess(self, test)
         self.testRunner.write('[' + self.OKGREEN + 'OK' + self.ENDC + ']\n')
 
     def addError(self, test, err):
+        """Wrapper to add a faulty test and customize the output."""
         unittest.TestResult.addError(self, test, err)
         self.testRunner.write('[' + self.WARNING + 'ERROR' + self.ENDC + ']\n')
 
     def addFailure(self, test, err):
+        """Wrapper to add a test with failure and customize the output."""
         unittest.TestResult.addFailure(self, test, err)
         self.testRunner.write('[' + self.FAIL + 'FAIL' + self.ENDC + ']\n')
 
     def printErrors(self):
+        """Wrapper to print a summary of errors customizing the output."""
         self.printErrorList('Error', self.errors)
         self.printErrorList('Failure', self.failures)
 
     def printErrorList(self, errorType, errors):
+        """Wrapper to print a list of errors customizing the output."""
         for test, err in errors:
             self.testRunner.write('%s checking %s\n' %
                                   (errorType, test.shortDescription()))
