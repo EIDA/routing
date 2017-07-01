@@ -255,6 +255,16 @@ def application(environ, start_response):
     global routes
     fname = environ['PATH_INFO']
 
+    config = configparser.RawConfigParser()
+    here = os.path.dirname(__file__)
+    config.read(os.path.join(here, 'routing.cfg'))
+    verbo = config.get('Service', 'verbosity')
+    baseURL = config.get('Service', 'baseURL')
+    # Warning is the default value
+    verboNum = getattr(logging, verbo.upper(), 30)
+    logging.info('Verbosity configured with %s' % verboNum)
+    logging.basicConfig(level=verboNum)
+
     # Among others, this will filter wrong function names,
     # but also the favicon.ico request, for instance.
     if fname is None:
@@ -312,16 +322,6 @@ def application(environ, start_response):
     # Check whether the function called is implemented
     implementedFunctions = ['query', 'application.wadl', 'localconfig',
                             'version', 'info']
-
-    config = configparser.RawConfigParser()
-    here = os.path.dirname(__file__)
-    config.read(os.path.join(here, 'routing.cfg'))
-    verbo = config.get('Service', 'verbosity')
-    baseURL = config.get('Service', 'baseURL')
-    # Warning is the default value
-    verboNum = getattr(logging, verbo.upper(), 30)
-    logging.info('Verbosity configured with %s' % verboNum)
-    logging.basicConfig(level=verboNum)
 
     if routes is None:
         # Add routing cache here, to be accessible to all modules
