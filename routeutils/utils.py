@@ -278,7 +278,7 @@ def addVirtualNets(fileName, **kwargs):
                     except:
                         startD = None
                         msg = 'Error while converting START attribute.\n'
-                        logs.error(msg)
+                        logs.warning(msg)
 
                     try:
                         auxEnd = stream.get('end')
@@ -286,7 +286,7 @@ def addVirtualNets(fileName, **kwargs):
                     except:
                         endD = None
                         msg = 'Error while converting END attribute.\n'
-                        logs.error(msg)
+                        logs.warning(msg)
 
                     if vnCode not in ptVN:
                         ptVN[vnCode] = [(Stream(net, sta, loc, cha),
