@@ -107,7 +107,7 @@ def applyFormat(resultRM, outFormat='xml'):
                 # All parameters are passed in the GET format with exception of
                 # priority which is consumed here.
                 iterObj.append(datacenter['url'] + '?' +
-                               '&'.join([k + '=' + (str(item[k]) if
+                               '&'.join([k + '=' + (str(item[k]) if not
                                          isinstance(item[k], datetime.datetime)
                                          else item[k].isoformat()) for k in
                                          item if item[k] not in ('', '*') and
