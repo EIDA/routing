@@ -69,6 +69,20 @@ class RouteCacheTests(unittest.TestCase):
 
         self.assertIsTrue(false, 'A RoutingException was expected!')
 
+    def testDS_ZE(self):
+        """Dataselect ZE.*.*.*"""
+
+        expURL = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
+        result = self.rc.getRoute(Stream('ZE', '*', '*', '*'), TW(None, None))
+        self.assertIsInstance(result, RequestMerge,
+                              'A RequestMerge object was expected!')
+        self.assertEqual(len(result), 1,
+                         'Wrong number of data centers for GE.*.*.*!')
+        self.assertEqual(len(result[0]['params']), 4,
+                         '4 epochs are expected from the ZE network')
+        self.assertEqual(result[0]['name'], 'dataselect',
+                         'Wrong service name!')
+
     def testDS_GE(self):
         """Dataselect GE.*.*.*"""
 

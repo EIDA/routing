@@ -461,6 +461,24 @@ class RouteCacheTests(unittest.TestCase):
                                  'URL for network %s is not from %s!' %
                                  (params['net'], expec[params['net']]))
 
+    def testDS_ZE(self):
+        """Dataselect ZE.*.*.* ."""
+        req = urllib2.Request(self.host + '?net=ZE&format=json')
+        try:
+            u = urllib2.urlopen(req)
+            buffer = u.read()
+        except:
+            raise Exception('Error retrieving data for ZE.*.*.*')
+
+        result = json.loads(buffer)
+
+        for node in result:
+            self.assertEqual(node['name'], 'dataselect',
+                             'Service of node is not dataselect!')
+
+            self.assertEqual(len(node['params']), 4,
+                            '4 epochs are expected from the ZE network')
+
     def testDS_GE(self):
         """Dataselect GE.*.*.* ."""
         req = urllib2.Request(self.host + '?net=GE&format=json')
