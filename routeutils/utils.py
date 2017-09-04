@@ -1555,16 +1555,25 @@ class RoutingCache(object):
                 else:
                     priorities.append(None)
 
+            if not alternative:
+                # Retrieve only the lowest value of priority
+                prio2retrieve = [min(x for x in priorities if x is not None)]
+            else:
+                # Retrieve all alternatives. Don't care about priorities
+                prio2retrieve = [x for x in priorities if x is not None]
+
+            # print prio2retrieve
+
             for pos, p in enumerate(priorities):
-                if p is None:
+                if p not in prio2retrieve:
                     continue
 
                 # Add tuples with (Stream, Route)
                 subs2.append((stRT, self.routingTable[stRT][pos]))
 
                 # If I don't want the alternative take only the first one
-                if not alternative:
-                    break
+                # if not alternative:
+                #     break
 
         # print 'subs2', subs2
 
