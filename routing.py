@@ -23,6 +23,7 @@ from routeutils.wsgicomm import WIContentError
 from routeutils.wsgicomm import WIClientError
 from routeutils.wsgicomm import WIError
 from routeutils.wsgicomm import send_plain_response
+from routeutils.wsgicomm import send_html_response
 from routeutils.wsgicomm import send_xml_response
 from routeutils.wsgicomm import send_error_response
 from routeutils.utils import Stream
@@ -321,7 +322,7 @@ def application(environ, start_response):
 
     # Check whether the function called is implemented
     implementedFunctions = ['query', 'application.wadl', 'localconfig',
-                            'version', 'info']
+                            'version', 'info', '']
 
     if routes is None:
         # Add routing cache here, to be accessible to all modules
@@ -336,7 +337,17 @@ def application(environ, start_response):
                                    'Function "%s" not implemented.' % fname,
                                    start_response)
 
-    if fname == 'application.wadl':
+
+    if fname == '':
+        iterObj = ''
+        here = os.path.dirname(__file__)
+        helpFile = os.path.join(here, 'help.html')
+        with open(helpFile, 'r') as helpHandle:
+            iterObj = helpHandle.read()
+            status = '200 OK'
+            return send_html_response(status, iterObj, start_response)
+
+    elif fname == 'application.wadl':
         iterObj = ''
         here = os.path.dirname(__file__)
         appWadl = os.path.join(here, 'application.wadl')
