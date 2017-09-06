@@ -146,10 +146,20 @@ def cacheStations(routingTable, stationTable):
     """
     ptRT = routingTable
     for st in ptRT.keys():
+        # Set a default result
+        result = None
+
+        # Set with the domain from all routes related to this stream
         services = set(urlparse(rt.address).netloc for rt in ptRT[st])
         for rt in ptRT[st]:
             if rt.service == 'station':
                 result = getStationCache(st, rt)
+
+        if result is None:
+            logging.warning('No Station-WS defined for this stream! No cache!')
+            # Set a default value so that things still work
+            result = list()
+
         for service in services:
             try:
                 stationTable[service][st] = result
