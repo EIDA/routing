@@ -1567,6 +1567,9 @@ class RoutingCache(object):
                 else:
                     priorities.append(None)
 
+            if not len([x for x in priorities if x is not None]):
+                continue
+
             if not alternative:
                 # Retrieve only the lowest value of priority
                 prio2retrieve = [min(x for x in priorities if x is not None)]
