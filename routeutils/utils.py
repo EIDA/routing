@@ -162,7 +162,10 @@ def cacheStations(routingTable, stationTable):
 
         for service in services:
             try:
-                stationTable[service][st] = result
+                if isinstance(stationTable[service][st], list):
+                    stationTable[service][st].expand(result)
+                else:
+                    stationTable[service][st] = result
             except KeyError:
                 stationTable[service] = dict()
                 stationTable[service][st] = result
