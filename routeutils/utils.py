@@ -153,7 +153,10 @@ def cacheStations(routingTable, stationTable):
         services = set(urlparse(rt.address).netloc for rt in ptRT[st])
         for rt in ptRT[st]:
             if rt.service == 'station':
-                result = getStationCache(st, rt)
+                if result is None:
+                    result = getStationCache(st, rt)
+                else:
+                    result.extend(getStationCache(st, rt))
 
         if result is None:
             logging.warning('No Station-WS defined for this stream! No cache!')
@@ -162,10 +165,7 @@ def cacheStations(routingTable, stationTable):
 
         for service in services:
             try:
-                if isinstance(stationTable[service][st], list):
-                    stationTable[service][st].expand(result)
-                else:
-                    stationTable[service][st] = result
+                stationTable[service][st] = result
             except KeyError:
                 stationTable[service] = dict()
                 stationTable[service][st] = result
