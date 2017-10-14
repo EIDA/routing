@@ -159,30 +159,7 @@ paths:
 
       responses:
         '200':
-          description: List of routes to request the specified (meta)data.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#components/schemas/Route'
-            application/xml:
-              schema:
-                type: array
-                items:
-                  $ref: '#components/schemas/Route'
-            text/plain:
-              schema:
-                type: string
-              examples:
-                getformat:
-                  # FIXME How to express the list of urls?
-                  summary: This is an example of the get format
-                  value: "http://server.domain/path/query?key=value"
-                postformat:
-                  # FIXME How to express the array of blocks of url and parameters?
-                  summary: This is an example of the post format
-                  value: "http://server.domain/path/query\nNET STA LOC CHA 2010-01-01T00:00:00Z 2010-01-02T00:00:00Z"
+          $ref: '#/components/responses/Routes'
 
         '204':
           description: No data available with the specified parameters.
@@ -210,24 +187,38 @@ paths:
     post:
       summary: Get routes to request the (meta)data specified in the body
       description: Returns a list of routes which should be used to get the data.
-      parameters:
-        - name: template
-          in: path
-          required: true
-          description: Name of the template
-          schema:
-            type: string
+      requestBody:
+        content:
+            # a plain text with the time windows
+          text/plain:
+            schema:
+              type: string
       responses:
         '200':
-          description: A Template in Notation3 format
+          $ref: '#/components/responses/Routes'
+
+        '204':
+          description: No data available with the specified parameters.
+
+        '400':
+          description: Bad request due to improper specification, unrecognized parameter, parameter value out of range, etc.
           content:
-            text/n3:
+            text/plain:
               schema:
                 type: string
-        '204':
-          description: The Template does not exist.
-        '400':
-          $ref: '#/components/responses/Standard4XXErrorResponse'
+
+        '413':
+          description: Request would result in too much data being returned or the request itself is too large. Returned error message should include the service limitations in the detailed description. Service limits should also be documented in the service WADL.
+
+        '414':
+          description: Request URI too large.
+
+        default:
+          description: Unexpected error
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/responses/Standard4XXErrorResponse'
 
 components:
   schemas:
@@ -266,6 +257,32 @@ components:
             $ref: '#/components/schemas/ParamsSet'
 
   responses:
+    Routes:
+      description: List of routes to request the specified (meta)data.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#components/schemas/Route'
+        application/xml:
+          schema:
+            type: array
+            items:
+              $ref: '#components/schemas/Route'
+        text/plain:
+          schema:
+            type: string
+          examples:
+            getformat:
+              # FIXME How to express the list of urls?
+              summary: This is an example of the get format
+              value: "http://server.domain/path/query?key=value"
+            postformat:
+              # FIXME How to express the array of blocks of url and parameters?
+              summary: This is an example of the post format
+              value: "http://server.domain/path/query\nNET STA LOC CHA 2010-01-01T00:00:00Z 2010-01-02T00:00:00Z"
+
     Standard4XXErrorResponse:
       description: Bad Request.
       content:
