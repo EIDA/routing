@@ -66,6 +66,7 @@ paths:
             type: array
             items:
               type: string
+            default: '*'
           style: form
           explode: false
         - name: station
@@ -76,6 +77,7 @@ paths:
             type: array
             items:
               type: string
+            default: '*'
           style: form
           explode: false
         - name: location
@@ -86,6 +88,7 @@ paths:
             type: array
             items:
               type: string
+            default: '*'
           style: form
           explode: false
         - name: channel
@@ -96,6 +99,7 @@ paths:
             type: array
             items:
               type: string
+            default: '*'
           style: form
           explode: false
         - name: starttime
@@ -128,6 +132,7 @@ paths:
             format: float
             minimum: -90.0
             maximum: 90.0
+            default: -90.0
         - name: maxlatitude
           in: query
           description: Limit to stations with latitude smaller than or equal to the specified maximum.
@@ -137,6 +142,7 @@ paths:
             format: float
             minimum: -90.0
             maximum: 90.0
+            default: 90.0
         - name: minlongitude
           in: query
           description: Limit to stations with longitude larger than or equal to the specified minimum.
@@ -146,6 +152,7 @@ paths:
             format: float
             minimum: -180.0
             maximum: 180.0
+            default: -180.0
         - name: maxlongitude
           in: query
           description: Limit to stations with longitude smaller than or equal to the specified maximum.
@@ -155,6 +162,7 @@ paths:
             format: float
             minimum: -180.0
             maximum: 180.0
+            default: 180.0
         - name: format
           in: query
           description: Format of the output
