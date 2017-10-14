@@ -89,24 +89,28 @@ paths:
         - name: starttime
           in: query
           description: Start time of the time window
+          required: false
           schema:
             type: string
             format: date-time
         - name: endtime
           in: query
           description: End time of the time window
+          required: false
           schema:
             type: string
             format: date-time
         - name: service
           in: query
           description: Service type
+          required: false
           schema:
             type: string
             default: "dataselect"
         - name: minlatitude
           in: query
           description: Limit to stations with latitude larger than or equal to the specified minimum.
+          required: false
           schema:
             type: number
             format: float
@@ -115,6 +119,7 @@ paths:
         - name: maxlatitude
           in: query
           description: Limit to stations with latitude smaller than or equal to the specified maximum.
+          required: false
           schema:
             type: number
             format: float
@@ -123,6 +128,7 @@ paths:
         - name: minlongitude
           in: query
           description: Limit to stations with longitude larger than or equal to the specified minimum.
+          required: false
           schema:
             type: number
             format: float
@@ -131,6 +137,7 @@ paths:
         - name: maxlongitude
           in: query
           description: Limit to stations with longitude smaller than or equal to the specified maximum.
+          required: false
           schema:
             type: number
             format: float
@@ -139,6 +146,7 @@ paths:
         - name: format
           in: query
           description: Format of the output
+          required: false
           schema:
             type: string
             default: "xml"
@@ -150,6 +158,7 @@ paths:
         - name: alternative
           in: query
           description: Include alternative routes in the output
+          required: false
           schema:
             type: boolean
             default: false
