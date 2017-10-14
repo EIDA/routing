@@ -1,0 +1,261 @@
+openapi: 3.0.0
+
+info:
+  version: 1.1.1
+  title: Routing Service API
+  description: API specification of the Routing Service
+  license:
+    name: GPLv3
+    url: https://www.gnu.org/licenses/gpl-3.0.html
+  contact:
+    name: Javier Quinteros
+    url: http://www.gfz-potsdam.de/en/section/seismology/staff/profil/javier-quinteros/
+    email: javier@gfz-potsdam.de
+
+servers:
+  - url: 'http://geofon.gfz-potsdam.de/eidaws/routing/1'
+    description: Routing Service at GEOFON
+
+paths:
+  /version:
+    get:
+      summary: Get version of the code
+      description: Returns a string specifying the version.
+      responses:
+        '200':
+          description: Version of the code
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /application.wadl:
+    get:
+      summary: Get the description of the service in WADL format
+      description: Returns the WADL description of the Routing Service.
+      responses:
+        '200':
+          description: WADL description of the service
+          content:
+            application/xml:
+              schema:
+                type: string
+
+  /query:
+    get:
+      summary: Get routes to request the (meta)data specified by the parameters
+      description: Returns a list of routes which should be used to get the data.
+      parameters:
+        - name: network
+          in: query
+          description: Network code
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: false
+        - name: station
+          in: query
+          description: Station code
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: false
+        - name: location
+          in: query
+          description: Location code
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: false
+        - name: channel
+          in: query
+          description: Channel code
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: false
+        - name: starttime
+          in: query
+          description: Start time of the time window
+          schema:
+            type: string
+            format: date-time
+        - name: endtime
+          in: query
+          description: End time of the time window
+          schema:
+            type: string
+            format: date-time
+        - name: service
+          in: query
+          description: Service type
+          schema:
+            type: string
+            default: "dataselect"
+        - name: minlatitude
+          in: query
+          description: Limit to stations with latitude larger than or equal to the specified minimum.
+          schema:
+            type: number
+            format: float
+            minimum: -90.0
+            maximum: 90.0
+        - name: maxlatitude
+          in: query
+          description: Limit to stations with latitude smaller than or equal to the specified maximum.
+          schema:
+            type: number
+            format: float
+            minimum: -90.0
+            maximum: 90.0
+        - name: minlongitude
+          in: query
+          description: Limit to stations with longitude larger than or equal to the specified minimum.
+          schema:
+            type: number
+            format: float
+            minimum: -180.0
+            maximum: 180.0
+        - name: maxlongitude
+          in: query
+          description: Limit to stations with longitude smaller than or equal to the specified maximum.
+          schema:
+            type: number
+            format: float
+            minimum: -180.0
+            maximum: 180.0
+        - name: format
+          in: query
+          description: Format of the output
+          schema:
+            type: string
+            default: "xml"
+            enum:
+            - "xml"
+            - "json"
+            - "get"
+            - "post"
+        - name: alternative
+          in: query
+          description: Include alternative routes in the output
+          schema:
+            type: boolean
+            default: false
+            enum:
+            - false
+            - true
+
+      responses:
+        '200':
+          description: List of routes to request the specified (meta)data.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#components/schemas/Route'
+            application/xml:
+              schema:
+                type: array
+                items:
+                  $ref: '#components/schemas/Route'
+            text/plain:
+              schema:
+                type: string
+              examples:
+                getformat:
+                  # FIXME How to express the list of urls?
+                  summary: This is an example of the get format
+                  value: "http://server.domain/path/query?key=value"
+                postformat:
+                  # FIXME How to express the array of blocks of url and parameters?
+                  summary: This is an example of the post format
+                  value: "http://server.domain/path/query\nNET STA LOC CHA 2010-01-01T00:00:00Z 2010-01-02T00:00:00Z"
+
+        '204':
+          description: No data available with the specified parameters.
+
+        default:
+          description: Unexpected error
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/responses/Standard4XXErrorResponse'
+
+    post:
+      summary: Get routes to request the (meta)data specified in the body
+      description: Returns a list of routes which should be used to get the data.
+      parameters:
+        - name: template
+          in: path
+          required: true
+          description: Name of the template
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A Template in Notation3 format
+          content:
+            text/n3:
+              schema:
+                type: string
+        '204':
+          description: The Template does not exist.
+        '400':
+          $ref: '#/components/responses/Standard4XXErrorResponse'
+
+components:
+  schemas:
+    ParamsSet:
+      description: Set of parameters to create a query together with the URL.
+      type: object
+      properties:
+        net:
+         type: string
+        sta:
+          type: string
+        loc:
+          type: string
+        cha:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        priority:
+          type: number
+
+    Route:
+      type: object
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+        params:
+          description: List of parameters to create many queries with the same URL.
+          type: array
+          items:
+            $ref: '#/components/schemas/ParamsSet'
+
+  responses:
+    Standard4XXErrorResponse:
+      description: Bad Request.
+      content:
+        text/plain:
+          schema:
+            type: string
