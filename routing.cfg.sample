@@ -6,6 +6,8 @@ port = 18002
 [Service]
 # Base URL of the current Routing Service
 baseURL = http://mydomain.dom/eidaws/routing/1
+# Directory where the system was installed
+directory = /var/www/eidaws/routing/1/
 # String that must be returned when the method "config" is called
 info = Routing information from the Arclink Server at GEOFON.
    All the routes related to the data in EIDA are supposed to be available here.
