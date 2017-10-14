@@ -187,6 +187,19 @@ paths:
         '204':
           description: No data available with the specified parameters.
 
+        '400':
+          description: Bad request due to improper specification, unrecognized parameter, parameter value out of range, etc.
+          content:
+            text/plain:
+              schema:
+                type: string
+
+        '413':
+          description: Request would result in too much data being returned or the request itself is too large. Returned error message should include the service limitations in the detailed description. Service limits should also be documented in the service WADL.
+
+        '414':
+          description: Request URI too large.
+
         default:
           description: Unexpected error
           content:
