@@ -29,6 +29,18 @@ paths:
               schema:
                 type: string
 
+  /info:
+    get:
+      summary: Get human readable description of the routes included in this instance of the Routing Service.
+      description: Returns a description of the routes included in this Routing Service.
+      responses:
+        '200':
+          description: Information about the routes available in this Routing Service.
+          content:
+            text/plain:
+              schema:
+                type: string
+
   /application.wadl:
     get:
       summary: Get the description of the service in WADL format
