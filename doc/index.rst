@@ -277,13 +277,6 @@ to be used in the generation of the `application.wadl` method. For instance, ::
 
     baseURL = http://mydomain.dom/eidaws/routing/1
 
-`directory` determines the root directory where the system was deployed in order
-to be able to find the modules to import. ::
-
-.. code-block:: ini
-
-    directory = /var/www/eidaws/routing/1/
-
 The variable `info` specifies the string
 that the ``config`` method from the service should return.
 
