@@ -7,19 +7,9 @@
 # ----------------------------------------------------------------------
 
 import sys
+import os
 
-# More Python 3 compatibility
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
-
-# Read the installation directory
-configP = configparser.RawConfigParser()
-if len(configP.read('routing.cfg')):
-    directory = configP.get('Service', 'directory')
-else:
-    raise Exception('Option "directory" not found in cfg file')
+directory = os.path.dirname(__file__)
 
 sys.path.append(directory)
 import routing
