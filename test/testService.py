@@ -31,6 +31,8 @@ here = os.path.dirname(__file__)
 sys.path.append(os.path.join(here, '..'))
 from routeutils.unittestTools import WITestRunner
 
+import configparser
+
 
 class RouteCacheTests(unittest.TestCase):
     """Test the functionality of routing.py."""
@@ -714,5 +716,9 @@ if __name__ == '__main__':
         else:
             host = arg
             del sys.argv[ind]
+    else:
+        configP = configparser.RawConfigParser()
+        configP.read('routing.cfg')
+        host = configP.get('Service', 'baseURL')
 
     unittest.main(testRunner=WITestRunner(mode=mode))
