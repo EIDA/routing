@@ -703,6 +703,7 @@ if __name__ == '__main__':
     # 0=Plain mode (good for printing); 1=Colourful mode
     mode = 1
 
+    # The default host is the one in the cfg file
     try:
         directory = os.path.dirname(__file__)
         configP = configparser.RawConfigParser()
@@ -711,7 +712,6 @@ if __name__ == '__main__':
     except:
         pass
 
-    # The default host is localhost
     for ind in range(len(sys.argv)-1, -1, -1):
         if ind == 0:
             break
