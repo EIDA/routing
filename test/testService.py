@@ -212,9 +212,6 @@ class RouteCacheTests(unittest.TestCase):
             self.assertTrue(False, '%s (%s)' % (msg, e))
             return
 
-        self.assertTrue(False, msg)
-        return
-
     def test_wrong_alternative(self):
         """Wrong values in alternative parameter."""
         # Test with an integer > 1
@@ -505,7 +502,7 @@ class RouteCacheTests(unittest.TestCase):
                 errors.append(line)
 
         if numErrors:
-            print '\n', '\n'.join(errors)
+            print('\n' + '\n'.join(errors))
             self.assertEqual(0, 1, 'Error in %d lines' % len(errors))
 
     def testDS_GE_RO(self):
@@ -562,7 +559,7 @@ class RouteCacheTests(unittest.TestCase):
                 errors.append(line)
 
         if numErrors:
-            print '\n', '\n'.join(errors)
+            print('\n' + '\n'.join(errors))
             self.assertEqual(0, 1, 'Error in %d lines' % len(errors))
 
     def testDS_CH_LIENZ_HHZ(self):
@@ -590,7 +587,7 @@ class RouteCacheTests(unittest.TestCase):
                 errors.append(line)
 
         if numErrors:
-            print '\n', '\n'.join(errors)
+            print('\n' + '\n'.join(errors))
             self.assertEqual(0, 1, 'Error in %d lines' % len(errors))
 
     def testDS_CH_LIENZ_BHZ(self):
@@ -623,7 +620,7 @@ class RouteCacheTests(unittest.TestCase):
                 errors.append(line)
 
         if numErrors:
-            print '\n', '\n'.join(errors)
+            print('\n' + '\n'.join(errors))
             self.assertEqual(0, 1, 'Error in %d lines' % len(errors))
 
     # def testDS_CH_LIENZ_qHZ(self):
@@ -686,14 +683,14 @@ class RouteCacheTests(unittest.TestCase):
                 errors.append(line)
 
         if numErrors:
-            print '\n', '\n'.join(errors)
+            print('\n' + '\n'.join(errors))
             self.assertEqual(0, 1, 'Error in %d lines' % len(errors))
 
 
 # ----------------------------------------------------------------------
 def usage():
     """Print how to use the service test."""
-    print 'testService [-h|--help] [-p|--plain] http://server/path'
+    print('testService [-h|--help] [-p|--plain] http://server/path')
 
 
 global host

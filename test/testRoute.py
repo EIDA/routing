@@ -55,7 +55,7 @@ class RouteCacheTests(unittest.TestCase):
         except RoutingException:
             return
 
-        self.assertIsTrue(false, 'A RoutingException was expected!')
+        self.assertIsTrue(False, 'A RoutingException was expected!')
 
     def test_wrong_datetime(self):
         """Swap start and end time."""
@@ -68,7 +68,7 @@ class RouteCacheTests(unittest.TestCase):
         except RoutingException:
             return
 
-        self.assertIsTrue(false, 'A RoutingException was expected!')
+        self.assertIsTrue(False, 'A RoutingException was expected!')
 
     def testDS_ZE(self):
         """Dataselect ZE.*.*.*"""
@@ -193,8 +193,7 @@ class RouteCacheTests(unittest.TestCase):
 
 # ----------------------------------------------------------------------
 def usage():
-    print 'testRoute [-h] [-p]'
-
+    print('testRoute [-h] [-p]')
 
 if __name__ == '__main__':
 
