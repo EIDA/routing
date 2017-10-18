@@ -703,22 +703,26 @@ if __name__ == '__main__':
     # 0=Plain mode (good for printing); 1=Colourful mode
     mode = 1
 
+    try:
+        directory = os.path.dirname(__file__)
+        configP = configparser.RawConfigParser()
+        configP.read(os.path.join(directory, '..', 'routing.cfg'))
+        host = configP.get('Service', 'baseURL')
+    except:
+        pass
+
     # The default host is localhost
-    for ind, arg in enumerate(sys.argv):
+    for ind in range(len(sys.argv)-1, -1, -1):
         if ind == 0:
-            continue
-        if arg in ('-p', '--plain'):
-            del sys.argv[ind]
+            break
+        if sys.argv[ind] in ('-p', '--plain'):
+            sys.argv.pop(ind)
             mode = 0
-        elif arg in ('-h', '--help'):
+        elif sys.argv[ind] in ('-h', '--help'):
             usage()
             sys.exit(0)
         else:
-            host = arg
-            del sys.argv[ind]
-    else:
-        configP = configparser.RawConfigParser()
-        configP.read('routing.cfg')
-        host = configP.get('Service', 'baseURL')
+            host = sys.argv[ind]
+            sys.argv.pop(ind)
 
     unittest.main(testRunner=WITestRunner(mode=mode))
