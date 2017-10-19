@@ -6,4 +6,3 @@ doc/.build/
 *.bck
 .ropeproject
 .idea
-routing.wsgi
