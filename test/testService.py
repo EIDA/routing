@@ -703,7 +703,7 @@ if __name__ == '__main__':
     # The default host is the one in the cfg file
     try:
         directory = os.path.dirname(__file__)
-        configP = configparser.RawConfigParser()
+        configP = ConfigParser.RawConfigParser()
         configP.read(os.path.join(directory, '..', 'routing.cfg'))
         host = configP.get('Service', 'baseURL')
     except:
