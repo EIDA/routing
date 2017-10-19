@@ -705,7 +705,7 @@ if __name__ == '__main__':
         directory = os.path.dirname(__file__)
         configP = ConfigParser.RawConfigParser()
         configP.read(os.path.join(directory, '..', 'routing.cfg'))
-        host = configP.get('Service', 'baseURL')
+        host = configP.get('Service', 'baseURL') + '/query'
     except:
         pass
 
