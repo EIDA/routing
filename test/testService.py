@@ -399,7 +399,7 @@ class RouteCacheTests(unittest.TestCase):
             msg = 'Components of the version number seem not to be integers.'
             self.assertEqual(1, 0, msg)
         # Check for exact version
-        self.assertEqual(components, [1, 1, 0], 'Version is not 1.1.0 !')
+        self.assertEqual(components, [1, 1, 1], 'Version is not 1.1.1 !')
 
     def testDS_VirtualNetwork(self):
         """Dataselect _GEALL.*.*.* ."""
