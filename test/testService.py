@@ -31,7 +31,7 @@ here = os.path.dirname(__file__)
 sys.path.append(os.path.join(here, '..'))
 from routeutils.unittestTools import WITestRunner
 
-import configparser
+import ConfigParser
 
 
 class RouteCacheTests(unittest.TestCase):

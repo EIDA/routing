@@ -32,7 +32,7 @@ from routeutils.utils import Stream
 from routeutils.utils import TW
 from routeutils.utils import RoutingException
 
-import configparser
+import ConfigParser
 
 class RouteCacheTests(unittest.TestCase):
     """Test the functionality of routing.py
