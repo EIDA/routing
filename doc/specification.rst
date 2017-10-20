@@ -24,8 +24,8 @@ Conceptual Architecture
 This service provides routing information for distributed data centers, in the
 case where multiple different seismic data centres offer access to data and
 products using compatible types of services. Examples of the data and product
-objects are seismic timeseries waveforms, station inventory, or earthquake
-catalogue event data. The
+objects are seismic timeseries waveforms, station inventory, or quality
+parameters from the waveforms. The
 `European Integrated Data Archive <http://www.orfeus-eu.org/eida/eida.html>`_
 (EIDA) is an example of a set of distributed data centres (the EIDA „nodes“).
 EIDA have offered Arclink and Seedlink services for many years, and now offer
