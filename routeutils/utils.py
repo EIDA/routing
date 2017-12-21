@@ -1476,7 +1476,7 @@ class RoutingCache(object):
 
         if ((result is None) or (not len(result))):
             # Through an exception if there is an error
-            raise RoutingException('Unknown service: %s' % service)
+            raise RoutingException('No routes found!')
 
         return result
 
