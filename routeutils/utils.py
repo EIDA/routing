@@ -353,7 +353,7 @@ def addRoutes(fileName, **kwargs):
     logs.info('Overlaps between routes will ' +
               ('' if allowOverlaps else 'NOT ' + 'be allowed'))
 
-    with open(fileName, 'r') as testFile:
+    with open(fileName, 'r', encoding='utf-8') as testFile:
         # Parse the routing file
         # Traverse through the networks
         # get an iterable
@@ -576,7 +576,7 @@ def addRemote(fileName, url):
     try:
         u = ul.urlopen(req)
 
-        with open(fileName, 'w') as routeExt:
+        with open(fileName, 'w', encoding='utf-8') as routeExt:
             logs.debug('%s opened\n%s:' % (fileName, url))
             # Read the data in blocks of predefined size
             buf = u.read(blockSize).decode('utf-8')
@@ -603,7 +603,7 @@ def addRemote(fileName, url):
         try:
             u = ul.urlopen(req)
 
-            with open(fileName, 'w') as routeExt:
+            with open(fileName, 'w', encoding='utf-8') as routeExt:
                 logs.debug('%s opened\n%s:' % (fileName, url))
                 # Read the data in blocks of predefined size
                 buf = u.read(blockSize).decode('utf-8')
@@ -1210,7 +1210,7 @@ class RoutingCache(object):
         header = """<?xml version="1.0" encoding="utf-8"?>
 <ns0:routing xmlns:ns0="http://geofon.gfz-potsdam.de/ns/Routing/1.0/">
 """
-        with open(foutput, 'w') as fo:
+        with open(foutput, 'w', encoding='utf-8') as fo:
             fo.write(header)
             for st, lr in self.routingTable.iteritems():
                 fo.write(st.toXMLopen())
@@ -1226,7 +1226,7 @@ class RoutingCache(object):
         :rtype: str
 
         """
-        with open(self.routingFile) as f:
+        with open(self.routingFile, encoding='utf-8') as f:
             return f.read().decode('utf-8')
 
     def configArclink(self):
@@ -1303,7 +1303,8 @@ class RoutingCache(object):
         except:
             pass
 
-        with open(os.path.join(here, 'routing.xml.download'), 'w') as fout:
+        with open(os.path.join(here, 'routing.xml.download'), 'w',
+                  encoding='utf-8') as fout:
             fout.write(routTable[routTable.find('<'):-3])
 
         try:
@@ -2077,7 +2078,7 @@ class RoutingCache(object):
         try:
             config = configparser.RawConfigParser()
             self.logs.debug(self.configFile)
-            with open(self.configFile) as c:
+            with open(self.configFile, encoding='utf-8') as c:
                 config.readfp(c)
 
             if 'synchronize' in config.options('Service'):
@@ -2103,7 +2104,7 @@ class RoutingCache(object):
         ptVN.clear()
         try:
             binFile = self.routingFile + '.bin'
-            with open(binFile) as rMerged:
+            with open(binFile, encoding='utf-8') as rMerged:
                 self.routingTable, self.stationTable, self.vnTable = \
                     pickle.load(rMerged)
         except:
@@ -2138,7 +2139,7 @@ class RoutingCache(object):
             self.stationTable = dict()
             cacheStations(ptRT, self.stationTable)
 
-            with open(binFile, 'wb') \
+            with open(binFile, 'wb', encoding='utf-8') \
                     as finalRoutes:
                 self.logs.debug('Writing %s\n' % binFile)
                 pickle.dump((ptRT, self.stationTable, ptVN), finalRoutes)
