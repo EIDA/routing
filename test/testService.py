@@ -502,23 +502,12 @@ class RouteCacheTests(unittest.TestCase):
         except:
             raise Exception('Error retrieving data for GE.*.*.*')
 
-        expected = '[{"url": ' + \
-            '"http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query", ' + \
-            '"params": [{"loc": "*", "end": "", "sta": "*", "cha": "*", ' + \
-            '"priority": 1, "start": "1993-01-01T00:00:00", "net": "GE"}], ' +\
-            '"name": "dataselect"}]'
+        jsonBuf = json.loads(buffer)
 
-        numErrors = 0
-        errors = []
-        d = Differ()
-        for line in d.compare([buffer], [expected]):
-            if line[:2] != '  ':
-                numErrors += 1
-                errors.append(line)
-
-        if numErrors:
-            print('\n' + '\n'.join(errors))
-            self.assertEqual(0, 1, 'Error in %d lines' % len(errors))
+        self.assertEqual(jsonBuf[0]['name'], 'dataselect',
+                         'Service of node is not dataselect!')
+        self.assertEqual(jsonBuf[0]['url'], 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query',
+                         'URL is not from GEOFON!')
 
     def testDS_GE_RO(self):
         """Dataselect GE,RO.*.*.* ."""
@@ -559,23 +548,14 @@ class RouteCacheTests(unittest.TestCase):
         except:
             raise Exception('Error retrieving data for GE.APE.*.*')
 
-        expected = '[{"url": ' + \
-            '"http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query", ' + \
-            '"params": [{"loc": "*", "end": "", "sta": "APE", "cha": "*", ' + \
-            '"priority": 1, "start": "1993-01-01T00:00:00", "net": "GE"}], ' +\
-            '"name": "dataselect"}]'
+        jsonBuf = json.loads(buffer)
 
-        numErrors = 0
-        errors = []
-        d = Differ()
-        for line in d.compare([buffer], [expected]):
-            if line[:2] != '  ':
-                numErrors += 1
-                errors.append(line)
-
-        if numErrors:
-            print('\n' + '\n'.join(errors))
-            self.assertEqual(0, 1, 'Error in %d lines' % len(errors))
+        self.assertEqual(jsonBuf[0]['name'], 'dataselect',
+                         'Service of node is not dataselect!')
+        self.assertEqual(jsonBuf[0]['url'], 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query',
+                         'URL is not from GEOFON!')
+        self.assertEqual(jsonBuf[0]['params']['sta'], 'APE',
+                         'Station is not APE!')
 
     def testDS_CH_LIENZ_HHZ(self):
         """Dataselect CH.LIENZ.*.HHZ ."""
@@ -587,23 +567,16 @@ class RouteCacheTests(unittest.TestCase):
         except:
             raise Exception('Error retrieving data for CH.LIENZ.*.HHZ')
 
-        expected = '[{"url": ' + \
-            '"http://eida.ethz.ch/fdsnws/dataselect/1/query", "params": ' + \
-            '[{"loc": "*", "end": "", "sta": "LIENZ", "cha": "HHZ", ' + \
-            '"priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}], ' +\
-            '"name": "dataselect"}]'
+        jsonBuf = json.loads(buffer)
 
-        numErrors = 0
-        errors = []
-        d = Differ()
-        for line in d.compare([buffer], [expected]):
-            if line[:2] != '  ':
-                numErrors += 1
-                errors.append(line)
-
-        if numErrors:
-            print('\n' + '\n'.join(errors))
-            self.assertEqual(0, 1, 'Error in %d lines' % len(errors))
+        self.assertEqual(jsonBuf[0]['name'], 'dataselect',
+                         'Service of node is not dataselect!')
+        self.assertEqual(jsonBuf[0]['url'], 'http://eida.ethz.ch/fdsnws/dataselect/1/query',
+                         'URL is not from ETH!')
+        self.assertEqual(jsonBuf[0]['params']['sta'], 'LIENZ',
+                         'Station is not LIENZ!')
+        self.assertEqual(jsonBuf[0]['params']['cha'], 'HHZ',
+                         'Channel is not HHZ!')
 
     def testDS_CH_LIENZ_BHZ(self):
         """Dataselect CH.LIENZ.*.BHZ ."""
@@ -615,63 +588,16 @@ class RouteCacheTests(unittest.TestCase):
         except:
             raise Exception('Error retrieving data for CH.LIENZ.*.BHZ')
 
-        expected = '[{"url": ' + \
-            '"http://eida.ethz.ch/fdsnws/dataselect/1/query", "params": ' + \
-            '[{"loc": "*", "end": "", "sta": "LIENZ", "cha": "BHZ", ' + \
-            '"priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}], ' +\
-            '"name": "dataselect"}]'
-        # expected = '[{"url": ' + \
-        #     '"http://www.orfeus-eu.org/fdsnws/dataselect/1/query", ' + \
-        #     '"params": [{"loc": "*", "end": "", "sta": "LIENZ", "cha": ' + \
-        #     '"BHZ", "priority": 2, "start": "1980-01-01T00:00:00", "net": ' +
-        #     '"CH"}], "name": "dataselect"}]'
+        jsonBuf = json.loads(buffer)
 
-        numErrors = 0
-        errors = []
-        d = Differ()
-        for line in d.compare([buffer], [expected]):
-            if line[:2] != '  ':
-                numErrors += 1
-                errors.append(line)
-
-        if numErrors:
-            print('\n' + '\n'.join(errors))
-            self.assertEqual(0, 1, 'Error in %d lines' % len(errors))
-
-    # def testDS_CH_LIENZ_qHZ(self):
-    #     "Dataselect CH.LIENZ.*.?HZ"
-
-    #     req = ul.Request('%s?net=CH&sta=LIENZ&cha=?HZ&format=json' %
-    #                           self.host)
-    #     try:
-    #         u = ul.urlopen(req)
-    #         buffer = u.read().decode('utf-8')
-    #     except:
-    #         raise Exception('Error retrieving data for CH.LIENZ.*.?HZ')
-
-    #     expected = '[{"url": ' + \
-    #         '"http://www.orfeus-eu.org/fdsnws/dataselect/1/query", ' + \
-    #         '"params": [{"loc": "*", "end": "", "sta": "LIENZ", "cha": ' + \
-    #         '"BHZ", "priority": 2, "start": "1980-01-01T00:00:00", ' + \
-    #         '"net": "CH"}], "name": "dataselect"}, {"url": ' + \
-    #         '"http://eida.ethz.ch/fdsnws/dataselect/1/query", "params": ' + \
-    #         '[{"loc": "*", "end": "", "sta": "LIENZ", "cha": "LHZ", ' + \
-    #         '"priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}, ' +
-    #         '{"loc": "*", "end": "", "sta": "LIENZ", "cha": "HHZ", ' + \
-    #         '"priority": 1, "start": "1980-01-01T00:00:00", "net": "CH"}], '+
-    #         '"name": "dataselect"}]'
-
-    #     numErrors = 0
-    #     errors = []
-    #     d = Differ()
-    #     for line in d.compare([buffer], [expected]):
-    #         if line[:2] != '  ':
-    #             numErrors += 1
-    #             errors.append(line)
-
-    #     if numErrors:
-    #         print '\n', '\n'.join(errors)
-    #         self.assertEqual(0, 1, 'Error in %d lines' % len(errors))
+        self.assertEqual(jsonBuf[0]['name'], 'dataselect',
+                         'Service of node is not dataselect!')
+        self.assertEqual(jsonBuf[0]['url'], 'http://eida.ethz.ch/fdsnws/dataselect/1/query',
+                         'URL is not from ETH!')
+        self.assertEqual(jsonBuf[0]['params']['sta'], 'LIENZ',
+                         'Station is not LIENZ!')
+        self.assertEqual(jsonBuf[0]['params']['cha'], 'BHZ',
+                         'Channel is not BHZ!')
 
     def testDS_RO_BZS_BHZ(self):
         """Dataselect RO.BZS.*.BHZ ."""
@@ -683,23 +609,16 @@ class RouteCacheTests(unittest.TestCase):
         except:
             raise Exception('Error retrieving data for RO.BZS.*.BHZ')
 
-        expected = '[{"url": ' + \
-            '"http://eida-sc3.infp.ro/fdsnws/dataselect/1/query", ' + \
-            '"params": [{"loc": "*", "end": "", "sta": "BZS", "cha": ' + \
-            '"BHZ", "priority": 1, "start": "1980-01-01T00:00:00", "net": ' + \
-            '"RO"}], "name": "dataselect"}]'
+        jsonBuf = json.loads(buffer)
 
-        numErrors = 0
-        errors = []
-        d = Differ()
-        for line in d.compare([buffer], [expected]):
-            if line[:2] != '  ':
-                numErrors += 1
-                errors.append(line)
-
-        if numErrors:
-            print('\n' + '\n'.join(errors))
-            self.assertEqual(0, 1, 'Error in %d lines' % len(errors))
+        self.assertEqual(jsonBuf[0]['name'], 'dataselect',
+                         'Service of node is not dataselect!')
+        self.assertEqual(jsonBuf[0]['url'], 'http://eida-sc3.infp.ro/fdsnws/dataselect/1/query',
+                         'URL is not from NIEP!')
+        self.assertEqual(jsonBuf[0]['params']['sta'], 'BZS',
+                         'Station is not BZS!')
+        self.assertEqual(jsonBuf[0]['params']['cha'], 'BHZ',
+                         'Channel is not BHZ!')
 
 
 # ----------------------------------------------------------------------
