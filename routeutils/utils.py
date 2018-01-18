@@ -2104,7 +2104,7 @@ class RoutingCache(object):
         ptVN.clear()
         try:
             binFile = self.routingFile + '.bin'
-            with open(binFile, encoding='utf-8') as rMerged:
+            with open(binFile, 'rb') as rMerged:
                 self.routingTable, self.stationTable, self.vnTable = \
                     pickle.load(rMerged)
         except:
@@ -2139,7 +2139,7 @@ class RoutingCache(object):
             self.stationTable = dict()
             cacheStations(ptRT, self.stationTable)
 
-            with open(binFile, 'wb', encoding='utf-8') \
+            with open(binFile, 'wb') \
                     as finalRoutes:
                 self.logs.debug('Writing %s\n' % binFile)
                 pickle.dump((ptRT, self.stationTable, ptVN), finalRoutes)
