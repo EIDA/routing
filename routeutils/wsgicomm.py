@@ -232,7 +232,7 @@ def send_xml_response(status, body, start_response):
     response_headers = [('Content-Type', 'text/xml; charset=UTF-8'),
                         ('Content-Length', str(len(body)))]
     start_response(status, response_headers)
-    return [body]
+    return [body.encode('utf-8')]
 
 
 def send_plain_response(status, body, start_response):
@@ -244,7 +244,7 @@ def send_plain_response(status, body, start_response):
     response_headers = [('Content-Type', 'text/plain'),
                         ('Content-Length', str(len(body)))]
     start_response(status, response_headers)
-    return [body]
+    return [body.encode('utf-8')]
 
 
 def send_nobody_response(status, start_response):
@@ -269,7 +269,7 @@ def send_error_response(status, body, start_response):
     # print status
     # print sys.exc_info()
     start_response(status, response_headers, sys.exc_info())
-    return [body]
+    return [body.encode('utf-8')]
 
 
 def send_file_response(status, body, start_response):

@@ -274,7 +274,7 @@ def application(environ, start_response):
 
     if len(environ['QUERY_STRING']) > 1000:
         return send_error_response("414 Request URI too large",
-                                   "maximum URI length is 1000 characters".encode('utf-8'),
+                                   "maximum URI length is 1000 characters",
                                    start_response)
 
     try:
@@ -315,10 +315,10 @@ def application(environ, start_response):
             # Add some user-friendliness (this message triggers an alert
             # box on the client)
             return send_error_response("400 Bad Request",
-                                       "maximum request size exceeded".encode('utf-8'),
+                                       "maximum request size exceeded",
                                        start_response)
 
-        return send_error_response("400 Bad Request", str(e).encode('utf-8'), start_response)
+        return send_error_response("400 Bad Request", str(e), start_response)
 
     # Check whether the function called is implemented
     implementedFunctions = ['query', 'application.wadl', 'localconfig',
@@ -345,7 +345,7 @@ def application(environ, start_response):
         with open(helpFile, 'r') as helpHandle:
             iterObj = helpHandle.read()
             status = '200 OK'
-            return send_html_response(status, iterObj.encode('utf-8'), start_response)
+            return send_html_response(status, iterObj, start_response)
 
     elif fname == 'application.wadl':
         iterObj = ''
@@ -356,7 +356,7 @@ def application(environ, start_response):
             tomorrow = datetime.date.today() + datetime.timedelta(days=1)
             iterObj = appFile.read() % (baseURL, tomorrow)
             status = '200 OK'
-            return send_xml_response(status, iterObj.encode('utf-8'), start_response)
+            return send_xml_response(status, iterObj, start_response)
 
     elif fname == 'query':
         makeQuery = globals()['makeQuery%s' % environ['REQUEST_METHOD']]
@@ -373,15 +373,15 @@ def application(environ, start_response):
                 return send_plain_response(status, iterObj, start_response)
 
         except WIError as w:
-            return send_error_response(w.status, w.body.encode('utf-8'), start_response)
+            return send_error_response(w.status, w.body, start_response)
 
     elif fname == 'localconfig':
-        return send_xml_response('200 OK', routes.localConfig().encode('utf-8'),
+        return send_xml_response('200 OK', routes.localConfig(),
                                  start_response)
 
     elif fname == 'version':
         text = "1.1.1"
-        return send_plain_response('200 OK', text.encode('utf-8'), start_response)
+        return send_plain_response('200 OK', text, start_response)
 
     elif fname == 'info':
         config = configparser.RawConfigParser()
@@ -389,6 +389,6 @@ def application(environ, start_response):
         config.read(os.path.join(here, 'routing.cfg'))
 
         text = config.get('Service', 'info')
-        return send_plain_response('200 OK', text.encode('utf-8'), start_response)
+        return send_plain_response('200 OK', text, start_response)
 
     raise Exception('This point should have never been reached!')
