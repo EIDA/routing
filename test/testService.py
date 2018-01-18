@@ -63,7 +63,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request(q % self.host)
         try:
             u = ul.urlopen(req)
-            buf = u.read()
+            buf = u.read().decode('utf-8')
         except ul.URLError:
             msg = 'Error while filtering routes by location.'
             self.assertTrue(False, msg)
@@ -92,7 +92,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request('%s?sta=BNDI&format=post' % self.host)
         try:
             u = ul.urlopen(req)
-            buf = u.read()
+            buf = u.read().decode('utf-8')
         except ul.URLError:
             msg = 'Error while requesting routes based on a station name.'
             self.assertTrue(False, msg)
@@ -120,7 +120,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request('%sapplication.wadl' % self.host[:-len('query')])
         try:
             u = ul.urlopen(req)
-            buf = u.read()
+            buf = u.read().decode('utf-8')
         except ul.URLError:
             msg = 'The file application.wadl cannot be built (missing ' + \
                 '"baseUrl" in config file?)'
@@ -143,7 +143,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request('%s?net=GE%s' % (self.host, '&net=GE' * 500))
         try:
             u = ul.urlopen(req)
-            u.read()
+            u.read().decode('utf-8')
         except ul.URLError as e:
             self.assertEqual(e.code, 414, msg)
             return
@@ -158,7 +158,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request('%s?start=2015-01-01&format=post' % self.host)
         try:
             u = ul.urlopen(req)
-            u.read()
+            u.read().decode('utf-8')
         except ul.URLError:
             self.assertTrue(False, msg)
 
@@ -171,7 +171,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request('%s?start=2013-01-01&end=2016-12-31' % self.host)
         try:
             u = ul.urlopen(req)
-            u.read()
+            u.read().decode('utf-8')
         except ul.URLError:
             self.assertTrue(False, msg)
 
@@ -185,7 +185,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request(q % self.host)
         try:
             u = ul.urlopen(req)
-            u.read()
+            u.read().decode('utf-8')
         except ul.URLError:
             self.assertTrue(False, msg)
 
@@ -198,7 +198,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request('%s?net=GE&wrongparam=1' % self.host)
         try:
             u = ul.urlopen(req)
-            u.read()
+            u.read().decode('utf-8')
         except ul.URLError as e:
             self.assertEqual(e.code, 400, msg)
             return
@@ -212,7 +212,7 @@ class RouteCacheTests(unittest.TestCase):
         msg = 'An error code 204 No Content is expected for an unknown network'
         try:
             u = ul.urlopen(req)
-            u.read()
+            u.read().decode('utf-8')
             self.assertEqual(u.getcode(), 204, '%s (%s)' % (msg, u.getcode()))
             return
         except ul.URLError as e:
@@ -236,7 +236,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request('%s?net=GE&alternative=%s' % (self.host, value))
         try:
             u = ul.urlopen(req)
-            u.read()
+            u.read().decode('utf-8')
             self.assertTrue(False, msg)
         except ul.URLError as e:
             self.assertEqual(e.code, 400, msg)
@@ -248,7 +248,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request('%s?net=GE&alternative=%s' % (self.host, value))
         try:
             u = ul.urlopen(req)
-            u.read()
+            u.read().decode('utf-8')
             self.assertTrue(False, msg)
         except ul.URLError as e:
             self.assertEqual(e.code, 400, msg)
@@ -260,7 +260,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request('%s?net=GE&alternative=%s' % (self.host, value))
         try:
             u = ul.urlopen(req)
-            u.read()
+            u.read().decode('utf-8')
             self.assertTrue(False, msg)
         except ul.URLError as e:
             self.assertEqual(e.code, 400, msg)
@@ -272,7 +272,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request('%s?net=GE&alternative=%s' % (self.host, value))
         try:
             u = ul.urlopen(req)
-            u.read()
+            u.read().decode('utf-8')
             self.assertTrue(False, msg)
         except ul.URLError as e:
             self.assertEqual(e.code, 400, msg)
@@ -284,7 +284,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request('%s?net=GE&alternative=%s' % (self.host, value))
         try:
             u = ul.urlopen(req)
-            u.read()
+            u.read().decode('utf-8')
             self.assertTrue(False, msg)
         except ul.URLError as e:
             self.assertEqual(e.code, 400, msg)
@@ -298,7 +298,7 @@ class RouteCacheTests(unittest.TestCase):
         msg = 'When a wrong format is specified an error code 400 is expected!'
         try:
             u = ul.urlopen(req)
-            u.read()
+            u.read().decode('utf-8')
         except ul.URLError as e:
             self.assertEqual(e.code, 400, msg)
             return
@@ -313,7 +313,7 @@ class RouteCacheTests(unittest.TestCase):
         msg = 'When a wrong format is specified an error code 400 is expected!'
         try:
             u = ul.urlopen(req)
-            u.read()
+            u.read().decode('utf-8')
         except ul.URLError as e:
             if hasattr(e, 'code'):
                 self.assertEqual(e.code, 400, '%s (%s)' % (msg, e.code))
@@ -335,7 +335,7 @@ class RouteCacheTests(unittest.TestCase):
         msg = 'When starttime > endtime an error code 400 is expected!'
         try:
             u = ul.urlopen(req)
-            u.read()
+            u.read().decode('utf-8')
         except ul.URLError as e:
             self.assertEqual(e.code, 400, msg)
             return
@@ -353,7 +353,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request(appmethod)
         try:
             u = ul.urlopen(req)
-            buffer = u.read()
+            buffer = u.read().decode('utf-8')
         except:
             msg = 'Error calling the "application.wadl" method'
             self.assertTrue(False, msg)
@@ -380,7 +380,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request(infomethod)
         try:
             u = ul.urlopen(req)
-            buffer = u.read()
+            buffer = u.read().decode('utf-8')
         except:
             msg = 'Error calling the "info" method'
             self.assertTrue(False, msg)
@@ -399,7 +399,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request(vermethod)
         try:
             u = ul.urlopen(req)
-            buffer = u.read()
+            buffer = u.read().decode('utf-8')
         except:
             raise Exception('Error retrieving version number')
 
@@ -424,7 +424,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request(self.host + '?net=_GEALL&format=json')
         try:
             u = ul.urlopen(req)
-            buffer = u.read()
+            buffer = u.read().decode('utf-8')
         except:
             raise Exception('Error retrieving data for _GEALL.*.*.*')
 
@@ -452,7 +452,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request(self.host + '?net=_GEALL&sta=AP*&format=json')
         try:
             u = ul.urlopen(req)
-            buffer = u.read()
+            buffer = u.read().decode('utf-8')
         except:
             raise Exception('Error retrieving data for _GEALL.*.*.*')
 
@@ -480,7 +480,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request(self.host + '?net=ZE&format=json')
         try:
             u = ul.urlopen(req)
-            buffer = u.read()
+            buffer = u.read().decode('utf-8')
         except:
             raise Exception('Error retrieving data for ZE.*.*.*')
 
@@ -498,7 +498,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request(self.host + '?net=GE&format=json')
         try:
             u = ul.urlopen(req)
-            buffer = u.read()
+            buffer = u.read().decode('utf-8')
         except:
             raise Exception('Error retrieving data for GE.*.*.*')
 
@@ -530,7 +530,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request(self.host + '?net=GE,RO&format=json')
         try:
             u = ul.urlopen(req)
-            buffer = u.read()
+            buffer = u.read().decode('utf-8')
         except:
             raise Exception('Error retrieving data for GE,RO.*.*.*')
 
@@ -555,7 +555,7 @@ class RouteCacheTests(unittest.TestCase):
         req = ul.Request(self.host + '?net=GE&sta=APE&format=json')
         try:
             u = ul.urlopen(req)
-            buffer = u.read()
+            buffer = u.read().decode('utf-8')
         except:
             raise Exception('Error retrieving data for GE.APE.*.*')
 
@@ -583,7 +583,7 @@ class RouteCacheTests(unittest.TestCase):
                               self.host)
         try:
             u = ul.urlopen(req)
-            buffer = u.read()
+            buffer = u.read().decode('utf-8')
         except:
             raise Exception('Error retrieving data for CH.LIENZ.*.HHZ')
 
@@ -611,7 +611,7 @@ class RouteCacheTests(unittest.TestCase):
                               self.host)
         try:
             u = ul.urlopen(req)
-            buffer = u.read()
+            buffer = u.read().decode('utf-8')
         except:
             raise Exception('Error retrieving data for CH.LIENZ.*.BHZ')
 
@@ -645,7 +645,7 @@ class RouteCacheTests(unittest.TestCase):
     #                           self.host)
     #     try:
     #         u = ul.urlopen(req)
-    #         buffer = u.read()
+    #         buffer = u.read().decode('utf-8')
     #     except:
     #         raise Exception('Error retrieving data for CH.LIENZ.*.?HZ')
 
@@ -679,7 +679,7 @@ class RouteCacheTests(unittest.TestCase):
                               self.host)
         try:
             u = ul.urlopen(req)
-            buffer = u.read()
+            buffer = u.read().decode('utf-8')
         except:
             raise Exception('Error retrieving data for RO.BZS.*.BHZ')
 
