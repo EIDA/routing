@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Routing Webservice for EIDA
 
@@ -20,15 +20,15 @@ any later version.
 import datetime
 import xml.etree.cElementTree as ET
 import json
-from wsgicomm import WIClientError
-from utils import RequestMerge
+from .wsgicomm import WIClientError
+from .utils import RequestMerge
 
 
 def _ConvertDictToXmlRecurse(parent, dictitem):
     assert not isinstance(dictitem, list)
 
     if isinstance(dictitem, dict):
-        for (tag, child) in dictitem.iteritems():
+        for (tag, child) in dictitem.items():
             if str(tag) == '_text':
                 parent.text = str(child)
             elif isinstance(child, list):
@@ -121,15 +121,15 @@ def applyFormat(resultRM, outFormat='xml'):
             for item in datacenter['params']:
                 item['loc'] = item['loc'] if len(item['loc']) else '--'
                 item['start'] = item['start'] if isinstance(item['start'],
-                                                            basestring) \
+                                                            str) \
                     else item['start'].isoformat()
 
                 # If endtime is a datetime get it in isoformat (string)
                 if isinstance(item['end'], datetime.datetime):
                     item['end'] = item['end'].isoformat()
                 # If endtime is not a string use a default value (tomorrow)
-                if ((not isinstance(item['end'], basestring)) or
-                        (isinstance(item['end'], basestring) and
+                if ((not isinstance(item['end'], str)) or
+                        (isinstance(item['end'], str) and
                          not len(item['end']))):
                     item['end'] = (datetime.date.today() +
                                    datetime.timedelta(days=1)).isoformat()
