@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 """Retrieve data from a Routing WS (or Arclink server) to be used locally
 
@@ -22,7 +22,7 @@ import sys
 import telnetlib
 import argparse
 from time import sleep
-import xml.etree.cElementTree as ET
+# import xml.etree.cElementTree as ET
 import logging
 
 try:
@@ -408,7 +408,7 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
         if os.path.exists('./routing-%s.xml' % dcid.strip()):
             # FIXME addRoutes should return no Exception ever and skip a
             # problematic file returning a coherent version of the routes
-            print 'Adding REMOTE %s' % dcid
+            print('Adding REMOTE %s' % dcid)
             ptRT = addRoutes('./routing-%s.xml' % dcid.strip(),
                              routingTable=ptRT, allowOverlaps=allowOverlaps)
             ptVN = addVirtualNets('./routing-%s.xml' % dcid.strip(),
@@ -499,8 +499,8 @@ def main():
             pass
 
     else:
-        print 'Skipping routing information. Config file does not allow to ' \
-            + 'overwrite the information. (%s)' % args.config
+        print('Skipping routing information. Config file does not allow to '
+              + 'overwrite the information. (%s)' % args.config)
 
     try:
         os.remove('routing-tmp.xml.bin')
