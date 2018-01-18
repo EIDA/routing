@@ -579,12 +579,12 @@ def addRemote(fileName, url):
         with open(fileName, 'w') as routeExt:
             logs.debug('%s opened\n%s:' % (fileName, url))
             # Read the data in blocks of predefined size
-            buf = u.read(blockSize)
+            buf = u.read(blockSize).decode('utf-8')
             while len(buf):
                 logs.debug('.')
                 # Return one block of data
                 routeExt.write(buf)
-                buf = u.read(blockSize)
+                buf = u.read(blockSize).decode('utf-8')
 
             # Close the connection to avoid overloading the server
             u.close()
@@ -606,12 +606,12 @@ def addRemote(fileName, url):
             with open(fileName, 'w') as routeExt:
                 logs.debug('%s opened\n%s:' % (fileName, url))
                 # Read the data in blocks of predefined size
-                buf = u.read(blockSize)
+                buf = u.read(blockSize).decode('utf-8')
                 while len(buf):
                     logs.debug('.')
                     # Return one block of data
                     routeExt.write(buf)
-                    buf = u.read(blockSize)
+                    buf = u.read(blockSize).decode('utf-8')
 
                 # Close the connection to avoid overloading the server
                 u.close()
@@ -1227,7 +1227,7 @@ class RoutingCache(object):
 
         """
         with open(self.routingFile) as f:
-            return f.read()
+            return f.read().decode('utf-8')
 
     def configArclink(self):
         """Connect via telnet to an Arclink server to get routing information.
