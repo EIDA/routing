@@ -1226,8 +1226,8 @@ class RoutingCache(object):
         :rtype: str
 
         """
-        with open(self.routingFile, encoding='utf-8') as f:
-            return f.read()
+        with open(self.routingFile) as f:
+            return f.read().encode('utf-8')
 
     def configArclink(self):
         """Connect via telnet to an Arclink server to get routing information.
