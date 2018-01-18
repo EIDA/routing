@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Tests to check that Routing Service classes are working
 
@@ -32,7 +32,6 @@ from routeutils.utils import Stream
 from routeutils.utils import TW
 from routeutils.utils import RoutingException
 
-import ConfigParser
 
 class RouteCacheTests(unittest.TestCase):
     """Test the functionality of routing.py
@@ -55,7 +54,7 @@ class RouteCacheTests(unittest.TestCase):
         except RoutingException:
             return
 
-        self.assertIsTrue(False, 'A RoutingException was expected!')
+        self.assertTrue(False, 'A RoutingException was expected!')
 
     def test_wrong_datetime(self):
         """Swap start and end time."""
@@ -68,7 +67,7 @@ class RouteCacheTests(unittest.TestCase):
         except RoutingException:
             return
 
-        self.assertIsTrue(False, 'A RoutingException was expected!')
+        self.assertTrue(False, 'A RoutingException was expected!')
 
     def testDS_ZE(self):
         """Dataselect ZE.*.*.*"""

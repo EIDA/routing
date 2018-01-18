@@ -20,7 +20,6 @@ import sys
 import datetime
 import fnmatch
 import telnetlib
-from urlparse import urlparse
 import xml.etree.cElementTree as ET
 from time import sleep
 from collections import namedtuple
@@ -44,6 +43,12 @@ try:
     import urllib.request as ul
 except ImportError:
     import urllib2 as ul
+
+# More Python 3 compatibility
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 
 
 def str2date(dStr):
@@ -105,7 +110,8 @@ def getStationCache(st, rt):
     req = ul.Request(query)
     try:
         u = ul.urlopen(req)
-        buf = u.read()
+        # What is read has to be decoded in python3
+        buf = u.read().decode('utf-8')
     except ul.URLError as e:
         logging.warning('The URL does not seem to be a valid Station-WS')
         if hasattr(e, 'reason'):
