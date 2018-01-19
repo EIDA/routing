@@ -56,7 +56,7 @@ def ConvertDictToXml(listdict):
     r = ET.Element('service')
     for di in listdict:
         d = {'datacenter': di}
-        roottag = d.keys()[0]
+        roottag = list(d.keys())[0]
         root = ET.SubElement(r, roottag)
         _ConvertDictToXmlRecurse(root, d[roottag])
     return r
