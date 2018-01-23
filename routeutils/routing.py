@@ -140,7 +140,9 @@ def applyFormat(resultRM, outFormat='xml'):
         iterObj = '\n'.join(iterObj)
         return iterObj
     elif outFormat == 'xml':
-        iterObj2 = ET.tostring(ConvertDictToXml(resultRM))
+        # Setting the encoding to unicode is the only way to get a string in the output
+        # Otherwise it will be a bytestring and the send_xml_response will fail
+        iterObj2 = ET.tostring(ConvertDictToXml(resultRM), encoding='unicode')
         return iterObj2
     else:
         raise WIClientError('Wrong format requested!')
