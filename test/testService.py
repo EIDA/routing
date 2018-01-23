@@ -409,7 +409,7 @@ class RouteCacheTests(unittest.TestCase):
         self.assertEqual(len(components), 3, msg)
 
         try:
-            components = map(int, components)
+            components = [x for x in map(int, components)]
         except ValueError:
             msg = 'Components of the version number seem not to be integers.'
             self.assertEqual(1, 0, msg)
@@ -554,7 +554,9 @@ class RouteCacheTests(unittest.TestCase):
                          'Service of node is not dataselect!')
         self.assertEqual(jsonBuf[0]['url'], 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query',
                          'URL is not from GEOFON!')
-        self.assertEqual(jsonBuf[0]['params']['sta'], 'APE',
+        self.assertEqual(len(jsonBuf[0]['params']), 1,
+                         'Only one set of "params" was expected!')
+        self.assertEqual(jsonBuf[0]['params'][0]['sta'], 'APE',
                          'Station is not APE!')
 
     def testDS_CH_LIENZ_HHZ(self):
@@ -573,9 +575,9 @@ class RouteCacheTests(unittest.TestCase):
                          'Service of node is not dataselect!')
         self.assertEqual(jsonBuf[0]['url'], 'http://eida.ethz.ch/fdsnws/dataselect/1/query',
                          'URL is not from ETH!')
-        self.assertEqual(jsonBuf[0]['params']['sta'], 'LIENZ',
+        self.assertEqual(jsonBuf[0]['params'][0]['sta'], 'LIENZ',
                          'Station is not LIENZ!')
-        self.assertEqual(jsonBuf[0]['params']['cha'], 'HHZ',
+        self.assertEqual(jsonBuf[0]['params'][0]['cha'], 'HHZ',
                          'Channel is not HHZ!')
 
     def testDS_CH_LIENZ_BHZ(self):
@@ -594,9 +596,9 @@ class RouteCacheTests(unittest.TestCase):
                          'Service of node is not dataselect!')
         self.assertEqual(jsonBuf[0]['url'], 'http://eida.ethz.ch/fdsnws/dataselect/1/query',
                          'URL is not from ETH!')
-        self.assertEqual(jsonBuf[0]['params']['sta'], 'LIENZ',
+        self.assertEqual(jsonBuf[0]['params'][0]['sta'], 'LIENZ',
                          'Station is not LIENZ!')
-        self.assertEqual(jsonBuf[0]['params']['cha'], 'BHZ',
+        self.assertEqual(jsonBuf[0]['params'][0]['cha'], 'BHZ',
                          'Channel is not BHZ!')
 
     def testDS_RO_BZS_BHZ(self):
@@ -615,9 +617,9 @@ class RouteCacheTests(unittest.TestCase):
                          'Service of node is not dataselect!')
         self.assertEqual(jsonBuf[0]['url'], 'http://eida-sc3.infp.ro/fdsnws/dataselect/1/query',
                          'URL is not from NIEP!')
-        self.assertEqual(jsonBuf[0]['params']['sta'], 'BZS',
+        self.assertEqual(jsonBuf[0]['params'][0]['sta'], 'BZS',
                          'Station is not BZS!')
-        self.assertEqual(jsonBuf[0]['params']['cha'], 'BHZ',
+        self.assertEqual(jsonBuf[0]['params'][0]['cha'], 'BHZ',
                          'Channel is not BHZ!')
 
 
@@ -657,3 +659,4 @@ if __name__ == '__main__':
             sys.argv.pop(ind)
 
     unittest.main(testRunner=WITestRunner(mode=mode))
+    # unittest.main()
