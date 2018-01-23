@@ -44,18 +44,17 @@ except ImportError:
 
 def getParam(parameters, names, default, csv=False):
     """Read a parameter and return its value or a default value."""
-    try:
-        for n in names:
-            if n in parameters:
-                result = parameters[n].value.upper()
-                break
-        else:
-            result = default
+    for n in names:
+        if n in parameters:
+            if isinstance(parameters[n], list):
+                raise Exception('Parameter(s) %s returned a list instead of a value. Multiple input?' % names)
+            result = parameters[n].value.upper()
+            break
+    else:
+        result = default
 
-        if csv:
-            result = result.split(',')
-    except:
-        result = [default] if csv else default
+    if csv:
+        result = result.split(',')
 
     return result
 
@@ -83,11 +82,15 @@ def makeQueryGET(parameters):
             msg = 'Unknown parameter: %s' % param
             raise WIClientError(msg)
 
-    net = getParam(parameters, ['net', 'network'], '*', csv=True)
-    sta = getParam(parameters, ['sta', 'station'], '*', csv=True)
-    loc = getParam(parameters, ['loc', 'location'], '*', csv=True)
-    cha = getParam(parameters, ['cha', 'channel'], '*', csv=True)
-    start = getParam(parameters, ['start', 'starttime'], None)
+    try:
+        net = getParam(parameters, ['net', 'network'], '*', csv=True)
+        sta = getParam(parameters, ['sta', 'station'], '*', csv=True)
+        loc = getParam(parameters, ['loc', 'location'], '*', csv=True)
+        cha = getParam(parameters, ['cha', 'channel'], '*', csv=True)
+        start = getParam(parameters, ['start', 'starttime'], None)
+    except Exception as e:
+        raise WIClientError(str(e))
+
     try:
         if start is not None:
             start = str2date(start)
