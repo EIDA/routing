@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<ns0:routing xmlns:ns0="http://geofon.gfz-potsdam.de/ns/Routing/1.0/">
-    <ns0:route locationCode="" networkCode="II" stationCode="" streamCode="">
-        <ns0:dataselect address="http://services.iris.edu/fdsnws/dataselect/1/query" end="" priority="9" start="1980-01-01T00:00:00.0000Z" />
-    </ns0:route>
-    <ns0:route locationCode="" networkCode="IU" stationCode="" streamCode="">
-        <ns0:dataselect address="http://services.iris.edu/fdsnws/dataselect/1/query" end="" priority="9" start="1980-01-01T00:00:00.0000Z" />
-    </ns0:route>
-</ns0:routing>
