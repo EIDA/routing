@@ -438,7 +438,6 @@ At Steps 4-6, re-use your previous versions of ``routing.wsgi`` and ``routing.cf
 And of course, copy your local routing table also. ::
 
     $ cp ../1.old/data/routing.xml data/routing.xml
-    $ cp ../1.old/data/masterTable.xml data/masterTable.xml
 
 
 Using the Service
@@ -489,53 +488,6 @@ A better option would be to take the file from Arclink as a base and make some
 adjustments to it manually. The number of routes could be reduced drastically
 by means of a clever use of the wildcards.
 
-If some extra information not available within EIDA would like to be also
-routed, there is a *masterTable* that can be used. When the service starts, it
-checks if a file called ``masterTable.xml`` in the ``data`` folder exists. If
-this is the case, the file is read, the routes inside are loaded in a separate
-table and are given the maximum priority.
-This could be perfect to route requests to other data centres, whose internal
-structure is not well known.
-
-
-.. note:: There are two main differences between the information provided in
-          `routing.xml` and the one provided in `masterTable.xml`. The former
-          will be used to synchronize with other data centers if requested.
-          On the other hand, the information added in `masterTable.xml` will
-          be kept private and not take part in any synchronization process.
-
-
-.. warning:: Only the network level is used to calculate the
-             routing for the routes in the master table. This makes sense if
-             we consider that the main purpose of this *extra* information is
-             to be able to route requests to other data centres who do **not**
-             synchronize their routing information with you. Therefore, the
-             internal and more specific structure of the distribution of data
-             to levels deeper than the network are usually not known.
-
-In the following example, we show how to point to the service in IRIS, when
-the ``II`` network is requested.
-
-.. code-block:: xml
-
-    <?xml version="1.0" encoding="utf-8"?>
-    <ns0:routing xmlns:ns0="http://geofon.gfz-potsdam.de/ns/Routing/1.0/">
-        <ns0:route locationCode="" networkCode="II" stationCode="" streamCode="">
-            <ns0:dataselect address="service.iris.edu/fdsnws/dataselect/1/query"
-                end="" priority="9" start="1980-01-01T00:00:00.0000Z" />
-        </ns0:route>
-    </ns0:routing>
-
-.. warning:: The `priority` attribute will be valid only in the context of the
-             `masterTable`. There is no relation with the priority for a
-             similar route that could be in the normal routing table.
-
-The routes that are part of the ``masterTable.xml`` will not be sent when the
-``localconfig`` method of the service is called, only the ones in the normal
-routing table.
-
-The idea is that the routes in the normal routing table is the local
-information that should be probably synchronized with other Routing Services.
 
 .. _importing_remote_routes:
 

@@ -43,8 +43,7 @@ class RouteCacheTests(unittest.TestCase):
         "Setting up test"
         if hasattr(cls, 'rc'):
             return
-        cls.rc = RoutingCache('../data/routing.xml.sample',
-                              '../data/masterTable.xml.sample')
+        cls.rc = RoutingCache('../data/routing.xml.sample')
 
     def testDS_XXX(self):
         """Non-existing network XXX"""
