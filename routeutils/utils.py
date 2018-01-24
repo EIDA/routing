@@ -588,7 +588,9 @@ def addRemote(fileName, url):
                 logs.debug('.')
                 # Return one block of data
                 routeExt.write(buf)
-                buf = u.read(blockSize).decode('utf-8')
+                buf = u.read(blockSize)
+                if isinstance(buf, bytes):
+                    buf = buf.decode('utf-8')
 
             # Close the connection to avoid overloading the server
             u.close()
