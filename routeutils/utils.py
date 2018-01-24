@@ -146,9 +146,9 @@ def cacheStations(routingTable, stationTable):
     """Loop for all station-WS and cache all station names and locations.
 
     :param routingTable: Routing table.
-    :type routingTable: list
+    :type routingTable: dict
     :param stationTable: Cache with names and locations of stations.
-    :type stationTable: list
+    :type stationTable: dict
     """
     ptRT = routingTable
     for st in ptRT.keys():
@@ -1127,14 +1127,11 @@ class RoutingCache(object):
 
     """
 
-    def __init__(self, routingFile=None, masterFile=None,
-                 config='routing.cfg'):
+    def __init__(self, routingFile=None, config='routing.cfg'):
         """Constructor of RoutingCache.
 
         :param routingFile: XML file with routing information
         :type routingFile: str
-        :param masterFile: XML file with high priority routes at network level
-        :type masterFile: str
         :param config: File where the configuration must be read from
         :type config: str
 
@@ -1152,7 +1149,6 @@ class RoutingCache(object):
         self.routingTable = dict()
         self.logs.info('Reading routes from %s' % self.routingFile)
         self.logs.info('Reading configuration from %s' % self.configFile)
-        self.logs.info('Reading masterTable from %s' % masterFile)
 
         # Dictionary with list of stations inside each virtual network
         self.vnTable = dict()
@@ -1192,18 +1188,6 @@ class RoutingCache(object):
                 self.nextUpd = min(enumerate([(x - now).total_seconds() %
                                               secsDay for x in self.updTimes]),
                                    key=itemgetter(1))[0]
-
-        # Check for masterTable
-        if masterFile is None:
-            self.logs.warning('No masterTable selected')
-        else:
-            # Master routing file in XML format
-            self.masterFile = masterFile
-
-            # Dictionary with list of highest priority routes
-            self.masterTable = dict()
-
-            self.updateMT()
 
     def toXML(self, foutput, nameSpace='ns0'):
         """Export the RoutingCache to an XML representation."""
@@ -1413,7 +1397,6 @@ class RoutingCache(object):
         # No update should be made
         return None
 
-    # FIXME Stream and TW should probably be built before calling this method
     def getRoute(self, stream, tw, service='dataselect', geoLoc=None,
                  alternative=False):
         """Return routes to request data for the stream and timewindow provided.
@@ -1448,19 +1431,6 @@ class RoutingCache(object):
             self.nextUpd = t2u
             self.logs.debug('Update successful at: %s\n' % self.lastUpd)
 
-        # Give priority to the masterTable!
-        try:
-            masterRoute = self.getRouteMaster(stream.n, tw=tw, service=service,
-                                              alternative=alternative)
-            for mr in masterRoute:
-                for reqL in mr['params']:
-                    reqL['sta'] = stream.s
-                    reqL['loc'] = stream.l
-                    reqL['cha'] = stream.c
-            return masterRoute
-        except:
-            pass
-
         # Convert from virtual network to real networks (if needed)
         strtwList = self.vn2real(stream, tw)
         self.logs.debug('Converting %s to %s' % (stream, strtwList))
@@ -1474,7 +1444,6 @@ class RoutingCache(object):
             try:
                 result.extend(self.getRouteDS(service, st, tw, geoLoc,
                                               alternative))
-                # print 'result', result
             except ValueError:
                 pass
 
@@ -1712,214 +1681,10 @@ class RoutingCache(object):
 
         return result
 
-    def getRouteMaster(self, n, tw, service='dataselect', alternative=False):
-        """Look for a high priority :class:`~Route` for a particular network.
-
-        This would provide the flexibility to incorporate new networks and
-        override the normal configuration.
-
-        :param n: Network code
-        :type n: string
-        :param tw: Timewindow
-        :type tw: :class:`~TW`
-        :param service: Service (e.g. dataselect)
-        :type service: string
-        :param alternative: Specifies whether alternative routes should be
-            included
-        :type alternative: Bool
-        :returns: URLs and parameters to request the data
-        :rtype: :class:`~RequestMerge`
-        :raises: RoutingException
-
-        """
-        result = list()
-        realRoutes = None
-
-        # Case 11
-        if Stream(n, None, None, None) in self.masterTable.keys():
-            realRoutes = self.masterTable[n, None, None, None]
-
-        if realRoutes is None:
-            raise RoutingException('No route for this network in masterTable!')
-
-        # Check that I found a route
-        for r in realRoutes:
-            # Check if the timewindow is encompassed in the returned dates
-            if (tw in r.tw):
-                # Filtering with the service parameter!
-                if service == r.service:
-                    result.append(r)
-                    if not alternative:
-                        break
-
-        # If I found nothing raise 204
-        if not len(result):
-            raise RoutingException('No routes have been found!')
-            # raise WIContentError('No routes have been found!')
-
-        result2 = RequestMerge()
-        for r in result:
-            twAux = TW(tw.start if tw.start is not None else '',
-                       tw.end if tw.end is not None else '')
-            result2.append(service, r.address, r.priority if r.priority
-                           is not None else '', Stream(n, None, None,
-                                                       None), twAux)
-
-        return result2
-
     def updateAll(self):
         """Read the two sources of routing information."""
         self.logs.debug('Entering updateAll()\n')
         self.update()
-
-        if self.masterFile is not None:
-            self.updateMT()
-
-    def updateMT(self):
-        """Read the routes with highest priority and store them in memory.
-
-        All the routing information is read into a dictionary. Only the
-        necessary attributes are stored. This relies on the idea
-        that some other agent should update the routing file at
-        a regular period of time.
-
-        """
-        self.logs.debug('Entering updateMT()\n')
-        # Just to shorten notation
-        ptMT = self.masterTable
-
-        mtHandle = None
-        try:
-            mtHandle = open(self.masterFile, 'r')
-        except:
-            msg = 'Error: %s could not be opened.\n'
-            self.logs.error(msg % self.masterFile)
-            return
-
-        # Parse the routing file
-        # Traverse through the networks
-        # get an iterable
-        try:
-            context = ET.iterparse(mtHandle, events=("start", "end"))
-        except IOError as e:
-            self.logs.error(str(e))
-            return
-
-        # turn it into an iterator
-        context = iter(context)
-
-        # get the root element
-        if hasattr(context, 'next'):
-            event, root = context.next()
-        else:
-            event, root = next(context)
-
-        # Check that it is really an inventory
-        if root.tag[-len('routing'):] != 'routing':
-            msg = 'The file parsed seems not to be a routing file (XML).\n'
-            self.logs.error(msg)
-            return
-
-        # Extract the namespace from the root node
-        namesp = root.tag[:-len('routing')]
-
-        ptMT.clear()
-
-        for event, route in context:
-            # The tag of this node should be "route".
-            # Now it is not being checked because
-            # we need all the data, but if we need to filter, this
-            # is the place.
-            #
-            if event == "end":
-                if route.tag == namesp + 'route':
-
-                    # Extract the location code
-                    try:
-                        locationCode = route.get('locationCode')
-                        if len(locationCode) == 0:
-                            locationCode = None
-                    except:
-                        locationCode = None
-
-                    # Extract the network code
-                    try:
-                        networkCode = route.get('networkCode')
-                        if len(networkCode) == 0:
-                            networkCode = None
-                    except:
-                        networkCode = None
-
-                    # Extract the station code
-                    try:
-                        stationCode = route.get('stationCode')
-                        if len(stationCode) == 0:
-                            stationCode = None
-                    except:
-                        stationCode = None
-
-                    # Extract the stream code
-                    try:
-                        streamCode = route.get('streamCode')
-                        if len(streamCode) == 0:
-                            streamCode = None
-                    except:
-                        streamCode = None
-
-                    # Traverse through the sources
-                    # for arcl in route.findall(namesp + 'dataselect'):
-                    for arcl in route:
-                        service = arcl.tag.replace(namesp, '')
-                        # Extract the address
-                        try:
-                            address = arcl.get('address')
-                            if len(address) == 0:
-                                continue
-                        except:
-                            continue
-
-                        # Extract the priority
-                        try:
-                            prio = arcl.get('priority')
-                        except:
-                            prio = None
-
-                        try:
-                            auxStart = arcl.get('start')
-                            startD = str2date(auxStart)
-                        except:
-                            startD = None
-                            msg = 'Error while converting START attribute.\n'
-                            self.logs.error(msg)
-
-                        try:
-                            auxEnd = arcl.get('end')
-                            endD = str2date(auxEnd)
-                        except:
-                            endD = None
-                            msg = 'Error while converting END attribute.\n'
-                            self.logs.error(msg)
-
-                        # Append the network to the list of networks
-                        st = Stream(networkCode, stationCode, locationCode,
-                                    streamCode)
-                        tw = TW(startD, endD)
-                        rt = Route(service, address, tw, prio)
-
-                        if st not in ptMT:
-                            ptMT[st] = [rt]
-                        else:
-                            ptMT[st].append(rt)
-
-                        arcl.clear()
-
-                    route.clear()
-
-                root.clear()
-
-        # Order the routes by priority
-        for keyDict in ptMT:
-            ptMT[keyDict] = sorted(ptMT[keyDict])
 
     def updateVN(self):
         """Read the virtual networks defined.
@@ -2110,7 +1875,7 @@ class RoutingCache(object):
         except:
             ptRT = addRoutes(self.routingFile, allowOverlaps=allowOverlaps)
             ptVN = addVirtualNets(self.routingFile)
-            # Loop for the datacenters which should be integrated
+            # Loop for the data centres which should be integrated
             for line in synchroList.splitlines():
                 if not len(line):
                     break

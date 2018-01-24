@@ -19,6 +19,8 @@ import os
 import cgi
 import datetime
 import logging
+import configparser
+
 from routeutils.wsgicomm import WIContentError
 from routeutils.wsgicomm import WIClientError
 from routeutils.wsgicomm import WIError
@@ -35,11 +37,6 @@ from routeutils.utils import RoutingException
 from routeutils.utils import str2date
 from routeutils.routing import lsNSLC
 from routeutils.routing import applyFormat
-
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
 
 
 def getParam(parameters, names, default, csv=False):
@@ -330,9 +327,8 @@ def application(environ, start_response):
     if routes is None:
         # Add routing cache here, to be accessible to all modules
         routesFile = os.path.join(here, 'data', 'routing.xml')
-        masterFile = os.path.join(here, 'data', 'masterTable.xml')
         configFile = os.path.join(here, 'routing.cfg')
-        routes = RoutingCache(routesFile, masterFile, configFile)
+        routes = RoutingCache(routesFile, configFile)
 
     fname = environ['PATH_INFO'].split('/')[-1]
     if fname not in implementedFunctions:
