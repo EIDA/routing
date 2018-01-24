@@ -559,9 +559,6 @@ def addRemote(fileName, url):
     logs = logging.getLogger('addRemote')
     logs.debug('Entering addRemote(%s)\n' % os.path.basename(fileName))
 
-    # Prepare Request
-    req = ul.Request(url + '/localconfig')
-
     blockSize = 4096 * 100
 
     fileName = fileName + '.download'
@@ -574,7 +571,12 @@ def addRemote(fileName, url):
 
     # Connect to the proper Routing-WS
     try:
-        u = ul.urlopen(req)
+        if url.startswith('http://') or url.startswith('https://'):
+            # Prepare Request
+            req = ul.Request(url + '/localconfig')
+            u = ul.urlopen(req)
+        else:
+            u = open(url, 'r')
 
         with open(fileName, 'w', encoding='utf-8') as routeExt:
             logs.debug('%s opened\n%s:' % (fileName, url))
