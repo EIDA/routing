@@ -200,7 +200,7 @@ def addVirtualNets(fileName, **kwargs):
 
     vnHandle = None
     try:
-        vnHandle = open(fileName, 'r')
+        vnHandle = open(fileName, 'r', encoding='utf-8')
     except:
         msg = 'Error: %s could not be opened.\n'
         logs.error(msg % fileName)
