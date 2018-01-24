@@ -581,7 +581,9 @@ def addRemote(fileName, url):
         with open(fileName, 'w', encoding='utf-8') as routeExt:
             logs.debug('%s opened\n%s:' % (fileName, url))
             # Read the data in blocks of predefined size
-            buf = u.read(blockSize).decode('utf-8')
+            buf = u.read(blockSize)
+            if isinstance(buf, bytes):
+                buf = buf.decode('utf-8')
             while len(buf):
                 logs.debug('.')
                 # Return one block of data
