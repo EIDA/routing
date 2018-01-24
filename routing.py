@@ -236,7 +236,7 @@ def makeQueryPOST(postText):
             endt = str2date(endt)
         except:
             msg = 'Error while converting %s to datetime' % endt
-            raise WIError(msg)
+            raise WIClientError(msg)
 
         try:
             st = Stream(net, sta, loc, cha)
