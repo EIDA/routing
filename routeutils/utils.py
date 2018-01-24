@@ -16,14 +16,12 @@ any later version.
 """
 
 import os
-import sys
 import datetime
 import fnmatch
 import telnetlib
 import xml.etree.cElementTree as ET
 from time import sleep
 from collections import namedtuple
-from operator import itemgetter
 import logging
 
 # Try to be Python 3 compliant as much as we can
@@ -32,23 +30,9 @@ try:
 except ImportError:
     import pickle
 
-# More Python 3 compatibility
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
-
-# More Python 3 compatibility
-try:
-    import urllib.request as ul
-except ImportError:
-    import urllib2 as ul
-
-# More Python 3 compatibility
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    from urlparse import urlparse
+import configparser
+import urllib.request as ul
+from urllib.parse import urlparse
 
 
 def str2date(dStr):
@@ -744,7 +728,6 @@ class RequestMerge(list):
                 super(RequestMerge, self).append(r)
 
 
-# FIXME Should I replace start and end for a TW?
 class Station(namedtuple('Station', ['name', 'latitude', 'longitude', 'start',
                                      'end'])):
     """Namedtuple representing a Station.
@@ -911,10 +894,10 @@ class TW(namedtuple('TW', ['start', 'end'])):
 
         .. rubric:: Examples
 
-        >>> y2011 = datetime(2011, 1, 1)
-        >>> y2012 = datetime(2012, 1, 1)
-        >>> y2013 = datetime(2013, 1, 1)
-        >>> y2014 = datetime(2014, 1, 1)
+        >>> y2011 = datetime.datetime(2011, 1, 1)
+        >>> y2012 = datetime.datetime(2012, 1, 1)
+        >>> y2013 = datetime.datetime(2013, 1, 1)
+        >>> y2014 = datetime.datetime(2014, 1, 1)
         >>> TW(y2011, y2014).overlap(TW(y2012, y2013))
         True
         >>> TW(y2012, y2014).overlap(TW(y2011, y2013))
@@ -1164,37 +1147,6 @@ class RoutingCache(object):
             self.update()
             self.logs.info('RoutingCache finished!')
 
-        # Check update time
-        # Configure the expected update moment of the day
-        now = datetime.datetime.now()
-
-        self.nextUpd = None
-        self.lastUpd = now
-
-        # Read the verbosity setting
-        configP = configparser.RawConfigParser()
-        if len(configP.read(config)):
-
-            updTime = configP.get('Service', 'updateTime')
-
-            auxL = list()
-            for auxT in updTime.split():
-                toAdd = datetime.datetime.strptime(auxT, '%H:%M')
-                auxL.append(toAdd)
-
-            self.updTimes = sorted(auxL)
-            secsDay = 60 * 60 * 24
-
-            # FIXME This hack disables the update time if python is old because
-            # it has no "total_seconds".
-            if sys.version_info[0] == 2 and sys.version_info[1] < 7:
-                auxL = list()
-
-            if auxL:
-                self.nextUpd = min(enumerate([(x - now).total_seconds() %
-                                              secsDay for x in self.updTimes]),
-                                   key=itemgetter(1))[0]
-
     def toXML(self, foutput, nameSpace='ns0'):
         """Export the RoutingCache to an XML representation."""
         header = """<?xml version="1.0" encoding="utf-8"?>
@@ -1365,44 +1317,6 @@ class RoutingCache(object):
             return koeri
         raise Exception('No Dataselect equivalent found for %s' % route)
 
-    def __time2Update(self):
-        secsDay = 60 * 60 * 24
-        # First check whether the information should be updated or not
-        if self.nextUpd is not None:
-            lU = self.lastUpd
-            now = datetime.datetime.now()
-            if len(self.updTimes) == 1:
-                now2lastUpd = (now - lU).seconds % secsDay \
-                    if lU else secsDay
-                upd2lastUpd = (self.updTimes[0] - lU).seconds % secsDay \
-                    if lU else secsDay
-
-                # Check for more than one day or updateTime in the past
-                if (((now - self.lastUpd) > datetime.timedelta(days=1)) or
-                        (now2lastUpd > upd2lastUpd)):
-                    self.logs.debug('now2lastUpd > upd2lastUpd : %s > %s\n'
-                                    % (now2lastUpd, upd2lastUpd))
-                    self.logs.info('Updating at %s!\n' % now)
-                    # Return a pointer to the first (and unique) position of
-                    # the updTimes array
-                    return 0
-            else:
-                self.logs.debug('Next update: %s\n' %
-                                self.updTimes[self.nextUpd])
-                self.logs.debug('Last update: %s\n' % lU)
-
-                auxU = min(enumerate([(x - now).total_seconds() % secsDay
-                                      for x in self.updTimes]),
-                           key=itemgetter(1))[0]
-                if ((auxU != self.nextUpd) or
-                        ((now - lU) > datetime.timedelta(days=1))):
-                    self.logs.info('Updating at %s!\n' % now.isoformat())
-                    # Return a pointer to the position of the updTimes array
-                    # which shows when should the next update take place
-                    return auxU
-        # No update should be made
-        return None
-
     def getRoute(self, stream, tw, service='dataselect', geoLoc=None,
                  alternative=False):
         """Return routes to request data for the stream and timewindow provided.
@@ -1428,15 +1342,6 @@ class RoutingCache(object):
         :raises: RoutingException
 
         """
-        # Is important to check against None because 0 is a valid value with a
-        # total different meaning
-        t2u = self.__time2Update()
-        if t2u is not None:
-            self.updateAll()
-            self.lastUpd = datetime.datetime.now()
-            self.nextUpd = t2u
-            self.logs.debug('Update successful at: %s\n' % self.lastUpd)
-
         # Convert from virtual network to real networks (if needed)
         strtwList = self.vn2real(stream, tw)
         self.logs.debug('Converting %s to %s' % (stream, strtwList))
