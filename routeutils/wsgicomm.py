@@ -295,10 +295,10 @@ def send_file_response(status, body, start_response):
     :platform: Linux
 
     """
-    response_headers = [('Content-Type', body.content_type),
+    response_headers.extend([('Content-Type', body.content_type),
                         ('Content-Length', str(body.size)),
                         ('Content-Disposition', 'attachment; filename=%s' %
-                         (body.filename))]
+                         body.filename)])
     start_response(status, response_headers)
     return body
 
@@ -320,9 +320,9 @@ def send_dynamicfile_response(status, body, start_response):
             # ACTUALLY data to send
 
             # Content-length cannot be set because the file size is unknown
-            response_headers = [('Content-Type', body.content_type),
+            response_headers.extend([('Content-Type', body.content_type),
                                 ('Content-Disposition',
-                                 'attachment; filename=%s' % (body.filename))]
+                                 'attachment; filename=%s' % (body.filename))])
             start_response(status, response_headers)
 
         # Increment the loop count
