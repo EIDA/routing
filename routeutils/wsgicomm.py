@@ -19,6 +19,9 @@ any later version.
 
 import sys
 
+response_headers = [('Access-Control-Allow-Origin', '*'),
+                    ('Access-Control-Allow-Headers', 'Authorization'),
+                    ('Access-Control-Expose-Headers', 'WWW-Authenticate')]
 
 class Logs(object):
     """Given a log level and a stream, redirect the output to the proper place.
@@ -206,7 +209,7 @@ def redirect_page(url, start_response):
     :platform: Linux
 
     """
-    response_headers = [('Location', url)]
+    response_headers.append(('Location', url))
     start_response('301 Moved Permanently', response_headers)
     return ''
 
@@ -217,8 +220,8 @@ def send_html_response(status, body, start_response):
     :platform: Linux
 
     """
-    response_headers = [('Content-Type', 'text/html; charset=UTF-8'),
-                        ('Content-Length', str(len(body)))]
+    response_headers.extend([('Content-Type', 'text/html; charset=UTF-8'),
+                        ('Content-Length', str(len(body)))])
     start_response(status, response_headers)
     return [body]
 
@@ -229,8 +232,8 @@ def send_xml_response(status, body, start_response):
     :platform: Linux
 
     """
-    response_headers = [('Content-Type', 'text/xml; charset=UTF-8'),
-                        ('Content-Length', str(len(body)))]
+    response_headers.extend([('Content-Type', 'text/xml; charset=UTF-8'),
+                        ('Content-Length', str(len(body)))])
     start_response(status, response_headers)
     return [body.encode('utf-8')]
 
@@ -241,8 +244,8 @@ def send_plain_response(status, body, start_response):
     :platform: Linux
 
     """
-    response_headers = [('Content-Type', 'text/plain'),
-                        ('Content-Length', str(len(body)))]
+    response_headers.extend([('Content-Type', 'text/plain'),
+                        ('Content-Length', str(len(body)))])
     start_response(status, response_headers)
     return [body.encode('utf-8')]
 
@@ -253,8 +256,8 @@ def send_json_response(status, body, start_response):
     :platform: Linux
 
     """
-    response_headers = [('Content-Type', 'application/json'),
-                        ('Content-Length', str(len(body)))]
+    response_headers.extend([('Content-Type', 'application/json'),
+                        ('Content-Length', str(len(body)))])
     start_response(status, response_headers)
     return [body.encode('utf-8')]
 
@@ -265,7 +268,7 @@ def send_nobody_response(status, start_response):
     :platform: Linux
 
     """
-    response_headers = [('Content-Length', 0)]
+    response_headers.append(('Content-Length', 0))
     start_response(status, response_headers)
     return []
 
@@ -276,7 +279,7 @@ def send_error_response(status, body, start_response):
     :platform: Linux
 
     """
-    response_headers = [('Content-Type', 'text/plain')]
+    response_headers.append(('Content-Type', 'text/plain'))
     # print response_headers
     # print status
     # print sys.exc_info()
