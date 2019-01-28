@@ -247,6 +247,18 @@ def send_plain_response(status, body, start_response):
     return [body.encode('utf-8')]
 
 
+def send_json_response(status, body, start_response):
+    """Send a JSON response in WSGI style.
+
+    :platform: Linux
+
+    """
+    response_headers = [('Content-Type', 'application/json'),
+                        ('Content-Length', str(len(body)))]
+    start_response(status, response_headers)
+    return [body.encode('utf-8')]
+
+
 def send_nobody_response(status, start_response):
     """Send a plain response without body in WSGI style.
 

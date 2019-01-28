@@ -25,6 +25,7 @@ from routeutils.wsgicomm import WIContentError
 from routeutils.wsgicomm import WIClientError
 from routeutils.wsgicomm import WIError
 from routeutils.wsgicomm import send_plain_response
+from routeutils.wsgicomm import send_json_response
 from routeutils.wsgicomm import send_html_response
 from routeutils.wsgicomm import send_xml_response
 from routeutils.wsgicomm import send_error_response
@@ -336,7 +337,6 @@ def application(environ, start_response):
                                    'Function "%s" not implemented.' % fname,
                                    start_response)
 
-
     if fname == '':
         iterObj = ''
         here = os.path.dirname(__file__)
@@ -368,6 +368,8 @@ def application(environ, start_response):
             status = '200 OK'
             if outForm == 'xml':
                 return send_xml_response(status, iterObj, start_response)
+            elif outForm == 'json':
+                return send_json_response(status, iterObj, start_response)
             else:
                 return send_plain_response(status, iterObj, start_response)
 
