@@ -180,7 +180,11 @@ def makeQueryPOST(postText):
     global routes
 
     # These are the parameters accepted appart from N.S.L.C
-    extraParams = ['format', 'service', 'alternative']
+    extraParams = ['format', 'service', 'alternative',
+                   'minlat', 'minlatitude',
+                   'maxlat', 'maxlatitude',
+                   'minlon', 'minlongitude',
+                   'maxlon', 'maxlongitude']
 
     # Defualt values
     ser = 'dataselect'
@@ -190,6 +194,11 @@ def makeQueryPOST(postText):
     # Check if we are still processing the header of the POST body. This has a
     # format like key=value, one per line.
     inHeader = True
+
+    minlat = -90.0
+    maxlat = 90.0
+    minlon = -180.0
+    maxlon = 180.0
 
     for line in postText.splitlines():
         if not len(line):
@@ -215,6 +224,14 @@ def makeQueryPOST(postText):
                 ser = value
             elif key == 'alternative':
                 alt = True if value.lower() == 'true' else False
+            elif key == 'minlat':
+                minlat = float(value.lower())
+            elif key == 'maxlat':
+                maxlat = float(value.lower())
+            elif key == 'minlon':
+                minlon = float(value.lower())
+            elif key == 'maxlon':
+                maxlon = float(value.lower())
 
             continue
 
@@ -236,10 +253,16 @@ def makeQueryPOST(postText):
             msg = 'Error while converting %s to datetime' % endt
             raise WIClientError(msg)
 
+        if ((minlat == -90.0) and (maxlat == 90.0) and (minlon == -180.0) and
+                (maxlon == 180.0)):
+            geoLoc = None
+        else:
+            geoLoc = geoRectangle(minlat, maxlat, minlon, maxlon)
+
         try:
             st = Stream(net, sta, loc, cha)
             tw = TW(start, endt)
-            result.extend(routes.getRoute(st, tw, ser, None, alt))
+            result.extend(routes.getRoute(st, tw, ser, geoLoc, alt))
         except RoutingException:
             pass
 
@@ -294,9 +317,9 @@ def application(environ, start_response):
 
             # If there is a body to read
             if length:
-                form = environ['wsgi.input'].read(length)
+                form = environ['wsgi.input'].read(length).decode()
             else:
-                form = environ['wsgi.input'].read()
+                form = environ['wsgi.input'].read().decode()
 
             for line in form.splitlines():
                 if not len(line):
