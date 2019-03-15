@@ -59,7 +59,7 @@ class RouteCacheTests(unittest.TestCase):
 
     def test_issue_5(self):
         """Filter stations by location."""
-        q = '%s?minlat=-31&maxlat=0&minlon=-70&maxlon=0&net=GE&format=post'
+        q = '%s?minlat=-31&maxlat=0&minlon=-70&maxlon=-67&net=GE&format=post'
         req = ul.Request(q % self.host)
         try:
             u = ul.urlopen(req)
@@ -85,7 +85,7 @@ class RouteCacheTests(unittest.TestCase):
                 continue
             self.assertEqual(line.split()[0], 'GE', msg)
             self.assertTrue(line.split()[1] in ('LVC', 'RIOB'),
-                            'Wrong station name! LVC or RIOB expected.')
+                            'Wrong station name! LVC or RIOB expected. %s found' % line.split()[1])
 
     def test_issue_19(self):
         """Caching of station names."""
@@ -508,6 +508,44 @@ class RouteCacheTests(unittest.TestCase):
                          'Service of node is not dataselect!')
         self.assertEqual(jsonBuf[0]['url'], 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query',
                          'URL is not from GEOFON!')
+
+    def test_GE_geolocation(self):
+        """Dataselect GE.*.*.* with latitude between -10 and 10."""
+        expURL = 'http://geofon.gfz-potsdam.de/fdsnws/station/1/query'
+        req = ul.Request(self.host + '?net=GE&minlat=-10&maxlat=10&service=station&format=json')
+        try:
+            u = ul.urlopen(req)
+            buffer = u.read().decode('utf-8')
+        except:
+            raise Exception('Error retrieving data for GE.*.*.*')
+
+        jsonBuf = json.loads(buffer)
+
+        self.assertEqual(jsonBuf[0]['name'], 'station',
+                         'Service of node is not station!')
+        self.assertEqual(jsonBuf[0]['url'], expURL,
+                         'URL is not from GEOFON!')
+
+        queryparams = '?net={net}&sta={sta}&loc={loc}&cha={cha}&minlat=-10&maxlat=10&format=text'
+        for st in jsonBuf[0]['params']:
+            req = ul.Request(expURL + queryparams.format_map(st))
+            try:
+                u = ul.urlopen(req)
+                buffer = u.read().decode('utf-8')
+            except:
+                raise Exception('Error retrieving GE stations with latitude between -10 and 10')
+
+            for line in buffer.splitlines():
+                if line.startswith('#'):
+                    continue
+
+                self.assertGreaterEqual(float(line.split('|')[2]), -10.0,
+                                        'Latitude smaller than -10.0!')
+                self.assertLessEqual(float(line.split('|')[2]), 10.0,
+                                        'Latitude bigger than 10.0!')
+                break
+
+
 
     def testDS_GE_RO(self):
         """Dataselect GE,RO.*.*.* ."""

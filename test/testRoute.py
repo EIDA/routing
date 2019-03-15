@@ -30,7 +30,14 @@ from routeutils.utils import RoutingCache
 from routeutils.utils import RequestMerge
 from routeutils.utils import Stream
 from routeutils.utils import TW
+from routeutils.utils import geoRectangle
 from routeutils.utils import RoutingException
+
+# More Python 3 compatibility
+try:
+    import urllib.request as ul
+except ImportError:
+    import urllib2 as ul
 
 
 class RouteCacheTests(unittest.TestCase):
@@ -95,6 +102,42 @@ class RouteCacheTests(unittest.TestCase):
                          'Wrong URL for GE.*.*.*')
         self.assertEqual(result[0]['name'], 'dataselect',
                          'Wrong service name!')
+
+    def test_geolocation(self):
+        """Station GE.*.*.* with latitude between -10 and 10"""
+
+        expURL = 'http://geofon.gfz-potsdam.de/fdsnws/station/1/query'
+        result = self.rc.getRoute(Stream('GE', '*', '*', '*'), TW(None, None),
+                                  'station',
+                                  geoLoc=geoRectangle(-10, 10, -180, 180))
+        self.assertIsInstance(result, RequestMerge,
+                              'A RequestMerge object was expected!')
+        self.assertEqual(len(result), 1,
+                         'Wrong number of data centers for GE.*.*.*!')
+        self.assertEqual(result[0]['url'], expURL,
+                         'Wrong URL for GE.*.*.*')
+        self.assertEqual(result[0]['name'], 'station',
+                         'Wrong service name!')
+
+        queryparams = '?net={net}&sta={sta}&loc={loc}&cha={cha}&minlat=-10&maxlat=10&format=text'
+        for st in result[0]['params']:
+            req = ul.Request(expURL + queryparams.format_map(st))
+            try:
+                u = ul.urlopen(req)
+                buffer = u.read().decode('utf-8')
+            except:
+                raise Exception('Error retrieving GE stations with latitude between -10 and 10')
+
+            for line in buffer.splitlines():
+                if line.startswith('#'):
+                    continue
+
+                self.assertGreaterEqual(float(line.split('|')[2]), -10.0,
+                                        'Latitude smaller than -10.0!')
+                self.assertLessEqual(float(line.split('|')[2]), 10.0,
+                                        'Latitude bigger than 10.0!')
+                break
+
 
     def testDS_GE_noEnd(self):
         """Dataselect GE.*.*.* start=2010"""
