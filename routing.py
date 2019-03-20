@@ -404,7 +404,7 @@ def application(environ, start_response):
                                  start_response)
 
     elif fname == 'version':
-        text = "1.1.1"
+        text = "1.1.2"
         return send_plain_response('200 OK', text, start_response)
 
     elif fname == 'info':
