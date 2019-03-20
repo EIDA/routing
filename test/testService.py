@@ -547,6 +547,44 @@ class RouteCacheTests(unittest.TestCase):
 
 
 
+    def test_GE_geolocation_POST(self):
+        """Dataselect GE.*.*.* with latitude between -10 and 10 via POST method."""
+        expURL = 'http://geofon.gfz-potsdam.de/fdsnws/station/1/query'
+        data = 'minlat=-10\nmaxlat=10\nservice=station\nformat=json\nGE * * * 1980-01-01 2018-01-01'
+        req = ul.Request(self.host, data)
+        try:
+            u = ul.urlopen(req)
+            buffer = u.read().decode('utf-8')
+        except:
+            raise Exception('Error retrieving data for GE.*.*.*')
+
+        jsonBuf = json.loads(buffer)
+
+        self.assertEqual(jsonBuf[0]['name'], 'station',
+                         'Service of node is not station!')
+        self.assertEqual(jsonBuf[0]['url'], expURL,
+                         'URL is not from GEOFON!')
+
+        queryparams = '?net={net}&sta={sta}&loc={loc}&cha={cha}&minlat=-10&maxlat=10&format=text'
+        for st in jsonBuf[0]['params']:
+            req = ul.Request(expURL + queryparams.format_map(st))
+            try:
+                u = ul.urlopen(req)
+                buffer = u.read().decode('utf-8')
+            except:
+                raise Exception('Error retrieving GE stations with latitude between -10 and 10')
+
+            for line in buffer.splitlines():
+                if line.startswith('#'):
+                    continue
+
+                self.assertGreaterEqual(float(line.split('|')[2]), -10.0,
+                                        'Latitude smaller than -10.0!')
+                self.assertLessEqual(float(line.split('|')[2]), 10.0,
+                                        'Latitude bigger than 10.0!')
+                break
+
+
     def testDS_GE_RO(self):
         """Dataselect GE,RO.*.*.* ."""
         expec = {
