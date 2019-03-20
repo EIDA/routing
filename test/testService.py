@@ -490,8 +490,9 @@ class RouteCacheTests(unittest.TestCase):
             self.assertEqual(node['name'], 'dataselect',
                              'Service of node is not dataselect!')
 
-            self.assertEqual(len(node['params']), 4,
-                            '4 epochs are expected from the ZE network')
+            if 'geofon' in node['url']:
+                self.assertEqual(len(node['params']), 4,
+                                '4 epochs are expected from the ZE network')
 
     def testDS_GE(self):
         """Dataselect GE.*.*.* ."""
