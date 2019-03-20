@@ -551,7 +551,7 @@ class RouteCacheTests(unittest.TestCase):
         """Dataselect GE.*.*.* with latitude between -10 and 10 via POST method."""
         expURL = 'http://geofon.gfz-potsdam.de/fdsnws/station/1/query'
         data = 'minlat=-10\nmaxlat=10\nservice=station\nformat=json\n\nGE * * * 1980-01-01 2018-01-01'
-        req = ul.Request(self.host, data)
+        req = ul.Request(self.host, data.encode('utf-8'))
         try:
             u = ul.urlopen(req)
             buffer = u.read().decode('utf-8')
