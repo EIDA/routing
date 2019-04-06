@@ -168,6 +168,9 @@ class FDSNRules(list):
         """
 
         url = url[:-len('query')] if url.endswith('query') else url
+        service = 'fdsnws-%s' % service if service in ('station', 'dataselect') else service
+        service = 'eidaws-%s' % service if service in ('wfcatalog') else service
+
         try:
             indList = self.index(service, url)
         except KeyError as k:
