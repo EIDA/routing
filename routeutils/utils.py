@@ -104,7 +104,7 @@ class FDSNRules(list):
         if rm is None:
             return
 
-        if type(rm) == type(RequestMerge()):
+        if type(rm) != type(RequestMerge()):
             raise Exception('FDSNRules cannot be created with an object different than RequestMerge.')
 
         for r in rm:
