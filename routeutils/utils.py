@@ -52,7 +52,7 @@ eidaDCs = [
                 "services": [
                     {
                         "name": "fdsnws-dataselect",
-                        "url": "http://geofon.gfz-potsdam.de/fdsnws/station/1/"
+                        "url": "http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/"
                     },
                     {
                         "name": "fdsnws-station",
@@ -90,6 +90,7 @@ eidaDCs = [
 #     }
 # ]
 
+
 class FDSNRules(list):
     """Extend a list to group data from many requests by datacenter.
 
@@ -100,7 +101,8 @@ class FDSNRules(list):
     __slots__ = ()
 
     def __init__(self, rm=None):
-        super(FDSNRules, self).__init__()
+        super().__init__()
+
         if rm is None:
             return
 
@@ -124,8 +126,7 @@ class FDSNRules(list):
         service = 'fdsnws-station' if service == 'station' else service
         service = 'eidaws-wfcatalog' if service == 'wfcatalog' else service
 
-        listPar = super(FDSNRules, self)
-        for inddc, dc in enumerate(listPar):
+        for inddc, dc in enumerate(self):
             for indrepo, repo in enumerate(dc['repositories']):
                 for inddcservice, dcservice in enumerate(repo['services']):
                     if ((service == dcservice['name']) and
@@ -140,7 +141,7 @@ class FDSNRules(list):
                             (url.startswith(dcservice['url']))):
                         raise KeyError(inddc)
 
-        raise Exception('Datacentre not found!')
+        raise Exception('Data centre not found!')
 
 
     def append(self, service, url, priority, stream, tw):
@@ -166,13 +167,11 @@ class FDSNRules(list):
 
         """
 
-        listPar = super(FDSNRules, self)
-
         try:
             indList = self.index(service, url)
         except KeyError as k:
-            indList = len(listPar)
-            listPar.append(eidaDCs[k.args[0]])
+            indList = len(self)
+            super().append(eidaDCs[k.args[0]])
         except:
             raise
 
@@ -199,7 +198,7 @@ class FDSNRules(list):
             toAdd["endtime"] = tw.end
 
         # FIXME the position in repositories is hard-coded!
-        listPar[indList]['repositories'][0]['timeseriesRouting'].append(toAdd)
+        super().__getitem__(indList)['repositories'][0]['timeseriesRouting'].append(toAdd)
 
     def extend(self, listReqM):
         """Append all the items in :class:`~RequestMerge` grouped by datacenter.
@@ -221,8 +220,6 @@ class FDSNRules(list):
                 self[pos]['params'].extend(r['params'])
             except:
                 super(RequestMerge, self).append(r)
-
-
 
 
 def str2date(dStr):
