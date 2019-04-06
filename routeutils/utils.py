@@ -99,6 +99,20 @@ class FDSNRules(list):
 
     __slots__ = ()
 
+    def __init__(self, rm=None):
+        super(FDSNRules, self).__init__()
+        if rm is None:
+            return
+
+        if type(rm) == type(RequestMerge()):
+            raise Exception('FDSNRules cannot be created with an object different than RequestMerge.')
+
+        for r in rm:
+            for p in r['params']:
+                self.append(r['name'], r['url'], p['priority'],
+                            Stream(p['net'], p['sta'], p['loc'], p['cha']),
+                            TW(p['start'], p['end']))
+
     def index(self, service, url):
         """Given a service and url returns the index on the list where
          the routes/rules should be added. If the data centre is still

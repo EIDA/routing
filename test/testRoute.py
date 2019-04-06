@@ -28,6 +28,7 @@ import unittest
 from routeutils.unittestTools import WITestRunner
 from routeutils.utils import RoutingCache
 from routeutils.utils import RequestMerge
+from routeutils.utils import FDSNRules
 from routeutils.utils import Stream
 from routeutils.utils import TW
 from routeutils.utils import geoRectangle
@@ -51,6 +52,28 @@ class RouteCacheTests(unittest.TestCase):
         if hasattr(cls, 'rc'):
             return
         cls.rc = RoutingCache('../data/routing.xml.sample')
+
+    def testDS_GE_FDSN_output(self):
+        """Dataselect GE.*.*.* start=2010 format=fdsn"""
+
+        expURL = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/'
+        startD = datetime.datetime(2010, 1, 1)
+        result = self.rc.getRoute(Stream('GE', '*', '*', '*'), TW(startD, None))
+        self.assertIsInstance(result, RequestMerge,
+                              'A RequestMerge object was expected!')
+
+        fdsnResult = FDSNRules(result)
+        self.assertEqual(len(fdsnResult), 1,
+                         'Wrong number of data centers for GE.*.*.*!')
+        tsr = fdsnResult[0]['repositories'][0]['timeseriesRouting']
+        self.assertEqual(len(tsr), 1,
+                         'Wrong number of rules for GE.*.*.*!')
+        self.assertEqual(tsr[0]['network'], 'GE',
+                         'Wrong network code')
+        self.assertEqual(tsr[0]['services'][0]['url'], expURL,
+                         'Wrong URL for GE.*.*.*')
+        self.assertEqual(tsr[0]['services'][0]['name'], 'fdsnws-dataselect',
+                         'Wrong service name!')
 
     def testDS_XXX(self):
         """Non-existing network XXX"""
