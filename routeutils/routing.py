@@ -22,6 +22,7 @@ import xml.etree.cElementTree as ET
 import json
 from .wsgicomm import WIClientError
 from .utils import RequestMerge
+from .utils import FDSNRules
 
 
 def _ConvertDictToXmlRecurse(parent, dictitem):
