@@ -68,6 +68,264 @@ eidaDCs = [
                 ]
             }
         ]
+    },
+    {
+        "name": "ODC",
+        "website": "https://www.orfeus-eu.org/",
+        "fullName": "ORFEUS Data Centre",
+        "summary": "ORFEUS Data Centre at KNMI in De Bilt",
+        "repositories": [
+            {
+                "name": "archive",
+                "description": "Archive of continuous seismological data",
+                "website": "https://www.orfeus-eu.org/data/eida/",
+                "services": [
+                    {
+                        "name": "fdsnws-dataselect",
+                        "url": "http://www.orfeus-eu.org/fdsnws/dataselect/1/"
+                    },
+                    {
+                        "name": "fdsnws-station",
+                        "url": "http://www.orfeus-eu.org/fdsnws/station/1/"
+                    },
+                    {
+                        "name": "eidaws-wfcatalog",
+                        "url": "http://www.orfeus-eu.org/eidaws/wfcatalog/1/",
+                        "description": "EIDA WFCatalog service"
+                    }
+                ],
+                "timeseriesRouting": [
+                ]
+            }
+        ]
+    },
+    {
+        "name": "RESIF",
+        "website": "https://www.resif.fr",
+        "fullName": "RESIF Data Centre",
+        "summary": "French seismologic and geodetic network",
+        "repositories": [
+            {
+                "name": "archive",
+                "description": "Archive of continuous seismological data",
+                "website": "http://seismology.resif.fr/",
+                "services": [
+                    {
+                        "name": "fdsnws-dataselect",
+                        "url": "http://ws.resif.fr/fdsnws/dataselect/1/"
+                    },
+                    {
+                        "name": "fdsnws-station",
+                        "url": "http://ws.resif.fr/fdsnws/station/1/"
+                    },
+                    {
+                        "name": "eidaws-wfcatalog",
+                        "url": "http://ws.resif.fr/eidaws/wfcatalog/1/"
+                    }
+                ],
+                "timeseriesRouting": [
+                ]
+            }
+        ]
+    },
+    {
+        "name": "INGV",
+        "website": "http://www.ingv.it",
+        "fullName": "INGV Data Centre",
+        "summary": "Istituto Nazionale di Geofisica e Vulcanologia",
+        "repositories": [
+            {
+                "name": "archive",
+                "description": "Archive of continuous seismological data",
+                "website": "http://www.ingv.it/",
+                "services": [
+                    {
+                        "name": "fdsnws-dataselect",
+                        "url": "http://webservices.ingv.it/fdsnws/dataselect/1/"
+                    },
+                    {
+                        "name": "fdsnws-station",
+                        "url": "http://webservices.ingv.it/fdsnws/station/1/"
+                    },
+                    {
+                        "name": "eidaws-wfcatalog",
+                        "url": "http://webservices.ingv.it/eidaws/wfcatalog/1/"
+                    }
+                ],
+                "timeseriesRouting": [
+                ]
+            }
+        ]
+    },
+    {
+        "name": "ETH",
+        "website": "https://www.ethz.ch",
+        "fullName": "ETH Data Centre",
+        "summary": "Eidgenössische Technische Hochschule Zürich",
+        "repositories": [
+            {
+                "name": "archive",
+                "description": "Archive of continuous seismological data",
+                "website": "http://www.seismo.ethz.ch/",
+                "services": [
+                    {
+                        "name": "fdsnws-dataselect",
+                        "url": "http://eida.ethz.ch/fdsnws/dataselect/1/"
+                    },
+                    {
+                        "name": "fdsnws-station",
+                        "url": "http://eida.ethz.ch/fdsnws/station/1/"
+                    },
+                    {
+                        "name": "eidaws-wfcatalog",
+                        "url": "http://eida.ethz.ch/eidaws/wfcatalog/1/"
+                    }
+                ],
+                "timeseriesRouting": [
+                ]
+            }
+        ]
+    },
+    {
+        "name": "BGR",
+        "website": "https://www.bgr.bund.de",
+        "fullName": "BGR Data Centre",
+        "summary": "Bundesanstalt für Geowissenschaften und Rohstoffe",
+        "repositories": [
+            {
+                "name": "archive",
+                "description": "Archive of continuous seismological data",
+                "website": "https://www.bgr.bund.de/EN/Themen/Seismologie",
+                "services": [
+                    {
+                        "name": "fdsnws-dataselect",
+                        "url": "http://eida.bgr.de/fdsnws/dataselect/1/"
+                    },
+                    {
+                        "name": "fdsnws-station",
+                        "url": "http://eida.bgr.de/fdsnws/station/1/"
+                    },
+                    {
+                        "name": "eidaws-wfcatalog",
+                        "url": "http://eida.bgr.de/eidaws/wfcatalog/1/"
+                    }
+                ],
+                "timeseriesRouting": [
+                ]
+            }
+        ]
+    },
+    {
+        "name": "NIEP",
+        "website": "http://www.infp.ro/en/",
+        "fullName": "NIEP Data Centre",
+        "summary": "National Institute for Earth Physics",
+        "repositories": [
+            {
+                "name": "archive",
+                "description": "Archive of continuous seismological data",
+                "website": "http://www.infp.ro/en/",
+                "services": [
+                    {
+                        "name": "fdsnws-dataselect",
+                        "url": "http://eida-sc3.infp.ro/fdsnws/dataselect/1/"
+                    },
+                    {
+                        "name": "fdsnws-station",
+                        "url": "http://eida-sc3.infp.ro/fdsnws/station/1/"
+                    },
+                    {
+                        "name": "eidaws-wfcatalog",
+                        "url": "http://eida-sc3.infp.ro/eidaws/wfcatalog/1/"
+                    }
+                ],
+                "timeseriesRouting": [
+                ]
+            }
+        ]
+    },
+    {
+        "name": "KOERI",
+        "website": "http://www.koeri.boun.edu.tr",
+        "fullName": "KOERI Data Centre",
+        "summary": "Kandilli Observatory and Earthquake Research Institute",
+        "repositories": [
+            {
+                "name": "archive",
+                "description": "Archive of continuous seismological data",
+                "website": "http://www.koeri.boun.edu.tr/sismo/2/en/",
+                "services": [
+                    {
+                        "name": "fdsnws-dataselect",
+                        "url": "http://eida-service.koeri.boun.edu.tr/fdsnws/dataselect/1/"
+                    },
+                    {
+                        "name": "fdsnws-station",
+                        "url": "http://eida-service.koeri.boun.edu.tr/fdsnws/station/1/"
+                    }
+                ],
+                "timeseriesRouting": [
+                ]
+            }
+        ]
+    },
+    {
+        "name": "LMU",
+        "website": "https://www.uni-muenchen.de/",
+        "fullName": "LMU Data Centre",
+        "summary": "Ludwig Maximilians Universität München",
+        "repositories": [
+            {
+                "name": "archive",
+                "description": "Archive of continuous seismological data",
+                "website": "https://www.geophysik.uni-muenchen.de/",
+                "services": [
+                    {
+                        "name": "fdsnws-dataselect",
+                        "url": "http://erde.geophysik.uni-muenchen.de/fdsnws/dataselect/1/"
+                    },
+                    {
+                        "name": "fdsnws-station",
+                        "url": "http://erde.geophysik.uni-muenchen.de/fdsnws/station/1/"
+                    },
+                    {
+                        "name": "eidaws-wfcatalog",
+                        "url": "http://erde.geophysik.uni-muenchen.de/eidaws/wfcatalog/1/"
+                    }
+                ],
+                "timeseriesRouting": [
+                ]
+            }
+        ]
+    },
+    {
+        "name": "NOA",
+        "website": "http://www.noa.gr",
+        "fullName": "NOA Data Centre",
+        "summary": "National Observatory of Athens",
+        "repositories": [
+            {
+                "name": "archive",
+                "description": "Archive of continuous seismological data",
+                "website": "http://bbnet.gein.noa.gr",
+                "services": [
+                    {
+                        "name": "fdsnws-dataselect",
+                        "url": "http://eida.gein.noa.gr/fdsnws/dataselect/1/"
+                    },
+                    {
+                        "name": "fdsnws-station",
+                        "url": "http://eida.gein.noa.gr/fdsnws/station/1/"
+                    },
+                    {
+                        "name": "eidaws-wfcatalog",
+                        "url": "http://eida.gein.noa.gr/eidaws/wfcatalog/1/"
+                    }
+                ],
+                "timeseriesRouting": [
+                ]
+            }
+        ]
     }
 ]
 
