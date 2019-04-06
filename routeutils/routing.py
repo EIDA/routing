@@ -144,5 +144,12 @@ def applyFormat(resultRM, outFormat='xml'):
         # Otherwise it will be a bytestring and the send_xml_response will fail
         iterObj2 = ET.tostring(ConvertDictToXml(resultRM), encoding='unicode')
         return iterObj2
+    elif outFormat == 'fdsn':
+        # This is the metadata schema Chad drafted on his mail on
+        # Setting the encoding to unicode is the only way to get a string in the output
+        # Otherwise it will be a bytestring and the send_xml_response will fail
+        resultFDSN = FDSNRules(resultRM)
+        iterObj = json.dumps(resultFDSN, default=datetime.datetime.isoformat)
+        return iterObj
     else:
         raise WIClientError('Wrong format requested!')

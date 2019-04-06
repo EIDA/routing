@@ -35,6 +35,182 @@ import urllib.request as ul
 from urllib.parse import urlparse
 
 
+# I need to find a mapping from (service, URL) to the schema below. It seems
+# that it could be feasible to put all routes in the timeseriesRouting item
+
+eidaDCs = [
+    {
+        "name": "GEOFON",
+        "website": "https://geofon.gfz-potsdam.de/",
+        "fullName": "GEOFON Program",
+        "summary": "The GEOFON Program at the GFZ in Potsdam",
+        "repositories": [
+            {
+                "name": "archive",
+                "description": "Archive of continuous seismological data",
+                "website": "https://geofon.gfz-potsdam.de/waveform/",
+                "services": [
+                    {
+                        "name": "fdsnws-dataselect",
+                        "url": "http://geofon.gfz-potsdam.de/fdsnws/station/1/"
+                    },
+                    {
+                        "name": "fdsnws-station",
+                        "url": "http://geofon.gfz-potsdam.de/fdsnws/station/1/"
+                    },
+                    {
+                        "name": "eidaws-wfcatalog",
+                        "url": "http://geofon.gfz-potsdam.de/eidaws/wfcatalog/1/",
+                        "description": "EIDA WFCatalog service"
+                    }
+                ],
+                "timeseriesRouting": [
+                ]
+            }
+        ]
+    }
+]
+
+# "timeseriesRouting": [
+#     {
+#         "network": "N1",
+#         "priority": 1,
+#         "starttime": "1980-01-01T00:00:00Z"
+#     },
+#     {
+#         "network": "N2",
+#         "priority": 2,
+#         "starttime": "2000-01-01T00:00:00Z",
+#         "services": [
+#             {
+#                 "name": "fdsnws-station",
+#                 "url": "http://orfeus.eu/fdsnws/station/1/"
+#             }
+#         ]
+#     }
+# ]
+
+class FDSNRules(list):
+    """Extend a list to group data from many requests by datacenter.
+
+    :platform: Any
+
+    """
+
+    __slots__ = ()
+
+    def index(self, service, url):
+        """Given a service and url returns the index on the list where
+         the routes/rules should be added. If the data centre is still
+         not in the list returns a KeyError with an index to the eidaDCs
+         list. That is the DC to add. If both searches fail an Exception
+         is raised"""
+
+        service = 'fdsnws-dataselect' if service == 'dataselect' else service
+        service = 'fdsnws-station' if service == 'station' else service
+        service = 'eidaws-wfcatalog' if service == 'wfcatalog' else service
+
+        listPar = super(FDSNRules, self)
+        for inddc, dc in enumerate(listPar):
+            for indrepo, repo in enumerate(dc['repositories']):
+                for inddcservice, dcservice in enumerate(repo['services']):
+                    if ((service == dcservice['name']) and
+                            (url.startswith(dcservice['url']))):
+                        return inddc
+
+        # After the for...else variable indList points to the DC in this object
+        for inddc, dc in enumerate(eidaDCs):
+            for indrepo, repo in enumerate(dc['repositories']):
+                for inddcservice, dcservice in enumerate(repo['services']):
+                    if ((service == dcservice['name']) and
+                            (url.startswith(dcservice['url']))):
+                        raise KeyError(inddc)
+
+        raise Exception('Datacentre not found!')
+
+
+    def append(self, service, url, priority, stream, tw):
+        """Append a new :class:`~Route` without repeating the datacenter.
+
+        Overrides the *append* method of the inherited list. If another route
+        for the datacenter was already added, the remaining attributes are
+        appended in *timeseriesRouting* for the datacenter. If this is the first
+        :class:`~Route` for the datacenter, everything is added.
+
+        :param service: Service name (f.i., 'dataselect')
+        :type service: str
+        :param url: URL for the service (f.i., 'http://server/path/query')
+        :type url: str
+        :param priority: Priority of the Route (1: highest priority)
+        :type priority: int
+        :param stream: Stream(s) associated with the Route
+        :type stream: :class:`~Stream`
+        :param start: Start date for the Route
+        :type start: datetime or None
+        :param end: End date for the Route
+        :type end: datetime or None
+
+        """
+
+        listPar = super(FDSNRules, self)
+
+        try:
+            indList = self.index(service, url)
+        except KeyError as k:
+            indList = len(listPar)
+            listPar.append(eidaDCs[k.args[0]])
+        except:
+            raise
+
+        # Include only mandatory attributes
+        toAdd = {
+            "priority": priority,
+            "starttime": tw.start,
+            "services": [
+                {"name": service,
+                 "url": url}
+            ]
+        }
+
+        # Add attributes with values different than the default ones
+        if stream.n != '*' and len(stream.n):
+            toAdd["network"] = stream.n
+        if stream.s != '*' and len(stream.s):
+            toAdd["station"] = stream.s
+        if stream.l != '*' and len(stream.l):
+            toAdd["location"] = stream.l
+        if stream.c != '*' and len(stream.c):
+            toAdd["channel"] = stream.c
+        if tw.end is not None:
+            toAdd["endtime"] = tw.end
+
+        # FIXME the position in repositories is hard-coded!
+        listPar[indList]['repositories'][0]['timeseriesRouting'].append(toAdd)
+
+    def extend(self, listReqM):
+        """Append all the items in :class:`~RequestMerge` grouped by datacenter.
+
+        Overrides the *extend* method of the inherited list. If another route
+        for the datacenter was already added, the remaining attributes are
+        appended in *params* for the datacenter. If this is the first
+        :class:`~Route` for the datacenter, everything is added.
+
+        :param listReqM: Requests from (posibly) different datacenters to be
+            added
+        :type listReqM: list of :class:`~RequestMerge`
+
+        """
+        # FIXME Re-implement this!!!
+        for r in listReqM:
+            try:
+                pos = self.index(r['name'], r['url'])
+                self[pos]['params'].extend(r['params'])
+            except:
+                super(RequestMerge, self).append(r)
+
+
+
+
 def str2date(dStr):
     """Transform a string to a datetime.
 
