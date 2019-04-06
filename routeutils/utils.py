@@ -167,6 +167,7 @@ class FDSNRules(list):
 
         """
 
+        url = url[:-len('query')] if url.endswith('query') else url
         try:
             indList = self.index(service, url)
         except KeyError as k:
