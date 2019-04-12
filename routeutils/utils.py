@@ -460,7 +460,10 @@ class FDSNRules(dict):
         if stream.c != '*' and len(stream.c):
             toAdd["channel"] = stream.c
         if tw.end is not None:
-            toAdd["endtime"] = tw.end
+            if type(tw) == str and len(tw):
+                toAdd["endtime"] = tw.end
+            if type(tw) == datetime.datetime:
+                toAdd["endtime"] = tw.end
 
         # FIXME the position in repositories is hard-coded!
         self['datacenters'][indList]['repositories'][0]['timeseriesRouting'].append(toAdd)
