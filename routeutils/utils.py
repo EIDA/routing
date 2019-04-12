@@ -349,8 +349,9 @@ eidaDCs = [
 # ]
 
 
-class FDSNRules(list):
-    """Extend a list to group data from many requests by datacenter.
+class FDSNRules(dict):
+    """Based on a dict, but all functionality is in the datacentres list
+     which groups data from many requests by datacenter.
 
     :platform: Any
 
@@ -360,6 +361,8 @@ class FDSNRules(list):
 
     def __init__(self, rm=None):
         super().__init__()
+        self['version'] = '1.0'
+        self['datacenters'] = list()
 
         if rm is None:
             return
@@ -384,7 +387,7 @@ class FDSNRules(list):
         service = 'fdsnws-station' if service == 'station' else service
         service = 'eidaws-wfcatalog' if service == 'wfcatalog' else service
 
-        for inddc, dc in enumerate(self):
+        for inddc, dc in enumerate(self['datacenters']):
             for indrepo, repo in enumerate(dc['repositories']):
                 for inddcservice, dcservice in enumerate(repo['services']):
                     if ((service == dcservice['name']) and
@@ -432,8 +435,8 @@ class FDSNRules(list):
         try:
             indList = self.index(service, url)
         except KeyError as k:
-            indList = len(self)
-            super().append(eidaDCs[k.args[0]])
+            indList = len(self['datacenters'])
+            self['datacenters'].append(eidaDCs[k.args[0]])
         except:
             raise
 
@@ -460,7 +463,7 @@ class FDSNRules(list):
             toAdd["endtime"] = tw.end
 
         # FIXME the position in repositories is hard-coded!
-        super().__getitem__(indList)['repositories'][0]['timeseriesRouting'].append(toAdd)
+        self['datacenters'][indList]['repositories'][0]['timeseriesRouting'].append(toAdd)
 
     def extend(self, listReqM):
         """Append all the items in :class:`~RequestMerge` grouped by datacenter.
@@ -479,9 +482,9 @@ class FDSNRules(list):
         for r in listReqM:
             try:
                 pos = self.index(r['name'], r['url'])
-                self[pos]['params'].extend(r['params'])
+                self['datacenters'][pos]['params'].extend(r['params'])
             except:
-                super(RequestMerge, self).append(r)
+                self['datacenters'].append(r)
 
 
 def str2date(dStr):

@@ -63,9 +63,9 @@ class RouteCacheTests(unittest.TestCase):
                               'A RequestMerge object was expected!')
 
         fdsnResult = FDSNRules(result)
-        self.assertEqual(len(fdsnResult), 1,
+        self.assertEqual(len(fdsnResult['datacenters']), 1,
                          'Wrong number of data centers for GE.*.*.*!')
-        tsr = fdsnResult[0]['repositories'][0]['timeseriesRouting']
+        tsr = fdsnResult['datacenters'][0]['repositories'][0]['timeseriesRouting']
         self.assertEqual(len(tsr), 1,
                          'Wrong number of rules for GE.*.*.*!')
         self.assertEqual(tsr[0]['network'], 'GE',
