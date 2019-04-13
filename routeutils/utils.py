@@ -361,7 +361,7 @@ class FDSNRules(dict):
 
     def __init__(self, rm=None):
         super().__init__()
-        self['version'] = '1.0'
+        self['version'] = 1
         self['datacenters'] = list()
 
         if rm is None:
