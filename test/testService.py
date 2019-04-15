@@ -467,7 +467,7 @@ class RouteCacheTests(unittest.TestCase):
                                  '%s is not the expected network' %
                                  params['net'])
 
-                self.assertEqual(params['sta'], 'APE',
+                self.assertIn(params['sta'], ['APE', 'APEZ'],
                                  '%s is not the expected station' %
                                  params['sta'])
 
