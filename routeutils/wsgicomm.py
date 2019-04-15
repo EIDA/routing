@@ -19,7 +19,7 @@ any later version.
 
 import sys
 
-response_headers = [('Access-Control-Allow-Origin', '*'),
+response_headers_template = [('Access-Control-Allow-Origin', '*'),
                     ('Access-Control-Allow-Headers', 'Authorization'),
                     ('Access-Control-Expose-Headers', 'WWW-Authenticate')]
 
@@ -209,6 +209,7 @@ def redirect_page(url, start_response):
     :platform: Linux
 
     """
+    response_headers = response_headers_template.copy()
     response_headers.append(('Location', url))
     start_response('301 Moved Permanently', response_headers)
     return ''
@@ -220,6 +221,7 @@ def send_html_response(status, body, start_response):
     :platform: Linux
 
     """
+    response_headers = response_headers_template.copy()
     response_headers.extend([('Content-Type', 'text/html; charset=UTF-8'),
                         ('Content-Length', str(len(body)))])
     start_response(status, response_headers)
@@ -232,6 +234,7 @@ def send_xml_response(status, body, start_response):
     :platform: Linux
 
     """
+    response_headers = response_headers_template.copy()
     response_headers.extend([('Content-Type', 'text/xml; charset=UTF-8'),
                         ('Content-Length', str(len(body)))])
     start_response(status, response_headers)
@@ -244,6 +247,7 @@ def send_plain_response(status, body, start_response):
     :platform: Linux
 
     """
+    response_headers = response_headers_template.copy()
     response_headers.extend([('Content-Type', 'text/plain'),
                         ('Content-Length', str(len(body)))])
     start_response(status, response_headers)
@@ -256,6 +260,7 @@ def send_json_response(status, body, start_response):
     :platform: Linux
 
     """
+    response_headers = response_headers_template.copy()
     response_headers.extend([('Content-Type', 'application/json'),
                         ('Content-Length', str(len(body)))])
     start_response(status, response_headers)
@@ -268,6 +273,7 @@ def send_nobody_response(status, start_response):
     :platform: Linux
 
     """
+    response_headers = response_headers_template.copy()
     response_headers.append(('Content-Length', 0))
     start_response(status, response_headers)
     return []
@@ -279,6 +285,7 @@ def send_error_response(status, body, start_response):
     :platform: Linux
 
     """
+    response_headers = response_headers_template.copy()
     response_headers.append(('Content-Type', 'text/plain'))
     # print response_headers
     # print status
@@ -295,6 +302,7 @@ def send_file_response(status, body, start_response):
     :platform: Linux
 
     """
+    response_headers = response_headers_template.copy()
     response_headers.extend([('Content-Type', body.content_type),
                         ('Content-Length', str(body.size)),
                         ('Content-Disposition', 'attachment; filename=%s' %
@@ -320,6 +328,7 @@ def send_dynamicfile_response(status, body, start_response):
             # ACTUALLY data to send
 
             # Content-length cannot be set because the file size is unknown
+            response_headers = response_headers_template.copy()
             response_headers.extend([('Content-Type', body.content_type),
                                 ('Content-Disposition',
                                  'attachment; filename=%s' % (body.filename))])
