@@ -287,10 +287,8 @@ def send_error_response(status, body, start_response):
     """
     response_headers = response_headers_template.copy()
     response_headers.append(('Content-Type', 'text/plain'))
-    # print response_headers
-    # print status
-    # print sys.exc_info()
-    start_response(status, response_headers, sys.exc_info())
+    # start_response(status, response_headers, sys.exc_info())
+    start_response(status, response_headers)
     return [body.encode('utf-8')]
 
 
