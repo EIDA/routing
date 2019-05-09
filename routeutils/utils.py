@@ -262,6 +262,10 @@ eidaDCs = [
                     {
                         "name": "fdsnws-station",
                         "url": "http://eida-service.koeri.boun.edu.tr/fdsnws/station/1/"
+                    },
+                    {
+                        "name": "eidaws-wfcatalog",
+                        "url": "http://eida-service.koeri.boun.edu.tr/eidaws/wfcatalog/1/"
                     }
                 ],
                 "timeseriesRouting": [
@@ -465,8 +469,28 @@ class FDSNRules(dict):
             if type(tw) == datetime.datetime:
                 toAdd["endtime"] = tw.end
 
+        # Check that the service is in the list offered by the DC
+        for srvDC in self['datacenters'][indList]['repositories'][0]['services']:
+            if service == srvDC['name']:
+                break
+        else:
+            raise Exception('Service %s seems not to be provided by the data centre!' % service)
+
         # FIXME the position in repositories is hard-coded!
         self['datacenters'][indList]['repositories'][0]['timeseriesRouting'].append(toAdd)
+
+        # Check that there is the same number of routes for timeseriesRouting and services
+        if len(self['datacenters'][indList]['repositories'][0]['timeseriesRouting']) != \
+                self['datacenters'][indList]['repositories'][0]['services']:
+            return
+
+        # Check that each timeseriesRouting is in ['services']
+        for tsr in self['datacenters'][indList]['repositories'][0]['timeseriesRouting']:
+            if tsr not in self['datacenters'][indList]['repositories'][0]['services']:
+                return
+
+        # Remove all timeseriesRouting because it is the same as services
+        self['datacenters'][indList]['repositories'][0]['timeseriesRouting'] = []
 
     def extend(self, listReqM):
         """Append all the items in :class:`~RequestMerge` grouped by datacenter.
