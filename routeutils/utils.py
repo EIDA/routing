@@ -1832,8 +1832,9 @@ class RoutingCache(object):
         result = RequestMerge()
         for st, tw in strtwList:
             try:
-                result.extend(self.getRouteDS(service, st, tw, geoLoc,
-                                              alternative))
+                for srv in service.split(','):
+                    result.extend(self.getRouteDS(srv, st, tw, geoLoc,
+                                                  alternative))
             except ValueError:
                 pass
 
@@ -1918,7 +1919,7 @@ class RoutingCache(object):
             if stRT.overlap(stream):
                 subs.append(stRT)
 
-        # print 'subs', subs
+        # print('subs', subs)
 
         # Filter by service and timewindow
         for stRT in subs:
@@ -1946,7 +1947,7 @@ class RoutingCache(object):
                 # Retrieve all alternatives. Don't care about priorities
                 prio2retrieve = [x for x in priorities if x is not None]
 
-            # print prio2retrieve
+            # print(prio2retrieve)
 
             for pos, p in enumerate(priorities):
                 if p not in prio2retrieve:
@@ -1959,7 +1960,7 @@ class RoutingCache(object):
                 # if not alternative:
                 #     break
 
-        # print 'subs2', subs2
+        # print('subs2', subs2)
 
         finalset = list()
 
@@ -1967,7 +1968,7 @@ class RoutingCache(object):
         priorities = [rt.priority for (st, rt) in subs2]
         subs3 = [x for (y, x) in sorted(zip(priorities, subs2))]
 
-        # print 'subs3', subs3
+        # print('subs3', subs3)
 
         for (s1, r1) in subs3:
             for (s2, r2) in finalset:

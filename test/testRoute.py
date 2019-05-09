@@ -112,6 +112,25 @@ class RouteCacheTests(unittest.TestCase):
         self.assertEqual(result[0]['name'], 'dataselect',
                          'Wrong service name!')
 
+    def test2services_GE(self):
+        """Dataselect AND Station GE.*.*.*"""
+
+        expURL_DS = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
+        expURL_ST = 'http://geofon.gfz-potsdam.de/fdsnws/station/1/query'
+        result = self.rc.getRoute(Stream('GE', '*', '*', '*'), TW(None, None), service='dataselect,station')
+        self.assertIsInstance(result, RequestMerge,
+                              'A RequestMerge object was expected!')
+        self.assertEqual(len(result), 2,
+                         'Wrong number of data centers for GE.*.*.*!')
+        self.assertIn(expURL_DS, [result[0]['url'], result[1]['url']],
+                         'Wrong URL for GE.*.*.*')
+        self.assertIn(expURL_ST, [result[0]['url'], result[1]['url']],
+                         'Wrong URL for GE.*.*.*')
+        self.assertIn('dataselect', [result[0]['name'], result[1]['name']],
+                         'Wrong service name!')
+        self.assertIn('station', [result[0]['name'], result[1]['name']],
+                         'Wrong service name!')
+
     def testDS_GE(self):
         """Dataselect GE.*.*.*"""
 
