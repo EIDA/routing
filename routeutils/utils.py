@@ -333,25 +333,6 @@ eidaDCs = [
     }
 ]
 
-# "timeseriesRouting": [
-#     {
-#         "network": "N1",
-#         "priority": 1,
-#         "starttime": "1980-01-01T00:00:00Z"
-#     },
-#     {
-#         "network": "N2",
-#         "priority": 2,
-#         "starttime": "2000-01-01T00:00:00Z",
-#         "services": [
-#             {
-#                 "name": "fdsnws-station",
-#                 "url": "http://orfeus.eu/fdsnws/station/1/"
-#             }
-#         ]
-#     }
-# ]
-
 
 class FDSNRules(dict):
     """Based on a dict, but all functionality is in the datacentres list
@@ -408,6 +389,24 @@ class FDSNRules(dict):
 
         raise Exception('Data centre not found!')
 
+    # "timeseriesRouting": [
+    #     {
+    #         "network": "N1",
+    #         "priority": 1,
+    #         "starttime": "1980-01-01T00:00:00Z"
+    #     },
+    #     {
+    #         "network": "N2",
+    #         "priority": 2,
+    #         "starttime": "2000-01-01T00:00:00Z",
+    #         "services": [
+    #             {
+    #                 "name": "fdsnws-station",
+    #                 "url": "http://orfeus.eu/fdsnws/station/1/"
+    #             }
+    #         ]
+    #     }
+    # ]
 
     def append(self, service, url, priority, stream, tw):
         """Append a new :class:`~Route` without repeating the datacenter.
@@ -436,22 +435,10 @@ class FDSNRules(dict):
         service = 'fdsnws-%s' % service if service in ('station', 'dataselect') else service
         service = 'eidaws-%s' % service if service in ('wfcatalog') else service
 
-        try:
-            indList = self.index(service, url)
-        except KeyError as k:
-            indList = len(self['datacenters'])
-            self['datacenters'].append(eidaDCs[k.args[0]])
-        except:
-            raise
-
         # Include only mandatory attributes
         toAdd = {
             "priority": priority,
-            "starttime": tw.start,
-            "services": [
-                {"name": service,
-                 "url": url}
-            ]
+            "starttime": tw.start
         }
 
         # Add attributes with values different than the default ones
@@ -469,28 +456,62 @@ class FDSNRules(dict):
             if type(tw) == datetime.datetime:
                 toAdd["endtime"] = tw.end
 
-        # Check that the service is in the list offered by the DC
-        for srvDC in self['datacenters'][indList]['repositories'][0]['services']:
-            if service == srvDC['name']:
-                break
-        else:
-            raise Exception('Service %s seems not to be provided by the data centre!' % service)
+        # Search in which data centre should this be added
+        try:
+            indList = self.index(service, url)
+        except KeyError as k:
+            indList = len(self['datacenters'])
+            self['datacenters'].append(eidaDCs[k.args[0]])
 
+            # This is empty and then it can be already added
+            # toAdd["services"] = [service]
+        except:
+            raise
+
+        toAdd["services"] = [{"name": service, "url": url}]
+
+        # print(self['datacenters'][indList]['repositories'][0]['timeseriesRouting'])
+        tsrIndex = 0
         # FIXME the position in repositories is hard-coded!
-        self['datacenters'][indList]['repositories'][0]['timeseriesRouting'].append(toAdd)
+        # Check if the request line had been already added
+        for ind, srvDC in enumerate(self['datacenters'][indList]['repositories'][0]['timeseriesRouting']):
+            if not (toAdd.get("network", '*') == srvDC.get("network", '*')):
+                continue
+            if not (toAdd.get("station", '*') == srvDC.get("station", '*')):
+                continue
+            if not (toAdd.get("location", '*') == srvDC.get("location", '*')):
+                continue
+            if not (toAdd.get("channel", '*') == srvDC.get("channel", '*')):
+                continue
+            if not (toAdd.get("start", None) == srvDC.get("start", None)):
+                continue
+            if not (toAdd.get("end", None) == srvDC.get("end", None)):
+                continue
+            srvDC["services"].append({"name": service, "url": url})
+            break
+            tsrIndex = ind
+        else:
+            tsrIndex = len(self['datacenters'][indList]['repositories'][0]['timeseriesRouting'])
+            self['datacenters'][indList]['repositories'][0]['timeseriesRouting'].append(toAdd)
 
         # Check that there is the same number of routes for timeseriesRouting and services
-        if len(self['datacenters'][indList]['repositories'][0]['timeseriesRouting']) != \
-                self['datacenters'][indList]['repositories'][0]['services']:
+        if len(self['datacenters'][indList]['repositories'][0]['timeseriesRouting'][tsrIndex]['services']) != \
+                len(self['datacenters'][indList]['repositories'][0]['services']):
             return
 
         # Check that each timeseriesRouting is in ['services']
-        for tsr in self['datacenters'][indList]['repositories'][0]['timeseriesRouting']:
-            if tsr not in self['datacenters'][indList]['repositories'][0]['services']:
+        tsr = self['datacenters'][indList]['repositories'][0]['timeseriesRouting'][tsrIndex]
+        for svc in tsr['services']:
+            # print(svc)
+            for dcservice in self['datacenters'][indList]['repositories'][0]['services']:
+                # print(dcservice)
+                if (svc['name'] == dcservice['name']) and (svc['url'] == dcservice['url']):
+                    break
+            else:
                 return
 
         # Remove all timeseriesRouting because it is the same as services
-        self['datacenters'][indList]['repositories'][0]['timeseriesRouting'] = []
+        self['datacenters'][indList]['repositories'][0]['timeseriesRouting'][tsrIndex]['services'] = []
 
     def extend(self, listReqM):
         """Append all the items in :class:`~RequestMerge` grouped by datacenter.
