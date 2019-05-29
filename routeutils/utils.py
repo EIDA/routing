@@ -546,9 +546,14 @@ def getStationCache(st, rt):
         query = query + '&end=%s' % rt.tw.end.isoformat()
 
     logging.debug(query)
+
+    # FIXME INGV must fix their firewall rules!
+    if 'ingv.it' in query:
+        sleep(1)
+
     req = ul.Request(query)
     try:
-        u = ul.urlopen(req)
+        u = ul.urlopen(req, timeout=15)
         # What is read has to be decoded in python3
         buf = u.read().decode('utf-8')
     except ul.URLError as e:
@@ -558,6 +563,12 @@ def getStationCache(st, rt):
         elif hasattr(e, 'code'):
             logging.warning('The server couldn\'t fulfill the request.')
             logging.warning('Error code: %s\n', e.code)
+        return list()
+    except ul.HTTPError as e:
+        logging.warning(str(e))
+        return list()
+    except Exception as e:
+        logging.warning('WATCH THIS! %s' % e)
         return list()
 
     result = list()
