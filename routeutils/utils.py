@@ -23,6 +23,7 @@ import xml.etree.cElementTree as ET
 from time import sleep
 from collections import namedtuple
 import logging
+from copy import deepcopy
 
 # Try to be Python 3 compliant as much as we can
 try:
@@ -461,7 +462,7 @@ class FDSNRules(dict):
             indList = self.index(service, url)
         except KeyError as k:
             indList = len(self['datacenters'])
-            self['datacenters'].append(eidaDCs[k.args[0]])
+            self['datacenters'].append(deepcopy(eidaDCs[k.args[0]]))
 
             # This is empty and then it can be already added
             # toAdd["services"] = [service]
