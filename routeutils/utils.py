@@ -19,6 +19,7 @@ import os
 import datetime
 import fnmatch
 import telnetlib
+import json
 import xml.etree.cElementTree as ET
 from time import sleep
 from collections import namedtuple
@@ -353,14 +354,15 @@ class FDSNRules(dict):
         if rm is None:
             return
 
-        if type(rm) != type(RequestMerge()):
-            raise Exception('FDSNRules cannot be created with an object different than RequestMerge.')
+        if type(rm) == type(RequestMerge()):
+            for r in rm:
+                for p in r['params']:
+                    self.append(r['name'], r['url'], p['priority'],
+                                Stream(p['net'], p['sta'], p['loc'], p['cha']),
+                                TW(p['start'], p['end']))
+            return
 
-        for r in rm:
-            for p in r['params']:
-                self.append(r['name'], r['url'], p['priority'],
-                            Stream(p['net'], p['sta'], p['loc'], p['cha']),
-                            TW(p['start'], p['end']))
+        raise Exception('FDSNRules cannot be created with an object different than RequestMerge.')
 
     def index(self, service, url):
         """Given a service and url returns the index on the list where
@@ -1673,15 +1675,24 @@ class RoutingCache(object):
                 fo.write(st.toXMLclose())
             fo.write('</ns0:routing>')
 
-    def localConfig(self):
+    def localConfig(self, format='xml'):
         """Return the local routing configuration.
 
         :returns: Local routing information in Arclink-XML format
         :rtype: str
 
         """
-        with open(self.routingFile) as f:
-            return f.read()
+        if format == 'xml':
+            with open(self.routingFile) as f:
+                return f.read()
+
+        if format == 'fdsn':
+            result = self.getRoute(Stream('*', '*', '*', '*'), TW(None, None), service='dataselect,wfcatalog,station',
+                                   alternative=True)
+            fdsnresult = FDSNRules(result)
+            return json.dumps(fdsnresult, default=datetime.datetime.isoformat)
+
+        raise Exception('Format (%s) is not xml of fdsn.' % format)
 
     def configArclink(self):
         """Connect via telnet to an Arclink server to get routing information.
