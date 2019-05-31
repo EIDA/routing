@@ -1842,7 +1842,7 @@ class RoutingCache(object):
         :type stream: :class:`~Stream`
         :param tw: Timewindow
         :type tw: :class:`~TW`
-        :param service: Service from which you want to get information
+        :param service: Comma-separated list of services to get information from
         :type service: str
         :param geoLoc: Rectangle to filter stations
         :type geoLoc: :class:`~geoRectangle`
@@ -1865,7 +1865,7 @@ class RoutingCache(object):
         result = RequestMerge()
         for st, tw in strtwList:
             try:
-                for srv in service.split(','):
+                for srv in set([s.lower() for s in service.split(',')]):
                     result.extend(self.getRouteDS(srv, st, tw, geoLoc,
                                                   alternative))
             except ValueError:
