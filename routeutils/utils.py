@@ -151,7 +151,7 @@ eidaDCs = [
                     },
                     {
                         "name": "eidaws-wfcatalog",
-                        "url": "http://webservices.ingv.it/eidaws/wfcatalog/1/"
+                        "url": "http://catalog.data.ingv.it/wfcatalog/1/"
                     }
                 ],
                 "timeseriesRouting": [
@@ -238,7 +238,7 @@ eidaDCs = [
                     },
                     {
                         "name": "eidaws-wfcatalog",
-                        "url": "http://eida-sc3.infp.ro/eidaws/wfcatalog/1/"
+                        "url": "http://eida-sc3.infp.ro/eidaws/wfcatalog/alpha/"
                     }
                 ],
                 "timeseriesRouting": [
@@ -390,7 +390,7 @@ class FDSNRules(dict):
                             (url.startswith(dcservice['url']))):
                         raise KeyError(inddc)
 
-        raise Exception('Data centre not found!')
+        raise Exception('Data centre not found! (%s, %s)' % (service, url))
 
     # "timeseriesRouting": [
     #     {
