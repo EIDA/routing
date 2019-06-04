@@ -434,6 +434,7 @@ class FDSNRules(dict):
 
         """
 
+        print(service, url, priority, stream, tw)
         url = url[:-len('query')] if url.endswith('query') else url
         service = 'fdsnws-%s' % service if service in ('station', 'dataselect') else service
         service = 'eidaws-%s' % service if service in ('wfcatalog') else service
@@ -486,13 +487,16 @@ class FDSNRules(dict):
                 continue
             if not (toAdd.get("channel", '*') == srvDC.get("channel", '*')):
                 continue
-            if not (toAdd.get("start", None) == srvDC.get("start", None)):
+            if not (toAdd.get("starttime", None) == srvDC.get("starttime", None)):
                 continue
-            if not (toAdd.get("end", None) == srvDC.get("end", None)):
+            if not (toAdd.get("endtime", None) == srvDC.get("endtime", None)):
                 continue
+            if not (toAdd.get("priority", None) == srvDC.get("priority", None)):
+                continue
+            # print('Agregar', toAdd, 'to', srvDC)
             srvDC["services"].append({"name": service, "url": url})
-            break
             tsrIndex = ind
+            break
         else:
             tsrIndex = len(self['datacenters'][indList]['repositories'][0]['timeseriesRouting'])
             self['datacenters'][indList]['repositories'][0]['timeseriesRouting'].append(toAdd)
@@ -504,17 +508,20 @@ class FDSNRules(dict):
 
         # Check that each timeseriesRouting is in ['services']
         tsr = self['datacenters'][indList]['repositories'][0]['timeseriesRouting'][tsrIndex]
+
+        svcset = set()
+        for dcservice in self['datacenters'][indList]['repositories'][0]['services']:
+            svcset.add((dcservice['name'], dcservice['url']))
+
         for svc in tsr['services']:
             # print(svc)
-            for dcservice in self['datacenters'][indList]['repositories'][0]['services']:
-                # print(dcservice)
-                if (svc['name'] == dcservice['name']) and (svc['url'] == dcservice['url']):
-                    break
-            else:
+            try:
+                svcset.remove((svc['name'], svc['url']))
+            except KeyError:
                 return
 
         # Remove all timeseriesRouting because it is the same as services
-        self['datacenters'][indList]['repositories'][0]['timeseriesRouting'][tsrIndex]['services'] = []
+        del self['datacenters'][indList]['repositories'][0]['timeseriesRouting'][tsrIndex]['services']
 
     def extend(self, listReqM):
         """Append all the items in :class:`~RequestMerge` grouped by datacenter.
