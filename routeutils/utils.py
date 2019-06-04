@@ -454,9 +454,9 @@ class FDSNRules(dict):
         if stream.c != '*' and len(stream.c):
             toAdd["channel"] = stream.c
         if tw.end is not None:
-            if type(tw) == str and len(tw):
+            if isinstance(tw.end, str) and len(tw.end):
                 toAdd["endtime"] = tw.end
-            if type(tw) == datetime.datetime:
+            if isinstance(tw.end, datetime.datetime):
                 toAdd["endtime"] = tw.end
 
         # Search in which data centre should this be added
