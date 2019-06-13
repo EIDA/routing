@@ -400,13 +400,17 @@ def application(environ, start_response):
             return send_error_response(w.status, w.body, start_response)
 
     elif fname == 'localconfig':
-        result = routes.localConfig(format=outForm)
+        result = routes.localConfig()
         if outForm == 'xml':
             return send_xml_response('200 OK', result,
                                      start_response)
+
+    elif fname == 'globalconfig':
+        result = routes.globalConfig()
         if outForm == 'fdsn':
             return send_json_response('200 OK', result,
                                       start_response)
+
 
     elif fname == 'version':
         text = "1.1.2"

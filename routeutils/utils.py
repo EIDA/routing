@@ -1693,13 +1693,24 @@ class RoutingCache(object):
             with open(self.routingFile) as f:
                 return f.read()
 
+        raise Exception('Format (%s) is not xml.' % format)
+
+    def globalConfig(self, format='xml'):
+        """Return the global routing configuration.
+
+        :returns: Global routing information in FDSN format
+        :rtype: str
+
+        """
         if format == 'fdsn':
             result = self.getRoute(Stream('*', '*', '*', '*'), TW(None, None), service='dataselect,wfcatalog,station',
                                    alternative=True)
             fdsnresult = FDSNRules(result)
             return json.dumps(fdsnresult, default=datetime.datetime.isoformat)
 
-        raise Exception('Format (%s) is not xml of fdsn.' % format)
+        raise Exception('Format (%s) is not fdsn.' % format)
+
+
 
     def getRoute(self, stream, tw, service='dataselect', geoLoc=None,
                  alternative=False):
