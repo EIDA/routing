@@ -992,13 +992,6 @@ TW (timewindow)  class
    :members:
    :undoc-members:
 
-RouteMT class
-^^^^^^^^^^^^^
-
-.. autoclass:: routeutils.utils.RouteMT
-   :members:
-   :undoc-members:
-
 RequestMerge class
 ^^^^^^^^^^^^^^^^^^
 
