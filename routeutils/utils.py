@@ -163,7 +163,7 @@ eidaDCs = [
         "name": "ETH",
         "website": "https://www.ethz.ch",
         "fullName": "ETH Data Centre",
-        "summary": "Eidgenössische Technische Hochschule Zürich",
+        "summary": u"Eidgenössische Technische Hochschule Zürich",
         "repositories": [
             {
                 "name": "archive",
@@ -192,7 +192,7 @@ eidaDCs = [
         "name": "BGR",
         "website": "https://www.bgr.bund.de",
         "fullName": "BGR Data Centre",
-        "summary": "Bundesanstalt für Geowissenschaften und Rohstoffe",
+        "summary": u"Bundesanstalt für Geowissenschaften und Rohstoffe",
         "repositories": [
             {
                 "name": "archive",
@@ -279,7 +279,7 @@ eidaDCs = [
         "name": "LMU",
         "website": "https://www.uni-muenchen.de/",
         "fullName": "LMU Data Centre",
-        "summary": "Ludwig Maximilians Universität München",
+        "summary": u"Ludwig Maximilians Universität München",
         "repositories": [
             {
                 "name": "archive",
