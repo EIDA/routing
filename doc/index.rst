@@ -271,7 +271,7 @@ Service
 """""""
 
 `baseURL` should contain the basic URL of the current Routing Service in order
-to be used in the generation of the `application.wadl` method. For instance, ::
+to be used in the generation of the `application.wadl` method. For instance,
 
 .. code-block:: ini
 
