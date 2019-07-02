@@ -48,7 +48,7 @@ master_doc = 'index'
 # General information about the project.
 project = u'Routing-WS'
 copyright = u'2014-2019, Javier Quinteros - Deutsches GFZ Potsdam'
-author = 'Javier Quinteros'
+author = u'Javier Quinteros'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -109,11 +109,12 @@ html_theme = 'default'
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    'collapsiblesidebar': True,
+    'collapse_navigation': False,
     'externalrefs': True,
     'navigation_depth': 2,
-    'issues_url': 'https://github.com/EIDA/routing/issues'
+    'prev_next_buttons_location': 'both'
 }
+
 # Add any paths that contain custom themes here, relative to this directory.
 # html_theme_path = []
 
@@ -206,11 +207,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'Routing-WS.tex', u'Routing-WS Documentation',
-   u'Javier Quinteros', 'manual'),
-  ('specification', 'Routing-spec-v1.1.tex',
-   u'Routing Service Specification - v1.1',
-   u'Javier Quinteros and the EIDA team', 'manual'),
+  ('index', 'Routing-Service-Documentation.tex', u'Routing Service Documentation',
+   u'Javier Quinteros', 'manual')
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -239,7 +237,7 @@ latex_logo = 'GFZ-logo.jpg'
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'routing-ws', u'Routing-WS Documentation',
+    ('index', 'routing-ws', u'Routing Service Documentation',
      [u'Javier Quinteros'], 1)
 ]
 
@@ -253,7 +251,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'Routing-WS', u'Routing-WS Documentation',
+  ('index', 'Routing-WS', u'Routing Service Documentation',
    u'Javier Quinteros', 'Routing-WS', 'One line description of project.',
    'Miscellaneous'),
 ]

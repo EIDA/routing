@@ -1,8 +1,7 @@
 #
-# EIDA Routing WS prototype
+# Routing Service
 #
-# (c) 2014 Javier Quinteros, GEOFON team
-# <javier@gfz-potsdam.de>
+# 2014-2019 Javier Quinteros, Deutsches GFZ Potsdam <javier@gfz-potsdam.de>
 #
 # ----------------------------------------------------------------------
 
