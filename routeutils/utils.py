@@ -38,7 +38,7 @@ from urllib.parse import urlparse
 
 
 # I need to find a mapping from (service, URL) to the schema below. It seems
-# that it could be feasible to put all routes in the timeseriesRouting item
+# that it could be feasible to put all routes in the datasets item
 
 eidaDCs = [
     {
@@ -66,7 +66,7 @@ eidaDCs = [
                         "description": "EIDA WFCatalog service"
                     }
                 ],
-                "timeseriesRouting": [
+                "datasets": [
                 ]
             }
         ]
@@ -96,7 +96,7 @@ eidaDCs = [
                         "description": "EIDA WFCatalog service"
                     }
                 ],
-                "timeseriesRouting": [
+                "datasets": [
                 ]
             }
         ]
@@ -125,7 +125,7 @@ eidaDCs = [
                         "url": "http://ws.resif.fr/eidaws/wfcatalog/1/"
                     }
                 ],
-                "timeseriesRouting": [
+                "datasets": [
                 ]
             }
         ]
@@ -154,7 +154,7 @@ eidaDCs = [
                         "url": "http://catalog.data.ingv.it/wfcatalog/1/"
                     }
                 ],
-                "timeseriesRouting": [
+                "datasets": [
                 ]
             }
         ]
@@ -183,7 +183,7 @@ eidaDCs = [
                         "url": "http://eida.ethz.ch/eidaws/wfcatalog/1/"
                     }
                 ],
-                "timeseriesRouting": [
+                "datasets": [
                 ]
             }
         ]
@@ -212,7 +212,7 @@ eidaDCs = [
                         "url": "http://eida.bgr.de/eidaws/wfcatalog/1/"
                     }
                 ],
-                "timeseriesRouting": [
+                "datasets": [
                 ]
             }
         ]
@@ -241,7 +241,7 @@ eidaDCs = [
                         "url": "http://eida-sc3.infp.ro/eidaws/wfcatalog/alpha/"
                     }
                 ],
-                "timeseriesRouting": [
+                "datasets": [
                 ]
             }
         ]
@@ -270,7 +270,7 @@ eidaDCs = [
                         "url": "http://eida-service.koeri.boun.edu.tr/eidaws/wfcatalog/1/"
                     }
                 ],
-                "timeseriesRouting": [
+                "datasets": [
                 ]
             }
         ]
@@ -299,7 +299,7 @@ eidaDCs = [
                         "url": "http://erde.geophysik.uni-muenchen.de/eidaws/wfcatalog/1/"
                     }
                 ],
-                "timeseriesRouting": [
+                "datasets": [
                 ]
             }
         ]
@@ -328,7 +328,7 @@ eidaDCs = [
                         "url": "http://eida.gein.noa.gr/eidaws/wfcatalog/1/"
                     }
                 ],
-                "timeseriesRouting": [
+                "datasets": [
                 ]
             }
         ]
@@ -371,8 +371,9 @@ class FDSNRules(dict):
          list. That is the DC to add. If both searches fail an Exception
          is raised"""
 
-        service = 'fdsnws-dataselect' if service == 'dataselect' else service
-        service = 'fdsnws-station' if service == 'station' else service
+        service = 'fdsnws-availability-1' if service == 'availability' else service
+        service = 'fdsnws-dataselect-1' if service == 'dataselect' else service
+        service = 'fdsnws-station-1' if service == 'station' else service
         service = 'eidaws-wfcatalog' if service == 'wfcatalog' else service
 
         for inddc, dc in enumerate(self['datacenters']):
@@ -392,7 +393,7 @@ class FDSNRules(dict):
 
         raise Exception('Data centre not found! (%s, %s)' % (service, url))
 
-    # "timeseriesRouting": [
+    # "datasets": [
     #     {
     #         "network": "N1",
     #         "priority": 1,
@@ -416,7 +417,7 @@ class FDSNRules(dict):
 
         Overrides the *append* method of the inherited list. If another route
         for the datacenter was already added, the remaining attributes are
-        appended in *timeseriesRouting* for the datacenter. If this is the first
+        appended in *datasets* for the datacenter. If this is the first
         :class:`~Route` for the datacenter, everything is added.
 
         :param service: Service name (f.i., 'dataselect')
@@ -436,7 +437,7 @@ class FDSNRules(dict):
 
         print(service, url, priority, stream, tw)
         url = url[:-len('query')] if url.endswith('query') else url
-        service = 'fdsnws-%s' % service if service in ('station', 'dataselect') else service
+        service = 'fdsnws-%s-1' % service if service in ('station', 'dataselect', 'availability') else service
         service = 'eidaws-%s' % service if service in ('wfcatalog') else service
 
         # Include only mandatory attributes
@@ -474,11 +475,11 @@ class FDSNRules(dict):
 
         toAdd["services"] = [{"name": service, "url": url}]
 
-        # print(self['datacenters'][indList]['repositories'][0]['timeseriesRouting'])
+        # print(self['datacenters'][indList]['repositories'][0]['datasets'])
         tsrIndex = 0
         # FIXME the position in repositories is hard-coded!
         # Check if the request line had been already added
-        for ind, srvDC in enumerate(self['datacenters'][indList]['repositories'][0]['timeseriesRouting']):
+        for ind, srvDC in enumerate(self['datacenters'][indList]['repositories'][0]['datasets']):
             if not (toAdd.get("network", '*') == srvDC.get("network", '*')):
                 continue
             if not (toAdd.get("station", '*') == srvDC.get("station", '*')):
@@ -498,16 +499,16 @@ class FDSNRules(dict):
             tsrIndex = ind
             break
         else:
-            tsrIndex = len(self['datacenters'][indList]['repositories'][0]['timeseriesRouting'])
-            self['datacenters'][indList]['repositories'][0]['timeseriesRouting'].append(toAdd)
+            tsrIndex = len(self['datacenters'][indList]['repositories'][0]['datasets'])
+            self['datacenters'][indList]['repositories'][0]['datasets'].append(toAdd)
 
-        # Check that there is the same number of routes for timeseriesRouting and services
-        if len(self['datacenters'][indList]['repositories'][0]['timeseriesRouting'][tsrIndex]['services']) != \
+        # Check that there is the same number of routes for datasets and services
+        if len(self['datacenters'][indList]['repositories'][0]['datasets'][tsrIndex]['services']) != \
                 len(self['datacenters'][indList]['repositories'][0]['services']):
             return
 
-        # Check that each timeseriesRouting is in ['services']
-        tsr = self['datacenters'][indList]['repositories'][0]['timeseriesRouting'][tsrIndex]
+        # Check that each datasets is in ['services']
+        tsr = self['datacenters'][indList]['repositories'][0]['datasets'][tsrIndex]
 
         svcset = set()
         for dcservice in self['datacenters'][indList]['repositories'][0]['services']:
@@ -520,8 +521,8 @@ class FDSNRules(dict):
             except KeyError:
                 return
 
-        # Remove all timeseriesRouting because it is the same as services
-        del self['datacenters'][indList]['repositories'][0]['timeseriesRouting'][tsrIndex]['services']
+        # Remove all datasets because it is the same as services
+        del self['datacenters'][indList]['repositories'][0]['datasets'][tsrIndex]['services']
 
     def extend(self, listReqM):
         """Append all the items in :class:`~RequestMerge` grouped by datacenter.
