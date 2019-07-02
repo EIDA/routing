@@ -1,13 +1,5 @@
-.. Routing Service specification (v1.1) master file, created by
-   sphinx-quickstart on Wed Oct  1 16:09:29 2014.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Welcome to Routing Service specification!
-=========================================
-
-.. toctree::
-   :maxdepth: 3
+Specification
+=============
 
 Overview of the service
 -----------------------
@@ -337,7 +329,7 @@ structure will consist of:
 
   * a line with a URL where the request must be made,
   * a list of lines with the format declared in the FDSN-WS specification
-    to do a POST request[#f3]_.
+    to do a POST request [#f3]_.
 
 .. [#f3] If start and end dates are not specified, they will not be present
          in the output and the lines cannot be used directly as POST body.

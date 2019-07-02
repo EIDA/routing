@@ -47,7 +47,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Routing-WS'
-copyright = u'2014-2017, Javier Quinteros'
+copyright = u'2014-2019, Javier Quinteros - Deutsches GFZ Potsdam'
+author = u'Javier Quinteros'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -202,10 +203,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   ('index', 'Routing-WS.tex', u'Routing-WS Documentation',
-   u'Javier Quinteros', 'manual'),
-  ('specification', 'Routing-spec-v1.1.tex',
-   u'Routing Service Specification - v1.1',
-   u'Javier Quinteros and the EIDA team', 'manual'),
+   u'Javier Quinteros', 'manual')
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
