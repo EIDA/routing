@@ -53,17 +53,19 @@ eidaDCs = [
                 "website": "https://geofon.gfz-potsdam.de/waveform/",
                 "services": [
                     {
-                        "name": "fdsnws-dataselect",
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
                         "url": "http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/"
                     },
                     {
-                        "name": "fdsnws-station",
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
                         "url": "http://geofon.gfz-potsdam.de/fdsnws/station/1/"
                     },
                     {
                         "name": "eidaws-wfcatalog",
-                        "url": "http://geofon.gfz-potsdam.de/eidaws/wfcatalog/1/",
-                        "description": "EIDA WFCatalog service"
+                        "description": "EIDA WFCatalog service",
+                        "url": "http://geofon.gfz-potsdam.de/eidaws/wfcatalog/1/"
                     }
                 ],
                 "datasets": [
@@ -83,17 +85,19 @@ eidaDCs = [
                 "website": "https://www.orfeus-eu.org/data/eida/",
                 "services": [
                     {
-                        "name": "fdsnws-dataselect",
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
                         "url": "http://www.orfeus-eu.org/fdsnws/dataselect/1/"
                     },
                     {
-                        "name": "fdsnws-station",
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
                         "url": "http://www.orfeus-eu.org/fdsnws/station/1/"
                     },
                     {
                         "name": "eidaws-wfcatalog",
-                        "url": "http://www.orfeus-eu.org/eidaws/wfcatalog/1/",
-                        "description": "EIDA WFCatalog service"
+                        "description": "EIDA WFCatalog service",
+                        "url": "http://www.orfeus-eu.org/eidaws/wfcatalog/1/"
                     }
                 ],
                 "datasets": [
@@ -113,17 +117,20 @@ eidaDCs = [
                 "website": "http://seismology.resif.fr/",
                 "services": [
                     {
-                        "name": "fdsnws-dataselect",
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
                         "url": "http://ws.resif.fr/fdsnws/dataselect/1/"
                     },
                     {
-                        "name": "fdsnws-station",
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
                         "url": "http://ws.resif.fr/fdsnws/station/1/"
                     },
                     {
                         "name": "eidaws-wfcatalog",
+                        "description": "EIDA WFCatalog service",
                         "url": "http://ws.resif.fr/eidaws/wfcatalog/1/"
-                    }
+}
                 ],
                 "datasets": [
                 ]
@@ -142,15 +149,18 @@ eidaDCs = [
                 "website": "http://www.ingv.it/",
                 "services": [
                     {
-                        "name": "fdsnws-dataselect",
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
                         "url": "http://webservices.ingv.it/fdsnws/dataselect/1/"
                     },
                     {
-                        "name": "fdsnws-station",
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
                         "url": "http://webservices.ingv.it/fdsnws/station/1/"
                     },
                     {
                         "name": "eidaws-wfcatalog",
+                        "description": "EIDA WFCatalog service",
                         "url": "http://catalog.data.ingv.it/wfcatalog/1/"
                     }
                 ],
@@ -171,15 +181,18 @@ eidaDCs = [
                 "website": "http://www.seismo.ethz.ch/",
                 "services": [
                     {
-                        "name": "fdsnws-dataselect",
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
                         "url": "http://eida.ethz.ch/fdsnws/dataselect/1/"
                     },
                     {
-                        "name": "fdsnws-station",
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
                         "url": "http://eida.ethz.ch/fdsnws/station/1/"
                     },
                     {
                         "name": "eidaws-wfcatalog",
+                        "description": "EIDA WFCatalog service",
                         "url": "http://eida.ethz.ch/eidaws/wfcatalog/1/"
                     }
                 ],
@@ -200,15 +213,18 @@ eidaDCs = [
                 "website": "https://www.bgr.bund.de/EN/Themen/Seismologie",
                 "services": [
                     {
-                        "name": "fdsnws-dataselect",
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
                         "url": "http://eida.bgr.de/fdsnws/dataselect/1/"
                     },
                     {
-                        "name": "fdsnws-station",
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
                         "url": "http://eida.bgr.de/fdsnws/station/1/"
                     },
                     {
                         "name": "eidaws-wfcatalog",
+                        "description": "EIDA WFCatalog service",
                         "url": "http://eida.bgr.de/eidaws/wfcatalog/1/"
                     }
                 ],
@@ -229,15 +245,18 @@ eidaDCs = [
                 "website": "http://www.infp.ro/en/",
                 "services": [
                     {
-                        "name": "fdsnws-dataselect",
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
                         "url": "http://eida-sc3.infp.ro/fdsnws/dataselect/1/"
                     },
                     {
-                        "name": "fdsnws-station",
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
                         "url": "http://eida-sc3.infp.ro/fdsnws/station/1/"
                     },
                     {
                         "name": "eidaws-wfcatalog",
+                        "description": "EIDA WFCatalog service",
                         "url": "http://eida-sc3.infp.ro/eidaws/wfcatalog/alpha/"
                     }
                 ],
@@ -258,15 +277,18 @@ eidaDCs = [
                 "website": "http://www.koeri.boun.edu.tr/sismo/2/en/",
                 "services": [
                     {
-                        "name": "fdsnws-dataselect",
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
                         "url": "http://eida-service.koeri.boun.edu.tr/fdsnws/dataselect/1/"
                     },
                     {
-                        "name": "fdsnws-station",
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
                         "url": "http://eida-service.koeri.boun.edu.tr/fdsnws/station/1/"
                     },
                     {
                         "name": "eidaws-wfcatalog",
+                        "description": "EIDA WFCatalog service",
                         "url": "http://eida-service.koeri.boun.edu.tr/eidaws/wfcatalog/1/"
                     }
                 ],
@@ -287,15 +309,18 @@ eidaDCs = [
                 "website": "https://www.geophysik.uni-muenchen.de/",
                 "services": [
                     {
-                        "name": "fdsnws-dataselect",
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
                         "url": "http://erde.geophysik.uni-muenchen.de/fdsnws/dataselect/1/"
                     },
                     {
-                        "name": "fdsnws-station",
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
                         "url": "http://erde.geophysik.uni-muenchen.de/fdsnws/station/1/"
                     },
                     {
                         "name": "eidaws-wfcatalog",
+                        "description": "EIDA WFCatalog service",
                         "url": "http://erde.geophysik.uni-muenchen.de/eidaws/wfcatalog/1/"
                     }
                 ],
@@ -316,15 +341,18 @@ eidaDCs = [
                 "website": "http://bbnet.gein.noa.gr",
                 "services": [
                     {
-                        "name": "fdsnws-dataselect",
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
                         "url": "http://eida.gein.noa.gr/fdsnws/dataselect/1/"
                     },
                     {
-                        "name": "fdsnws-station",
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
                         "url": "http://eida.gein.noa.gr/fdsnws/station/1/"
                     },
                     {
                         "name": "eidaws-wfcatalog",
+                        "description": "EIDA WFCatalog service",
                         "url": "http://eida.gein.noa.gr/eidaws/wfcatalog/1/"
                     }
                 ],
