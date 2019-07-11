@@ -1724,7 +1724,7 @@ class RoutingCache(object):
 
         raise Exception('Format (%s) is not xml.' % format)
 
-    def globalConfig(self, format='xml'):
+    def globalConfig(self, format='fdsn'):
         """Return the global routing configuration.
 
         :returns: Global routing information in FDSN format

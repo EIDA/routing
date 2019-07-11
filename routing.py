@@ -346,7 +346,7 @@ def application(environ, start_response):
 
     # Check whether the function called is implemented
     implementedFunctions = ['query', 'application.wadl', 'localconfig',
-                            'version', 'info', '']
+                            'globalconfig', 'version', 'info', '']
 
     if routes is None:
         # Add routing cache here, to be accessible to all modules
