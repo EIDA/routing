@@ -1,8 +1,10 @@
-Specification
-=============
+Specification - v1.2
+====================
 
 Overview of the service
 -----------------------
+
+.. todo:: Need to include description of the "fdsn" format.
 
 Purpose
 '''''''

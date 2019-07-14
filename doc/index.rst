@@ -7,12 +7,6 @@ Routing Service documentation
     :titlesonly:
 
     userdoc.rst
-    developer.rst
     specification.rst
+    modules.rst
 
-
-Indices and tables
-==================
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
