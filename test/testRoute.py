@@ -112,6 +112,126 @@ class RouteCacheTests(unittest.TestCase):
         self.assertEqual(result[0]['name'], 'dataselect',
                          'Wrong service name!')
 
+    def test2services_GE_DS_ST(self):
+        """Dataselect AND Station GE.*.*.*"""
+
+        expURL_DS = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
+        expURL_ST = 'http://geofon.gfz-potsdam.de/fdsnws/station/1/query'
+        result = self.rc.getRoute(Stream('GE', '*', '*', '*'), TW(None, None), service='dataselect,station')
+        self.assertIsInstance(result, RequestMerge,
+                              'A RequestMerge object was expected!')
+        self.assertEqual(len(result), 2,
+                         'Wrong number of data centers for GE.*.*.*!')
+        self.assertIn(expURL_DS, [result[0]['url'], result[1]['url']],
+                         'Wrong URL for GE.*.*.*')
+        self.assertIn(expURL_ST, [result[0]['url'], result[1]['url']],
+                         'Wrong URL for GE.*.*.*')
+        self.assertIn('dataselect', [result[0]['name'], result[1]['name']],
+                         'Wrong service name!')
+        self.assertIn('station', [result[0]['name'], result[1]['name']],
+                         'Wrong service name!')
+
+    def test2services_GE_DS_ST_FDSN(self):
+        """Dataselect AND Station GE.*.*.* in FDSN format"""
+
+        expURL_DS = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/'
+        expURL_ST = 'http://geofon.gfz-potsdam.de/fdsnws/station/1/'
+        result = self.rc.getRoute(Stream('GE', '*', '*', '*'), TW(None, None), service='dataselect,station')
+        fdsnresult = FDSNRules(result)
+        self.assertIsInstance(fdsnresult, FDSNRules,
+                              'A FDSNRules object was expected!')
+        self.assertEqual(len(fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services']), 2,
+                         'Wrong number of services for GE.*.*.*!')
+        self.assertIn(expURL_DS, [fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][0]['url'],
+                                  fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][1]['url']],
+                         'Dataselect URL not found for GE.*.*.*')
+        self.assertIn(expURL_ST, [fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][0]['url'],
+                                  fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][1]['url']],
+                         'StationWS URL not found for GE.*.*.*')
+        self.assertIn('fdsnws-dataselect', [fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][0]['name'],
+                                            fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][1]['name']],
+                         'Dataselect name not found for GE.*.*.*')
+        self.assertIn('fdsnws-station', [fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][0]['name'],
+                                         fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][1]['name']],
+                         'StationWS name not found for GE.*.*.*')
+
+    def test2services_GE_DS_ST_WF(self):
+        """Dataselect AND Station AND WFCatalog GE.*.*.*"""
+
+        expURL_WF = 'http://geofon.gfz-potsdam.de/eidaws/wfcatalog/1/query'
+        expURL_DS = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
+        expURL_ST = 'http://geofon.gfz-potsdam.de/fdsnws/station/1/query'
+        result = self.rc.getRoute(Stream('GE', '*', '*', '*'), TW(None, None), service='dataselect,station,wfcatalog')
+        self.assertIsInstance(result, RequestMerge,
+                              'A RequestMerge object was expected!')
+        self.assertEqual(len(result), 3,
+                         'Wrong number of data centers for GE.*.*.*!')
+        self.assertIn(expURL_DS, [result[0]['url'], result[1]['url'], result[2]['url']],
+                         'Wrong URL for GE.*.*.*')
+        self.assertIn(expURL_ST, [result[0]['url'], result[1]['url'], result[2]['url']],
+                         'Wrong URL for GE.*.*.*')
+        self.assertIn(expURL_WF, [result[0]['url'], result[1]['url'], result[2]['url']],
+                         'Wrong URL for GE.*.*.*')
+        self.assertIn('dataselect', [result[0]['name'], result[1]['name'], result[2]['name']],
+                         'Wrong service name!')
+        self.assertIn('station', [result[0]['name'], result[1]['name'], result[2]['name']],
+                         'Wrong service name!')
+        self.assertIn('wfcatalog', [result[0]['name'], result[1]['name'], result[2]['name']],
+                         'Wrong service name!')
+
+    def test2services_GE_DS_ST_WF_FDSN(self):
+        """Dataselect AND Station AND WFCatalog GE.*.*.* in FDSN format"""
+
+        result = self.rc.getRoute(Stream('GE', '*', '*', '*'), TW(None, None), service='dataselect,wfcatalog,station')
+        fdsnresult = FDSNRules(result)
+        self.assertIsInstance(fdsnresult, FDSNRules,
+                              'A FDSNRules object was expected!')
+        self.assertEqual(len(fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services']), 0,
+                         'Wrong number of services for GE.*.*.*! An empty list is expected.')
+
+    def test2services_GE_ST_WF(self):
+        """Station AND WFCatalog GE.*.*.*"""
+
+        expURL_WF = 'http://geofon.gfz-potsdam.de/eidaws/wfcatalog/1/query'
+        expURL_ST = 'http://geofon.gfz-potsdam.de/fdsnws/station/1/query'
+        result = self.rc.getRoute(Stream('GE', '*', '*', '*'), TW(None, None), service='station,wfcatalog')
+        self.assertIsInstance(result, RequestMerge,
+                              'A RequestMerge object was expected!')
+        self.assertEqual(len(result), 2,
+                         'Wrong number of data centers for GE.*.*.*!')
+        self.assertIn(expURL_ST, [result[0]['url'], result[1]['url']],
+                         'Wrong URL for GE.*.*.*')
+        self.assertIn(expURL_WF, [result[0]['url'], result[1]['url']],
+                         'Wrong URL for GE.*.*.*')
+        self.assertIn('station', [result[0]['name'], result[1]['name']],
+                         'Wrong service name!')
+        self.assertIn('wfcatalog', [result[0]['name'], result[1]['name']],
+                         'Wrong service name!')
+
+    def test2services_GE_ST_WF_FDSN(self):
+        """Station AND WFCatalog GE.*.*.* in FDSN format"""
+
+        expURL_WF = 'http://geofon.gfz-potsdam.de/eidaws/wfcatalog/1/'
+        expURL_ST = 'http://geofon.gfz-potsdam.de/fdsnws/station/1/'
+        result = self.rc.getRoute(Stream('GE', '*', '*', '*'), TW(None, None), service='wfcatalog,station')
+        fdsnresult = FDSNRules(result)
+        self.assertIsInstance(fdsnresult, FDSNRules,
+                              'A FDSNRules object was expected!')
+        self.assertEqual(len(fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services']), 2,
+                         'Wrong number of services for GE.*.*.*!')
+        self.assertIn(expURL_WF, [fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][0]['url'],
+                                  fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][1]['url']],
+                         'WFCatalog URL not found for GE.*.*.*')
+        self.assertIn(expURL_ST, [fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][0]['url'],
+                                  fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][1]['url']],
+                         'StationWS URL not found for GE.*.*.*')
+        self.assertIn('eidaws-wfcatalog', [fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][0]['name'],
+                                           fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][1]['name']],
+                         'WFCatalog name not found for GE.*.*.*')
+        self.assertIn('fdsnws-station', [fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][0]['name'],
+                                         fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][1]['name']],
+                         'StationWS name not found for GE.*.*.*')
+
     def testDS_GE(self):
         """Dataselect GE.*.*.*"""
 

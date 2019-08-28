@@ -19,10 +19,12 @@ import os
 import datetime
 import fnmatch
 import telnetlib
+import json
 import xml.etree.cElementTree as ET
 from time import sleep
 from collections import namedtuple
 import logging
+from copy import deepcopy
 
 # Try to be Python 3 compliant as much as we can
 try:
@@ -36,7 +38,7 @@ from urllib.parse import urlparse
 
 
 # I need to find a mapping from (service, URL) to the schema below. It seems
-# that it could be feasible to put all routes in the timeseriesRouting item
+# that it could be feasible to put all routes in the datasets item
 
 eidaDCs = [
     {
@@ -51,20 +53,22 @@ eidaDCs = [
                 "website": "https://geofon.gfz-potsdam.de/waveform/",
                 "services": [
                     {
-                        "name": "fdsnws-dataselect",
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
                         "url": "http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/"
                     },
                     {
-                        "name": "fdsnws-station",
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
                         "url": "http://geofon.gfz-potsdam.de/fdsnws/station/1/"
                     },
                     {
                         "name": "eidaws-wfcatalog",
-                        "url": "http://geofon.gfz-potsdam.de/eidaws/wfcatalog/1/",
-                        "description": "EIDA WFCatalog service"
+                        "description": "EIDA WFCatalog service",
+                        "url": "http://geofon.gfz-potsdam.de/eidaws/wfcatalog/1/"
                     }
                 ],
-                "timeseriesRouting": [
+                "datasets": [
                 ]
             }
         ]
@@ -81,20 +85,22 @@ eidaDCs = [
                 "website": "https://www.orfeus-eu.org/data/eida/",
                 "services": [
                     {
-                        "name": "fdsnws-dataselect",
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
                         "url": "http://www.orfeus-eu.org/fdsnws/dataselect/1/"
                     },
                     {
-                        "name": "fdsnws-station",
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
                         "url": "http://www.orfeus-eu.org/fdsnws/station/1/"
                     },
                     {
                         "name": "eidaws-wfcatalog",
-                        "url": "http://www.orfeus-eu.org/eidaws/wfcatalog/1/",
-                        "description": "EIDA WFCatalog service"
+                        "description": "EIDA WFCatalog service",
+                        "url": "http://www.orfeus-eu.org/eidaws/wfcatalog/1/"
                     }
                 ],
-                "timeseriesRouting": [
+                "datasets": [
                 ]
             }
         ]
@@ -111,19 +117,22 @@ eidaDCs = [
                 "website": "http://seismology.resif.fr/",
                 "services": [
                     {
-                        "name": "fdsnws-dataselect",
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
                         "url": "http://ws.resif.fr/fdsnws/dataselect/1/"
                     },
                     {
-                        "name": "fdsnws-station",
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
                         "url": "http://ws.resif.fr/fdsnws/station/1/"
                     },
                     {
                         "name": "eidaws-wfcatalog",
+                        "description": "EIDA WFCatalog service",
                         "url": "http://ws.resif.fr/eidaws/wfcatalog/1/"
-                    }
+}
                 ],
-                "timeseriesRouting": [
+                "datasets": [
                 ]
             }
         ]
@@ -140,19 +149,22 @@ eidaDCs = [
                 "website": "http://www.ingv.it/",
                 "services": [
                     {
-                        "name": "fdsnws-dataselect",
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
                         "url": "http://webservices.ingv.it/fdsnws/dataselect/1/"
                     },
                     {
-                        "name": "fdsnws-station",
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
                         "url": "http://webservices.ingv.it/fdsnws/station/1/"
                     },
                     {
                         "name": "eidaws-wfcatalog",
-                        "url": "http://webservices.ingv.it/eidaws/wfcatalog/1/"
+                        "description": "EIDA WFCatalog service",
+                        "url": "http://catalog.data.ingv.it/wfcatalog/1/"
                     }
                 ],
-                "timeseriesRouting": [
+                "datasets": [
                 ]
             }
         ]
@@ -169,19 +181,22 @@ eidaDCs = [
                 "website": "http://www.seismo.ethz.ch/",
                 "services": [
                     {
-                        "name": "fdsnws-dataselect",
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
                         "url": "http://eida.ethz.ch/fdsnws/dataselect/1/"
                     },
                     {
-                        "name": "fdsnws-station",
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
                         "url": "http://eida.ethz.ch/fdsnws/station/1/"
                     },
                     {
                         "name": "eidaws-wfcatalog",
+                        "description": "EIDA WFCatalog service",
                         "url": "http://eida.ethz.ch/eidaws/wfcatalog/1/"
                     }
                 ],
-                "timeseriesRouting": [
+                "datasets": [
                 ]
             }
         ]
@@ -198,19 +213,22 @@ eidaDCs = [
                 "website": "https://www.bgr.bund.de/EN/Themen/Seismologie",
                 "services": [
                     {
-                        "name": "fdsnws-dataselect",
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
                         "url": "http://eida.bgr.de/fdsnws/dataselect/1/"
                     },
                     {
-                        "name": "fdsnws-station",
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
                         "url": "http://eida.bgr.de/fdsnws/station/1/"
                     },
                     {
                         "name": "eidaws-wfcatalog",
+                        "description": "EIDA WFCatalog service",
                         "url": "http://eida.bgr.de/eidaws/wfcatalog/1/"
                     }
                 ],
-                "timeseriesRouting": [
+                "datasets": [
                 ]
             }
         ]
@@ -227,19 +245,22 @@ eidaDCs = [
                 "website": "http://www.infp.ro/en/",
                 "services": [
                     {
-                        "name": "fdsnws-dataselect",
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
                         "url": "http://eida-sc3.infp.ro/fdsnws/dataselect/1/"
                     },
                     {
-                        "name": "fdsnws-station",
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
                         "url": "http://eida-sc3.infp.ro/fdsnws/station/1/"
                     },
                     {
                         "name": "eidaws-wfcatalog",
-                        "url": "http://eida-sc3.infp.ro/eidaws/wfcatalog/1/"
+                        "description": "EIDA WFCatalog service",
+                        "url": "http://eida-sc3.infp.ro/eidaws/wfcatalog/alpha/"
                     }
                 ],
-                "timeseriesRouting": [
+                "datasets": [
                 ]
             }
         ]
@@ -256,15 +277,22 @@ eidaDCs = [
                 "website": "http://www.koeri.boun.edu.tr/sismo/2/en/",
                 "services": [
                     {
-                        "name": "fdsnws-dataselect",
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
                         "url": "http://eida-service.koeri.boun.edu.tr/fdsnws/dataselect/1/"
                     },
                     {
-                        "name": "fdsnws-station",
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
                         "url": "http://eida-service.koeri.boun.edu.tr/fdsnws/station/1/"
+                    },
+                    {
+                        "name": "eidaws-wfcatalog",
+                        "description": "EIDA WFCatalog service",
+                        "url": "http://eida-service.koeri.boun.edu.tr/eidaws/wfcatalog/1/"
                     }
                 ],
-                "timeseriesRouting": [
+                "datasets": [
                 ]
             }
         ]
@@ -281,19 +309,22 @@ eidaDCs = [
                 "website": "https://www.geophysik.uni-muenchen.de/",
                 "services": [
                     {
-                        "name": "fdsnws-dataselect",
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
                         "url": "http://erde.geophysik.uni-muenchen.de/fdsnws/dataselect/1/"
                     },
                     {
-                        "name": "fdsnws-station",
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
                         "url": "http://erde.geophysik.uni-muenchen.de/fdsnws/station/1/"
                     },
                     {
                         "name": "eidaws-wfcatalog",
+                        "description": "EIDA WFCatalog service",
                         "url": "http://erde.geophysik.uni-muenchen.de/eidaws/wfcatalog/1/"
                     }
                 ],
-                "timeseriesRouting": [
+                "datasets": [
                 ]
             }
         ]
@@ -310,43 +341,27 @@ eidaDCs = [
                 "website": "http://bbnet.gein.noa.gr",
                 "services": [
                     {
-                        "name": "fdsnws-dataselect",
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
                         "url": "http://eida.gein.noa.gr/fdsnws/dataselect/1/"
                     },
                     {
-                        "name": "fdsnws-station",
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
                         "url": "http://eida.gein.noa.gr/fdsnws/station/1/"
                     },
                     {
                         "name": "eidaws-wfcatalog",
+                        "description": "EIDA WFCatalog service",
                         "url": "http://eida.gein.noa.gr/eidaws/wfcatalog/1/"
                     }
                 ],
-                "timeseriesRouting": [
+                "datasets": [
                 ]
             }
         ]
     }
 ]
-
-# "timeseriesRouting": [
-#     {
-#         "network": "N1",
-#         "priority": 1,
-#         "starttime": "1980-01-01T00:00:00Z"
-#     },
-#     {
-#         "network": "N2",
-#         "priority": 2,
-#         "starttime": "2000-01-01T00:00:00Z",
-#         "services": [
-#             {
-#                 "name": "fdsnws-station",
-#                 "url": "http://orfeus.eu/fdsnws/station/1/"
-#             }
-#         ]
-#     }
-# ]
 
 
 class FDSNRules(dict):
@@ -367,14 +382,15 @@ class FDSNRules(dict):
         if rm is None:
             return
 
-        if type(rm) != type(RequestMerge()):
-            raise Exception('FDSNRules cannot be created with an object different than RequestMerge.')
+        if type(rm) == type(RequestMerge()):
+            for r in rm:
+                for p in r['params']:
+                    self.append(r['name'], r['url'], p['priority'],
+                                Stream(p['net'], p['sta'], p['loc'], p['cha']),
+                                TW(p['start'], p['end']))
+            return
 
-        for r in rm:
-            for p in r['params']:
-                self.append(r['name'], r['url'], p['priority'],
-                            Stream(p['net'], p['sta'], p['loc'], p['cha']),
-                            TW(p['start'], p['end']))
+        raise Exception('FDSNRules cannot be created with an object different than RequestMerge.')
 
     def index(self, service, url):
         """Given a service and url returns the index on the list where
@@ -383,8 +399,9 @@ class FDSNRules(dict):
          list. That is the DC to add. If both searches fail an Exception
          is raised"""
 
-        service = 'fdsnws-dataselect' if service == 'dataselect' else service
-        service = 'fdsnws-station' if service == 'station' else service
+        service = 'fdsnws-availability-1' if service == 'availability' else service
+        service = 'fdsnws-dataselect-1' if service == 'dataselect' else service
+        service = 'fdsnws-station-1' if service == 'station' else service
         service = 'eidaws-wfcatalog' if service == 'wfcatalog' else service
 
         for inddc, dc in enumerate(self['datacenters']):
@@ -402,15 +419,33 @@ class FDSNRules(dict):
                             (url.startswith(dcservice['url']))):
                         raise KeyError(inddc)
 
-        raise Exception('Data centre not found!')
+        raise Exception('Data centre not found! (%s, %s)' % (service, url))
 
+    # "datasets": [
+    #     {
+    #         "network": "N1",
+    #         "priority": 1,
+    #         "starttime": "1980-01-01T00:00:00Z"
+    #     },
+    #     {
+    #         "network": "N2",
+    #         "priority": 2,
+    #         "starttime": "2000-01-01T00:00:00Z",
+    #         "services": [
+    #             {
+    #                 "name": "fdsnws-station",
+    #                 "url": "http://orfeus.eu/fdsnws/station/1/"
+    #             }
+    #         ]
+    #     }
+    # ]
 
     def append(self, service, url, priority, stream, tw):
         """Append a new :class:`~Route` without repeating the datacenter.
 
         Overrides the *append* method of the inherited list. If another route
         for the datacenter was already added, the remaining attributes are
-        appended in *timeseriesRouting* for the datacenter. If this is the first
+        appended in *datasets* for the datacenter. If this is the first
         :class:`~Route` for the datacenter, everything is added.
 
         :param service: Service name (f.i., 'dataselect')
@@ -428,26 +463,15 @@ class FDSNRules(dict):
 
         """
 
+        print(service, url, priority, stream, tw)
         url = url[:-len('query')] if url.endswith('query') else url
-        service = 'fdsnws-%s' % service if service in ('station', 'dataselect') else service
+        service = 'fdsnws-%s-1' % service if service in ('station', 'dataselect', 'availability') else service
         service = 'eidaws-%s' % service if service in ('wfcatalog') else service
-
-        try:
-            indList = self.index(service, url)
-        except KeyError as k:
-            indList = len(self['datacenters'])
-            self['datacenters'].append(eidaDCs[k.args[0]])
-        except:
-            raise
 
         # Include only mandatory attributes
         toAdd = {
             "priority": priority,
-            "starttime": tw.start,
-            "services": [
-                {"name": service,
-                 "url": url}
-            ]
+            "starttime": tw.start
         }
 
         # Add attributes with values different than the default ones
@@ -460,13 +484,73 @@ class FDSNRules(dict):
         if stream.c != '*' and len(stream.c):
             toAdd["channel"] = stream.c
         if tw.end is not None:
-            if type(tw) == str and len(tw):
+            if isinstance(tw.end, str) and len(tw.end):
                 toAdd["endtime"] = tw.end
-            if type(tw) == datetime.datetime:
+            if isinstance(tw.end, datetime.datetime):
                 toAdd["endtime"] = tw.end
 
+        # Search in which data centre should this be added
+        try:
+            indList = self.index(service, url)
+        except KeyError as k:
+            indList = len(self['datacenters'])
+            self['datacenters'].append(deepcopy(eidaDCs[k.args[0]]))
+
+            # This is empty and then it can be already added
+            # toAdd["services"] = [service]
+        except:
+            raise
+
+        toAdd["services"] = [{"name": service, "url": url}]
+
+        # print(self['datacenters'][indList]['repositories'][0]['datasets'])
+        tsrIndex = 0
         # FIXME the position in repositories is hard-coded!
-        self['datacenters'][indList]['repositories'][0]['timeseriesRouting'].append(toAdd)
+        # Check if the request line had been already added
+        for ind, srvDC in enumerate(self['datacenters'][indList]['repositories'][0]['datasets']):
+            if not (toAdd.get("network", '*') == srvDC.get("network", '*')):
+                continue
+            if not (toAdd.get("station", '*') == srvDC.get("station", '*')):
+                continue
+            if not (toAdd.get("location", '*') == srvDC.get("location", '*')):
+                continue
+            if not (toAdd.get("channel", '*') == srvDC.get("channel", '*')):
+                continue
+            if not (toAdd.get("starttime", None) == srvDC.get("starttime", None)):
+                continue
+            if not (toAdd.get("endtime", None) == srvDC.get("endtime", None)):
+                continue
+            if not (toAdd.get("priority", None) == srvDC.get("priority", None)):
+                continue
+            # print('Agregar', toAdd, 'to', srvDC)
+            srvDC["services"].append({"name": service, "url": url})
+            tsrIndex = ind
+            break
+        else:
+            tsrIndex = len(self['datacenters'][indList]['repositories'][0]['datasets'])
+            self['datacenters'][indList]['repositories'][0]['datasets'].append(toAdd)
+
+        # Check that there is the same number of routes for datasets and services
+        if len(self['datacenters'][indList]['repositories'][0]['datasets'][tsrIndex]['services']) != \
+                len(self['datacenters'][indList]['repositories'][0]['services']):
+            return
+
+        # Check that each datasets is in ['services']
+        tsr = self['datacenters'][indList]['repositories'][0]['datasets'][tsrIndex]
+
+        svcset = set()
+        for dcservice in self['datacenters'][indList]['repositories'][0]['services']:
+            svcset.add((dcservice['name'], dcservice['url']))
+
+        for svc in tsr['services']:
+            # print(svc)
+            try:
+                svcset.remove((svc['name'], svc['url']))
+            except KeyError:
+                return
+
+        # Remove all datasets because it is the same as services
+        del self['datacenters'][indList]['repositories'][0]['datasets'][tsrIndex]['services']
 
     def extend(self, listReqM):
         """Append all the items in :class:`~RequestMerge` grouped by datacenter.
@@ -1627,161 +1711,35 @@ class RoutingCache(object):
                 fo.write(st.toXMLclose())
             fo.write('</ns0:routing>')
 
-    def localConfig(self):
+    def localConfig(self, format='xml'):
         """Return the local routing configuration.
 
         :returns: Local routing information in Arclink-XML format
         :rtype: str
 
         """
-        with open(self.routingFile) as f:
-            return f.read()
+        if format == 'xml':
+            with open(self.routingFile) as f:
+                return f.read()
 
-    def configArclink(self):
-        """Connect via telnet to an Arclink server to get routing information.
+        raise Exception('Format (%s) is not xml.' % format)
 
-        Address and port of the server are read from the configuration file.
-        The data is saved in the file ``routing.xml``. Generally used to start
-        operating with an EIDA default configuration.
+    def globalConfig(self, format='fdsn'):
+        """Return the global routing configuration.
 
-        .. deprecated:: 1.1
-
-        This method should not be used and the configuration should be
-        independent from Arclink. Namely, the ``routing.xml`` file must exist
-        in advance.
-
-        """
-        # Functionality moved away from this module. Check updateAll.py.
-
-        return
-        # Check Arclink server that must be contacted to get a routing table
-        config = configparser.RawConfigParser()
-        msg = 'Method configArclink is deprecated and should NOT be used!'
-        self.logs.warning(msg)
-
-        here = os.path.dirname(__file__)
-        config.read(os.path.join(here, self.config))
-        arcServ = config.get('Arclink', 'server')
-        arcPort = config.getint('Arclink', 'port')
-
-        tn = telnetlib.Telnet(arcServ, arcPort)
-        tn.write('HELLO\n')
-        # FIXME The institution should be detected here. Shouldn't it?
-        self.logs.info(tn.read_until('GFZ', 5))
-        tn.write('user routing@eida\n')
-        self.logs.debug(tn.read_until('OK', 5))
-        tn.write('request routing\n')
-        self.logs.debug(tn.read_until('OK', 5))
-        tn.write('1920,1,1,0,0,0 2030,1,1,0,0,0 * * * *\nEND\n')
-
-        reqID = 0
-        while not reqID:
-            text = tn.read_until('\n', 5).splitlines()
-            for line in text:
-                try:
-                    testReqID = int(line)
-                except:
-                    continue
-                if testReqID:
-                    reqID = testReqID
-
-        myStatus = 'UNSET'
-        while (myStatus in ('UNSET', 'PROCESSING')):
-            sleep(1)
-            tn.write('status %s\n' % reqID)
-            stText = tn.read_until('END', 5)
-
-            stStr = 'status='
-            myStatus = stText[stText.find(stStr) + len(stStr):].split()[0]
-            myStatus = myStatus.replace('"', '').replace("'", "")
-            self.logs.debug(myStatus + '\n')
-
-        if myStatus != 'OK':
-            self.logs.error('Error! Request status is not OK.\n')
-            return
-
-        tn.write('download %s\n' % reqID)
-        routTable = tn.read_until('END', 5)
-        start = routTable.find('<')
-        self.logs.info('Length: %s\n' % routTable[:start])
-
-        here = os.path.dirname(__file__)
-        try:
-            os.remove(os.path.join(here, 'routing.xml.download'))
-        except:
-            pass
-
-        with open(os.path.join(here, 'routing.xml.download'), 'w',
-                  encoding='utf-8') as fout:
-            fout.write(routTable[routTable.find('<'):-3])
-
-        try:
-            os.rename(os.path.join(here, './routing.xml'),
-                      os.path.join(here, './routing.xml.bck'))
-        except:
-            pass
-
-        try:
-            os.rename(os.path.join(here, './routing.xml.download'),
-                      os.path.join(here, './routing.xml'))
-        except:
-            pass
-
-        self.logs.info('Configuration read from Arclink!\n')
-
-    def __arc2DS(self, route):
-        """Map from an Arclink address to a Dataselect one.
-
-        :param route: Arclink route
-        :type route: str
-        :returns: Dataselect URL equivalent of the given Arclink route
+        :returns: Global routing information in FDSN format
         :rtype: str
-        :raises: Exception
-
-        .. deprecated:: 1.1
-
-        This method should not be used and the configuration should be
-        independent from Arclink. Namely, the ``routing.xml`` file must exist
-        in advance.
 
         """
-        gfz = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
-        odc = 'http://www.orfeus-eu.org/fdsnws/dataselect/1/query'
-        eth = 'http://eida.ethz.ch/fdsnws/dataselect/1/query'
-        resif = 'http://ws.resif.fr/fdsnws/dataselect/1/query'
-        ingv = 'http://webservices.rm.ingv.it/fdsnws/dataselect/1/query'
-        bgr = 'http://eida.bgr.de/fdsnws/dataselect/1/query'
-        lmu = 'http://erde.geophysik.uni-muenchen.de/fdsnws/' +\
-            'dataselect/1/query'
-        ipgp = 'http://eida.ipgp.fr/fdsnws/dataselect/1/query'
-        niep = 'http://eida-sc3.infp.ro/fdsnws/dataselect/1/query'
-        koeri = \
-            'http://eida.koeri.boun.edu.tr/fdsnws/dataselect/1/query'
+        if format == 'fdsn':
+            result = self.getRoute(Stream('*', '*', '*', '*'), TW(None, None), service='dataselect,wfcatalog,station',
+                                   alternative=True)
+            fdsnresult = FDSNRules(result)
+            return json.dumps(fdsnresult, default=datetime.datetime.isoformat)
 
-        # Try to identify the hosting institution
-        host = route.split(':')[0]
+        raise Exception('Format (%s) is not fdsn.' % format)
 
-        if host.endswith('gfz-potsdam.de'):
-            return gfz
-        elif host.endswith('knmi.nl'):
-            return odc
-        elif host.endswith('ethz.ch'):
-            return eth
-        elif host.endswith('resif.fr'):
-            return resif
-        elif host.endswith('ingv.it'):
-            return ingv
-        elif host.endswith('bgr.de'):
-            return bgr
-        elif host.startswith('141.84.'):
-            return lmu
-        elif host.endswith('ipgp.fr'):
-            return ipgp
-        elif host.endswith('infp.ro'):
-            return niep
-        elif host.endswith('boun.edu.tr'):
-            return koeri
-        raise Exception('No Dataselect equivalent found for %s' % route)
+
 
     def getRoute(self, stream, tw, service='dataselect', geoLoc=None,
                  alternative=False):
@@ -1796,7 +1754,7 @@ class RoutingCache(object):
         :type stream: :class:`~Stream`
         :param tw: Timewindow
         :type tw: :class:`~TW`
-        :param service: Service from which you want to get information
+        :param service: Comma-separated list of services to get information from
         :type service: str
         :param geoLoc: Rectangle to filter stations
         :type geoLoc: :class:`~geoRectangle`
@@ -1819,8 +1777,9 @@ class RoutingCache(object):
         result = RequestMerge()
         for st, tw in strtwList:
             try:
-                result.extend(self.getRouteDS(service, st, tw, geoLoc,
-                                              alternative))
+                for srv in set([s.lower() for s in service.split(',')]):
+                    result.extend(self.getRouteDS(srv, st, tw, geoLoc,
+                                                  alternative))
             except ValueError:
                 pass
 
@@ -1905,7 +1864,7 @@ class RoutingCache(object):
             if stRT.overlap(stream):
                 subs.append(stRT)
 
-        # print 'subs', subs
+        # print('subs', subs)
 
         # Filter by service and timewindow
         for stRT in subs:
@@ -1933,7 +1892,7 @@ class RoutingCache(object):
                 # Retrieve all alternatives. Don't care about priorities
                 prio2retrieve = [x for x in priorities if x is not None]
 
-            # print prio2retrieve
+            # print(prio2retrieve)
 
             for pos, p in enumerate(priorities):
                 if p not in prio2retrieve:
@@ -1946,7 +1905,7 @@ class RoutingCache(object):
                 # if not alternative:
                 #     break
 
-        # print 'subs2', subs2
+        # print('subs2', subs2)
 
         finalset = list()
 
@@ -1954,7 +1913,7 @@ class RoutingCache(object):
         priorities = [rt.priority for (st, rt) in subs2]
         subs3 = [x for (y, x) in sorted(zip(priorities, subs2))]
 
-        # print 'subs3', subs3
+        # print('subs3', subs3)
 
         for (s1, r1) in subs3:
             for (s2, r2) in finalset:
