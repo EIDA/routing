@@ -1,18 +1,9 @@
-[Arclink]
-# Arclink server where the routing information should be downloaded from
-server = eida.gfz-potsdam.de
-port = 18002
-
 [Service]
 # Base URL of the current Routing Service
 baseURL = http://mydomain.dom/eidaws/routing/1
 # String that must be returned when the method "config" is called
 info = Routing information from the Arclink Server at GEOFON.
    All the routes related to the data in EIDA are supposed to be available here.
-# Should the routing information be updated and overwritten by the data from
-# the configured Arclink server when updateAll.py is run?
-# Also the algorithms for other services will be based on the arclink routes.
-ArclinkBased = false
 # Verbosity of the logging system
 # Possible values are:
 # CRITICAL, ERROR, WARNING, INFO, DEBUG
