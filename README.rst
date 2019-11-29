@@ -1,4 +1,4 @@
-Routing Service v1.1
+Routing Service v1.2
 --------------------
 
 Why a Routing Service?
