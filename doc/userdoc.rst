@@ -98,8 +98,8 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
        $ git clone https://github.com/GEOFON/routing.git 1
        $ cd 1
 
-#. Enable `mod_wsgi`. For openSUSE, add 'wsgi' to the list of modules in the
-   APACHE_MODULES variable in `/etc/sysconfig/apache2` ::
+#. Enable `mod_wsgi` for Python3. For openSUSE, add 'wsgi' to the list of modules
+   in the APACHE_MODULES variable in `/etc/sysconfig/apache2` ::
 
        APACHE_MODULES+=" python wsgi"
 
@@ -107,8 +107,6 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
    configuration (in `/etc/apache2/sysconfig.d/loadmodule.conf` for **openSUSE**) ::
 
        LoadModule wsgi_module   /usr/lib64/apache2/mod_wsgi.so
-
-   You can also look at the output from ``a2enmod -l`` - you should see wsgi listed.
 
    For **Ubuntu/Mint**, you can enable the module with the command ::
 
@@ -129,10 +127,9 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
    For any distribution there may be a message like this in Apache's `error_log` file, showing
    that `mod_wsgi` was loaded ::
 
-        [Tue Jul 16 14:24:32 2013] [notice] Apache/2.2.17 (Linux/SUSE)
-        PHP/5.3.5 mod_python/3.3.1 Python/2.7 mod_wsgi/3.3 configured
-         -- resuming normal operations
-
+        [Fri Nov 29 00:08:25 2019] [notice] Apache/2.4.29 (Ubuntu)
+        OpenSSL/1.1.1 mod_wsgi/4.5.17 Python/3.6 configured --
+        resuming normal operations
 
 #. Add the following lines to a new file, `conf.d/routing.conf`, or in
    `default-server.conf`, or in the configuration for your virtual host. ::
@@ -167,18 +164,11 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
       $ sudo service apache2 start
 
 
-#. Get initial metadata in the `data` directory. You have two options to feed the system with
-   some routes. Either you edit by hand (or copy from some other place) a file with your local
-   streams and save them into `data/routing.xml`, or you get them from an Arclink server.
-   In the latter case, you need to allow this in the configuration file like this: ::
-
-      $ vim routing.cfg
-      $ # set ArclinkBased = true to allow the information to be overwritten by Arclink data
-      $ grep ArclinkBased routing.cfg
-      ArclinkBased = true
-
-   After saving this change you can run change into the `data` directory and run the ``updateAll.py``
-   script there. ::
+#. Get initial metadata in the `data` directory. To do that you have to feed the system with
+   some routes. Edit by hand (or copy from some other place) a file with your local
+   streams and save them into `data/routing.xml`.
+   Once the file contains all routes available change into the `data` directory and run the
+   ``updateAll.py`` script there. ::
 
       $ cd /var/www/eidaws/routing/1/data
       $ ./updateAll.py -l DEBUG
@@ -197,8 +187,6 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
         -h, --help            show this help message and exit
         -l {CRITICAL,ERROR,WARNING,INFO,DEBUG}, --loglevel {CRITICAL,ERROR,WARNING,INFO,DEBUG}
                               Verbosity in the output.
-        -s SERVER, --server SERVER
-                              Arclink server address (address.domain:18001).
         -c CONFIG, --config CONFIG
                               Config file to use.
 
@@ -249,24 +237,6 @@ Configuration options
 
 The configuration file contains two sections up to this moment.
 
-Arclink
-"""""""
-
-.. warning:: The capability to get routes from an Arclink server has been
-    deprecated and it should not be used at all. This functionality will be
-    removed from future versions!
-
-In the Arclink section an arclink server must be defined, from which the
-default routing table could be retrieved.
-The default value is the Arclink server running at GEOFON, but this can be
-configured with the address of any Arclink server.
-
-.. code-block:: ini
-
-    [Arclink]
-    server = eida.gfz-potsdam.de
-    port = 18002
-
 Service
 """""""
 
@@ -279,26 +249,6 @@ to be used in the generation of the `application.wadl` method. For instance,
 
 The variable `info` specifies the string
 that the ``config`` method from the service should return.
-
-The variable `updateTime` determines at which moment of the day should be
-updated all the routing information.
-
-The format for the update time should be ``HH:MM`` separated by a space. It is
-not necessary that the different time entries are in order. If no update is
-required, there should be nothing at the right side of the ``=`` character.
-
-.. deprecated:: This functionality was actually skipped and this options will
-    be removed in future releases. The usage of a cronjob is recommended to
-    run the `updateAll.py` script and generate the binary version of the routing
-    table.
-
-`ArclinkBased` determines whether the routing information should be retrieved
-from an Arclink server by the `updateAll.py` script. Usually, you want to set
-it to ``false`` in order to configure your own set of routes, so that the
-update procedure will not delete your manual configuration.
-
-.. deprecated:: This option will be removed in a future version, when the
-    capability to feed the service from an Arclink server disappears.
 
 `verbosity` controls the amount of output send to the logging system depending
 of the importance of the messages. A number is expected ranging from 1 to 4,
@@ -322,8 +272,6 @@ the resulting data could be inconsistent.
     baseURL = http://mydomain.dom/eidaws/routing/1
     info = Routing information from the Arclink Server at GEOFON.
        All the routes related to EIDA are supposed to be available here.
-    updateTime = 01:01 16:58
-    ArclinkBased = true
     verbosity = 3
     synchronize = SERVER2, http://server2/eidaws/routing/1
         SERVER3, http://server3/eidaws/routing/1
@@ -338,7 +286,7 @@ Always check your web server log files (e.g. for Apache: ``access_log`` and
 If you visit http://localhost/eidaws/routing/1/version on your machine
 you should see the version information of the deployed service ::
 
-    1.1.2
+    1.2.0-b2
 
 If this information cannot be retrieved, the installation was not successful.
 If this **do** show up, check that the information there looks correct.
