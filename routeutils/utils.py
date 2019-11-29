@@ -161,7 +161,7 @@ eidaDCs = [
                     {
                         "name": "eidaws-wfcatalog",
                         "description": "EIDA WFCatalog service",
-                        "url": "http://catalog.data.ingv.it/wfcatalog/1/"
+                        "url": "http://webservices.ingv.it/eidaws/wfcatalog/1/"
                     }
                 ],
                 "datasets": [
