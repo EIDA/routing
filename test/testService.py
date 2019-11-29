@@ -403,8 +403,10 @@ class RouteCacheTests(unittest.TestCase):
         except:
             raise Exception('Error retrieving version number')
 
+        # Remove information about release (after a minus '-')
+        auxversion = buffer.split('-')[0]
         # Check that it has three components (ints) separated by '.'
-        components = buffer.split('.')
+        components = auxversion.split('.')
         msg = 'Version number does not include the three components'
         self.assertEqual(len(components), 3, msg)
 
