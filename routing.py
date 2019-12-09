@@ -304,7 +304,7 @@ def application(environ, start_response):
     try:
         outForm = 'xml'
 
-        if environ['REQUEST_METHOD'] == 'GET':
+        if environ['REQUEST_METHOD'] == 'GET' or environ['REQUEST_METHOD'] == 'HEAD':
             form = cgi.FieldStorage(fp=environ['wsgi.input'], environ=environ)
             if 'format' in form:
                 outForm = form['format'].value.lower()
