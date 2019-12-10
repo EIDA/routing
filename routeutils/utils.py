@@ -360,6 +360,38 @@ eidaDCs = [
                 ]
             }
         ]
+    },
+    {
+        "name": "UIB",
+        "website": "https://www.uib.no/geo",
+        "fullName": "University of Bergen",
+        "summary": "Department of Earth Science - UiB",
+        "repositories": [
+            {
+                "name": "archive",
+                "description": "Archive of continuous seismological data",
+                "website": "http://eida.geo.uib.no",
+                "services": [
+                    {
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
+                        "url": "http://eida.geo.uib.no/fdsnws/dataselect/1/"
+                    },
+                    {
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
+                        "url": "http://eida.geo.uib.no/fdsnws/station/1/"
+                    },
+                    {
+                        "name": "eidaws-wfcatalog",
+                        "description": "EIDA WFCatalog service",
+                        "url": "http://eida.geo.uib.no/eidaws/wfcatalog/1/"
+                    }
+                ],
+                "datasets": [
+                ]
+            }
+        ]
     }
 ]
 
