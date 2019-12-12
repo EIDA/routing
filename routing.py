@@ -365,7 +365,7 @@ def application(environ, start_response):
         here = os.path.dirname(__file__)
         helpFile = os.path.join(here, 'help.html')
         with open(helpFile, 'r') as helpHandle:
-            iterObj = helpHandle.read().decode()
+            iterObj = helpHandle.read()
             status = '200 OK'
             return send_html_response(status, iterObj, start_response)
 

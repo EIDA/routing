@@ -225,7 +225,7 @@ def send_html_response(status, body, start_response):
     response_headers.extend([('Content-Type', 'text/html; charset=UTF-8'),
                         ('Content-Length', str(len(body)))])
     start_response(status, response_headers)
-    return [body]
+    return [body.encode('utf-8')]
 
 
 def send_xml_response(status, body, start_response):
