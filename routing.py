@@ -411,6 +411,9 @@ def application(environ, start_response):
             return send_json_response('200 OK', result,
                                       start_response)
 
+        # Only FDSN format is supported for the time being
+        text = 'Only format=FDSN is supported'
+        raise WIClientError(text)
 
     elif fname == 'version':
         text = "1.2.0-b3"
