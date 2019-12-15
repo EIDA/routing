@@ -413,7 +413,7 @@ def application(environ, start_response):
 
         # Only FDSN format is supported for the time being
         text = 'Only format=FDSN is supported'
-        raise WIClientError(text)
+        return send_error_response("400 Bad Request", text, start_response)
 
     elif fname == 'version':
         text = "1.2.0-b3"
