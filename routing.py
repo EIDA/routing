@@ -416,7 +416,7 @@ def application(environ, start_response):
         return send_error_response("400 Bad Request", text, start_response)
 
     elif fname == 'version':
-        text = "1.2.0-b3"
+        text = "1.2.0-b4"
         return send_plain_response('200 OK', text, start_response)
 
     elif fname == 'info':

@@ -286,7 +286,7 @@ Always check your web server log files (e.g. for Apache: ``access_log`` and
 If you visit http://localhost/eidaws/routing/1/version on your machine
 you should see the version information of the deployed service ::
 
-    1.2.0-b2
+    1.2.0-b4
 
 If this information cannot be retrieved, the installation was not successful.
 If this **do** show up, check that the information there looks correct.
