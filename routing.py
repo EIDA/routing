@@ -346,7 +346,8 @@ def application(environ, start_response):
 
     # Check whether the function called is implemented
     implementedFunctions = ['query', 'application.wadl', 'localconfig',
-                            'globalconfig', 'version', 'info', '']
+                            'globalconfig', 'version', 'info', '',
+                            'virtualnets']
 
     if routes is None:
         # Add routing cache here, to be accessible to all modules
@@ -414,6 +415,11 @@ def application(environ, start_response):
         # Only FDSN format is supported for the time being
         text = 'Only format=FDSN is supported'
         return send_error_response("400 Bad Request", text, start_response)
+
+    elif fname == 'virtualnets':
+        result = routes.virtualNets()
+        return send_json_response('200 OK', result,
+                                  start_response)
 
     elif fname == 'version':
         text = "1.2.0-b4"

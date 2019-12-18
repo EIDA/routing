@@ -1743,6 +1743,15 @@ class RoutingCache(object):
                 fo.write(st.toXMLclose())
             fo.write('</ns0:routing>')
 
+    def virtualNets(self):
+        """Return the virtual networks defined in the system
+
+        :returns: Virtual networks in this system in JSON format
+        :rtype: str
+
+        """
+        return json.dumps(self.vnTable, default=datetime.datetime.isoformat)
+
     def localConfig(self, format='xml'):
         """Return the local routing configuration.
 
