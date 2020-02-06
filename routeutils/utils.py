@@ -2235,7 +2235,7 @@ class RoutingCache(object):
                 if not len(line):
                     break
                 dcid, url = line.split(',')
-                result.append(url)
+                result.append(url.strip())
 
         return '\n'.join(result)
 
