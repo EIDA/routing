@@ -177,7 +177,7 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
    the configuration file at the default location `../routing.cfg`. You can use the switch `-h`
    to see the parameters you can use. ::
 
-      $ ./updateAlls.py -h
+      $ ./updateAll.py -h
       usage: updateAll.py [-h] [-l {CRITICAL,ERROR,WARNING,INFO,DEBUG}] [-s SERVER]
                           [-c CONFIG]
 
@@ -286,7 +286,7 @@ Always check your web server log files (e.g. for Apache: ``access_log`` and
 If you visit http://localhost/eidaws/routing/1/version on your machine
 you should see the version information of the deployed service ::
 
-    1.2.0-b4
+    1.2.1-b1
 
 If this information cannot be retrieved, the installation was not successful.
 If this **do** show up, check that the information there looks correct.
@@ -598,6 +598,12 @@ of the service with optional parameters and maintaining backwards compatibility.
 Each version number is service specific, there is no implication that
 `SpecMajor` version numbers across services (from EIDA or FDSN) are related.
 
+Endpoints from which data have been imported
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``endpoints`` method returns a list of URLs pointing to the Routing Services (or static file) from the endpoints, which contribute with routes for this Routing Service. The MIME type of the returned value is
+`text/plain`.
+
 Exporting routes
 ^^^^^^^^^^^^^^^^
 
@@ -606,6 +612,10 @@ returns it when this method is invoked. The MIME type of the returned value is
 `text/xml`.
 
 .. seealso:: :ref:`Importing remote routes <importing_remote_routes>`
+
+The ``globalconfig`` method reads all available routes and exports them to a JSON schema which has been approved by the FDSN. The MIME type of the returned value is
+`application/json`.
+
 
 
 Querying information
@@ -741,7 +751,7 @@ JSON format
 """""""""""
 
 if the format parameter is ``json``, the information will be returned with
-MIME type `text/plain`. The content will be a JSON (JavaScript Object
+MIME type `application/json`. The content will be a JSON (JavaScript Object
 notation) array, in which each element is a JSON object corresponding to a
 ``<datacenter>`` element in the XML format shown above. For the example
 response above, this would appear as:
