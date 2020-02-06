@@ -1,7 +1,7 @@
 openapi: 3.0.0
 
 info:
-  version: 1.1.2
+  version: 1.2.1
   title: Routing Service API
   description: API specification of the Routing Service
   license:
@@ -24,6 +24,18 @@ paths:
       responses:
         '200':
           description: Version of the code
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /endpoints:
+    get:
+      summary: Get a list of URLs pointing to the endpoints providing routes to this Routing Service
+      description: Returns a string with a URL in each line. Each URL points to an endpoint providing routes which have been imported into this Routing Service.
+      responses:
+        '200':
+          description: URLs to endpoints
           content:
             text/plain:
               schema:
