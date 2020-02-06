@@ -186,7 +186,7 @@ def makeQueryPOST(postText):
                    'minlon', 'minlongitude',
                    'maxlon', 'maxlongitude']
 
-    # Defualt values
+    # Default values
     ser = 'dataselect'
     alt = False
 
@@ -309,7 +309,6 @@ def application(environ, start_response):
             if 'format' in form:
                 outForm = form['format'].value.lower()
         elif environ['REQUEST_METHOD'] == 'POST':
-            form = ''
             try:
                 length = int(environ.get('CONTENT_LENGTH', '0'))
             except ValueError:
@@ -347,7 +346,7 @@ def application(environ, start_response):
     # Check whether the function called is implemented
     implementedFunctions = ['query', 'application.wadl', 'localconfig',
                             'globalconfig', 'version', 'info', '',
-                            'virtualnets']
+                            'virtualnets', 'endpoints']
 
     if routes is None:
         # Add routing cache here, to be accessible to all modules
@@ -362,7 +361,6 @@ def application(environ, start_response):
                                    start_response)
 
     if fname == '':
-        iterObj = ''
         here = os.path.dirname(__file__)
         helpFile = os.path.join(here, 'help.html')
         with open(helpFile, 'r') as helpHandle:
@@ -371,7 +369,6 @@ def application(environ, start_response):
             return send_html_response(status, iterObj, start_response)
 
     elif fname == 'application.wadl':
-        iterObj = ''
         here = os.path.dirname(__file__)
         appWadl = os.path.join(here, 'application.wadl')
         with open(appWadl, 'r') \
@@ -386,7 +383,6 @@ def application(environ, start_response):
         try:
             iterObj = makeQuery(form)
 
-            # print iterObj
             iterObj = applyFormat(iterObj, outForm)
 
             status = '200 OK'
@@ -399,6 +395,10 @@ def application(environ, start_response):
 
         except WIError as w:
             return send_error_response(w.status, w.body, start_response)
+
+    elif fname == 'endpoints':
+        result = routes.endpoints()
+        return send_plain_response('200 OK', result, start_response)
 
     elif fname == 'localconfig':
         result = routes.localConfig()
