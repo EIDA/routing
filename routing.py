@@ -200,6 +200,7 @@ def makeQueryPOST(postText):
     minlon = -180.0
     maxlon = 180.0
 
+    filterdefined = False
     for line in postText.splitlines():
         if not len(line):
             continue
@@ -237,19 +238,21 @@ def makeQueryPOST(postText):
 
         # I'm already in the main part of the POST body, where the streams are
         # specified
+        filterdefined = True
+
         net, sta, loc, cha, start, endt = line.split()
         net = net.upper()
         sta = sta.upper()
         loc = loc.upper()
         try:
             start = str2date(start)
-        except:
+        except Exception:
             msg = 'Error while converting %s to datetime' % start
             raise WIClientError(msg)
 
         try:
             endt = str2date(endt)
-        except:
+        except Exception:
             msg = 'Error while converting %s to datetime' % endt
             raise WIClientError(msg)
 
@@ -265,6 +268,12 @@ def makeQueryPOST(postText):
             result.extend(routes.getRoute(st, tw, ser, geoLoc, alt))
         except RoutingException:
             pass
+
+    if not filterdefined:
+        st = Stream('*', '*', '*', '*')
+        tw = TW(None, None)
+        geoLoc = None
+        result.extend(routes.getRoute(st, tw, ser, geoLoc, alt))
 
     if len(result) == 0:
         raise WIContentError()
