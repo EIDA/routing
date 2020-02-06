@@ -2223,8 +2223,8 @@ class RoutingCache(object):
         result = list()
 
         # Add this RS endpoint
-        if 'baseURL' in config.options('Service'):
-            result.append(config.get('Service', 'baseURL'))
+        if 'baseurl' in config.options('Service'):
+            result.append(config.get('Service', 'baseurl'))
 
         if 'synchronize' in config.options('Service'):
 
