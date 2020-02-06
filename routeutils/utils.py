@@ -18,7 +18,6 @@ any later version.
 import os
 import datetime
 import fnmatch
-import telnetlib
 import json
 import xml.etree.cElementTree as ET
 from time import sleep
@@ -2202,6 +2201,43 @@ class RoutingCache(object):
 
                 # FIXME Probably the indentation below is wrong.
                 root.clear()
+
+    def endpoints(self):
+        """Read the list of endpoints from the configuration file.
+
+        :returns: List of URLs from endpoints including this RS instance
+        :rtype: str
+
+        """
+        self.logs.debug('Entering endpoints()\n')
+
+        # Read cfg file
+        config = configparser.RawConfigParser()
+        self.logs.debug(self.configFile)
+        with open(self.configFile, encoding='utf-8') as c:
+            config.read_file(c)
+
+        if not config.has_section('Service'):
+            return ''
+
+        result = list()
+
+        # Add this RS endpoint
+        if 'baseURL' in config.options('Service'):
+            result.append(config.get('Service', 'baseURL'))
+
+        if 'synchronize' in config.options('Service'):
+
+            synchroList = config.get('Service', 'synchronize')
+
+            # Loop for the data centres which should be integrated
+            for line in synchroList.splitlines():
+                if not len(line):
+                    break
+                dcid, url = line.split(',')
+                result.append(url)
+
+        return '\n'.join(result)
 
     def update(self):
         """Read the routing data from the file saved by the off-line process.
