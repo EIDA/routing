@@ -19,11 +19,9 @@ any later version.
 
 import os
 import sys
-import telnetlib
 import argparse
-from time import sleep
-# import xml.etree.cElementTree as ET
 import logging
+from urllib.parse import urlparse
 
 try:
     import cPickle as pickle
@@ -74,12 +72,21 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
             break
         logs.debug(str(line.split(',')))
         dcid, url = line.split(',')
-        try:
-            addRemote('./routing-%s.xml' % dcid.strip(), url.strip())
-        except:
-            msg = 'Failure updating routing information from %s (%s)' % \
-                (dcid, url)
-            logs.error(msg)
+        parts = urlparse(url)
+
+        if parts.scheme in ('file', ''):
+            if parts.path != 'routing-%s.xml' % dcid:
+                msg = 'Routes from %s must be in a file called "routing-%s.xml' \
+                      % (dcid, dcid)
+                logs.error(msg)
+                raise Exception('File must be called "routing-%s.xml"' % dcid)
+        else:
+            try:
+                addRemote('./routing-%s.xml' % dcid.strip(), url.strip())
+            except:
+                msg = 'Failure updating routing information from %s (%s)' % \
+                      (dcid, url)
+                logs.error(msg)
 
         if os.path.exists('./routing-%s.xml' % dcid.strip()):
             # FIXME addRoutes should return no Exception ever and skip a
