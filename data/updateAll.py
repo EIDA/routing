@@ -72,6 +72,7 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
             break
         logs.debug(str(line.split(',')))
         dcid, url = line.split(',')
+        url = url.strip()
         parts = urlparse(url)
 
         if parts.scheme in ('file', ''):
