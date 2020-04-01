@@ -245,13 +245,19 @@ def makeQueryPOST(postText):
         sta = sta.upper()
         loc = loc.upper()
         try:
-            start = str2date(start)
+            if start.strip() == '*':
+                start = None
+            else:
+                start = str2date(start)
         except Exception:
             msg = 'Error while converting %s to datetime' % start
             raise WIClientError(msg)
 
         try:
-            endt = str2date(endt)
+            if endt.strip() == '*':
+                endt = None
+            else:
+                endt = str2date(endt)
         except Exception:
             msg = 'Error while converting %s to datetime' % endt
             raise WIClientError(msg)
