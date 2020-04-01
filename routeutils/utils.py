@@ -6,7 +6,7 @@ the Free Software Foundation, either version 3 of the License, or
 any later version.
 
    :Copyright:
-       2014-2019 Javier Quinteros, Deutsches GFZ Potsdam <javier@gfz-potsdam.de>
+       2014-2020 Javier Quinteros, Deutsches GFZ Potsdam <javier@gfz-potsdam.de>
    :License:
        GPLv3
    :Platform:

@@ -8,7 +8,7 @@ the Free Software Foundation, either version 3 of the License, or
 any later version.
 
    :Copyright:
-       2014-2019 Javier Quinteros, Deutsches GFZ Potsdam <javier@gfz-potsdam.de>
+       2014-2020 Javier Quinteros, Deutsches GFZ Potsdam <javier@gfz-potsdam.de>
    :License:
        GPLv3
    :Platform:
@@ -416,7 +416,7 @@ class RouteCacheTests(unittest.TestCase):
             msg = 'Components of the version number seem not to be integers.'
             self.assertEqual(1, 0, msg)
         # Check for exact version
-        self.assertEqual(components, [1, 2, 0], 'Version is not 1.2.0 !')
+        self.assertEqual(components, [1, 2, 1], 'Version is not 1.2.1 !')
 
     def testDS_VirtualNetwork(self):
         """Dataselect _GEALL.*.*.* ."""
