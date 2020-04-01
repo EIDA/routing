@@ -124,6 +124,7 @@ def main():
                         help='Verbosity in the output.',
                         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO',
                                  'DEBUG'])
+    # TODO Add type=argparse.FileType
     parser.add_argument('-c', '--config',
                         help='Config file to use.',
                         default='../routing.cfg')
