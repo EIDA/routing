@@ -436,7 +436,7 @@ class RouteCacheTests(unittest.TestCase):
             self.assertEqual(node['name'], 'dataselect',
                              'Service of node is not dataselect!')
 
-            self.assertTrue(node['params'][0]['net'] == 'GE',
+            self.assertTrue(node['params'][0]['net'] in ('GE', 'DK', 'WM'),
                             '%s is not the expected network' %
                             node['params'][0]['net'])
 
