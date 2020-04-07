@@ -421,7 +421,9 @@ class RouteCacheTests(unittest.TestCase):
     def testDS_VirtualNetwork(self):
         """Dataselect _GEALL.*.*.* ."""
         expec = {
-                 'GE': 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
+                 'GE': 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query',
+                 'DK': 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query',
+                 'WM': 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
                 }
         req = ul.Request(self.host + '?net=_GEALL&format=json')
         try:
