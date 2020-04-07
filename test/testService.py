@@ -418,6 +418,25 @@ class RouteCacheTests(unittest.TestCase):
         # Check for exact version
         self.assertEqual(components, [1, 2, 1], 'Version is not 1.2.1 !')
 
+    def test_issue_63(self):
+        """Query without start and endtime via POST method."""
+        expURL = 'http://geofon.gfz-potsdam.de/fdsnws/station/1/query'
+        data = 'service = station\nformat = json\nalternative = false\nGE * * * * *'
+
+        req = ul.Request(self.host, data.encode('utf-8'))
+        try:
+            u = ul.urlopen(req)
+            buffer = u.read().decode('utf-8')
+        except:
+            raise Exception('Error retrieving data for GE.*.*.* without start and endtime')
+
+        jsonBuf = json.loads(buffer)
+
+        self.assertEqual(jsonBuf[0]['name'], 'station',
+                         'Service of node is not station!')
+        self.assertEqual(jsonBuf[0]['url'], expURL,
+                         'URL is not from GEOFON!')
+
     def testDS_VirtualNetwork(self):
         """Dataselect _GEALL.*.*.* ."""
         expec = {
