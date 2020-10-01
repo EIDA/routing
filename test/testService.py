@@ -8,7 +8,7 @@ the Free Software Foundation, either version 3 of the License, or
 any later version.
 
    :Copyright:
-       2014-2019 Javier Quinteros, Deutsches GFZ Potsdam <javier@gfz-potsdam.de>
+       2014-2020 Javier Quinteros, Deutsches GFZ Potsdam <javier@gfz-potsdam.de>
    :License:
        GPLv3
    :Platform:
@@ -21,32 +21,17 @@ import sys
 import os
 import datetime
 import unittest
-
+import configparser
+import urllib.request as ul
 import json
-from difflib import Differ
 from xml.dom.minidom import parseString
-
-# More Python 3 compatibility
-try:
-    import urllib.request as ul
-except ImportError:
-    import urllib2 as ul
+from urllib.parse import urlparse
+from urllib.error import URLError
+from urllib.error import HTTPError
 
 here = os.path.dirname(__file__)
 sys.path.append(os.path.join(here, '..'))
 from routeutils.unittestTools import WITestRunner
-
-# More Python 3 compatibility
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
-
-# More Python 3 compatibility
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    from urlparse import urlparse
 
 
 class RouteCacheTests(unittest.TestCase):
@@ -64,7 +49,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = ul.urlopen(req)
             buf = u.read().decode('utf-8')
-        except ul.URLError:
+        except URLError:
             msg = 'Error while filtering routes by location.'
             self.assertTrue(False, msg)
             return
@@ -93,7 +78,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = ul.urlopen(req)
             buf = u.read().decode('utf-8')
-        except ul.URLError:
+        except URLError:
             msg = 'Error while requesting routes based on a station name.'
             self.assertTrue(False, msg)
             return
@@ -121,7 +106,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = ul.urlopen(req)
             buf = u.read().decode('utf-8')
-        except ul.URLError:
+        except URLError:
             msg = 'The file application.wadl cannot be built (missing ' + \
                 '"baseUrl" in config file?)'
             self.assertTrue(False, msg)
@@ -144,7 +129,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = ul.urlopen(req)
             u.read().decode('utf-8')
-        except ul.URLError as e:
+        except HTTPError as e:
             self.assertEqual(e.code, 414, msg)
             return
 
@@ -159,7 +144,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = ul.urlopen(req)
             u.read().decode('utf-8')
-        except ul.URLError:
+        except URLError:
             self.assertTrue(False, msg)
 
         return
@@ -172,7 +157,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = ul.urlopen(req)
             u.read().decode('utf-8')
-        except ul.URLError:
+        except URLError:
             self.assertTrue(False, msg)
 
         return
@@ -186,7 +171,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = ul.urlopen(req)
             u.read().decode('utf-8')
-        except ul.URLError:
+        except URLError:
             self.assertTrue(False, msg)
 
         return
@@ -199,7 +184,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = ul.urlopen(req)
             u.read().decode('utf-8')
-        except ul.URLError as e:
+        except HTTPError as e:
             self.assertEqual(e.code, 400, msg)
             return
 
@@ -215,7 +200,7 @@ class RouteCacheTests(unittest.TestCase):
             u.read().decode('utf-8')
             self.assertEqual(u.getcode(), 204, '%s (%s)' % (msg, u.getcode()))
             return
-        except ul.URLError as e:
+        except HTTPError as e:
             if hasattr(e, 'code'):
                 self.assertEqual(e.code, 204, '%s (%s)' % (msg, e.code))
                 return
@@ -238,7 +223,7 @@ class RouteCacheTests(unittest.TestCase):
             u = ul.urlopen(req)
             u.read().decode('utf-8')
             self.assertTrue(False, msg)
-        except ul.URLError as e:
+        except HTTPError as e:
             self.assertEqual(e.code, 400, msg)
 
         # Test with 1
@@ -250,7 +235,7 @@ class RouteCacheTests(unittest.TestCase):
             u = ul.urlopen(req)
             u.read().decode('utf-8')
             self.assertTrue(False, msg)
-        except ul.URLError as e:
+        except HTTPError as e:
             self.assertEqual(e.code, 400, msg)
 
         # Test with 0
@@ -262,7 +247,7 @@ class RouteCacheTests(unittest.TestCase):
             u = ul.urlopen(req)
             u.read().decode('utf-8')
             self.assertTrue(False, msg)
-        except ul.URLError as e:
+        except HTTPError as e:
             self.assertEqual(e.code, 400, msg)
 
         # Test with a float
@@ -274,7 +259,7 @@ class RouteCacheTests(unittest.TestCase):
             u = ul.urlopen(req)
             u.read().decode('utf-8')
             self.assertTrue(False, msg)
-        except ul.URLError as e:
+        except HTTPError as e:
             self.assertEqual(e.code, 400, msg)
 
         # Test with a random string
@@ -286,7 +271,7 @@ class RouteCacheTests(unittest.TestCase):
             u = ul.urlopen(req)
             u.read().decode('utf-8')
             self.assertTrue(False, msg)
-        except ul.URLError as e:
+        except HTTPError as e:
             self.assertEqual(e.code, 400, msg)
 
         return
@@ -299,7 +284,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = ul.urlopen(req)
             u.read().decode('utf-8')
-        except ul.URLError as e:
+        except HTTPError as e:
             self.assertEqual(e.code, 400, msg)
             return
 
@@ -314,7 +299,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = ul.urlopen(req)
             u.read().decode('utf-8')
-        except ul.URLError as e:
+        except HTTPError as e:
             if hasattr(e, 'code'):
                 self.assertEqual(e.code, 400, '%s (%s)' % (msg, e.code))
                 return
@@ -336,7 +321,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = ul.urlopen(req)
             u.read().decode('utf-8')
-        except ul.URLError as e:
+        except HTTPError as e:
             self.assertEqual(e.code, 400, msg)
             return
 
@@ -347,16 +332,19 @@ class RouteCacheTests(unittest.TestCase):
         """'application.wadl' method."""
         if self.host.endswith('query'):
             appmethod = '%sapplication.wadl' % self.host[:-len('query')]
+        elif self.host.endswith('/'):
+            appmethod = '%sapplication.wadl' % self.host
         else:
-            pass
+            appmethod = '%s/application.wadl' % self.host
 
         req = ul.Request(appmethod)
         try:
             u = ul.urlopen(req)
             buffer = u.read().decode('utf-8')
-        except:
+        except Exception:
             msg = 'Error calling the "application.wadl" method'
             self.assertTrue(False, msg)
+            sys.exit()
 
         msg = 'The "application.wadl" method returned an empty string'
         self.assertGreater(len(buffer), 0, msg)
@@ -367,23 +355,26 @@ class RouteCacheTests(unittest.TestCase):
         msg = 'Error! application.wadl method does not return a valid xml file'
         try:
             parseString(buffer)
-        except:
+        except Exception:
             self.assertTrue(False, msg)
 
     def test_info(self):
         """'info' method."""
         if self.host.endswith('query'):
             infomethod = '%sinfo' % self.host[:-len('query')]
+        elif self.host.endswith('/'):
+            infomethod = '%sinfo' % self.host
         else:
-            pass
+            infomethod = '%s/info' % self.host
 
         req = ul.Request(infomethod)
         try:
             u = ul.urlopen(req)
             buffer = u.read().decode('utf-8')
-        except:
+        except Exception:
             msg = 'Error calling the "info" method'
             self.assertTrue(False, msg)
+            sys.exit()
 
         # Check that the length is at least 1
         msg = 'Error "info" method does not return a valid text'
@@ -393,14 +384,16 @@ class RouteCacheTests(unittest.TestCase):
         """'version' method."""
         if self.host.endswith('query'):
             vermethod = '%sversion' % self.host[:-len('query')]
+        elif self.host.endswith('/'):
+            vermethod = '%sversion' % self.host
         else:
-            pass
+            vermethod = '%s/version' % self.host
 
         req = ul.Request(vermethod)
         try:
             u = ul.urlopen(req)
             buffer = u.read().decode('utf-8')
-        except:
+        except Exception:
             raise Exception('Error retrieving version number')
 
         # Remove information about release (after a minus '-')
@@ -416,18 +409,39 @@ class RouteCacheTests(unittest.TestCase):
             msg = 'Components of the version number seem not to be integers.'
             self.assertEqual(1, 0, msg)
         # Check for exact version
-        self.assertEqual(components, [1, 2, 0], 'Version is not 1.2.0 !')
+        self.assertEqual(components, [1, 2, 1], 'Version is not 1.2.1 !')
+
+    def test_issue_63(self):
+        """Query without start and endtime via POST method."""
+        expURL = 'http://geofon.gfz-potsdam.de/fdsnws/station/1/query'
+        data = 'service = station\nformat = json\nalternative = false\nGE * * * * *'
+
+        req = ul.Request(self.host, data.encode('utf-8'))
+        try:
+            u = ul.urlopen(req)
+            buffer = u.read().decode('utf-8')
+        except Exception:
+            raise Exception('Error retrieving data for GE.*.*.* without start and endtime')
+
+        jsonBuf = json.loads(buffer)
+
+        self.assertEqual(jsonBuf[0]['name'], 'station',
+                         'Service of node is not station!')
+        self.assertEqual(jsonBuf[0]['url'], expURL,
+                         'URL is not from GEOFON!')
 
     def testDS_VirtualNetwork(self):
         """Dataselect _GEALL.*.*.* ."""
         expec = {
-                 'GE': 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
+                 'GE': 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query',
+                 'DK': 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query',
+                 'WM': 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
                 }
         req = ul.Request(self.host + '?net=_GEALL&format=json')
         try:
             u = ul.urlopen(req)
             buffer = u.read().decode('utf-8')
-        except:
+        except Exception:
             raise Exception('Error retrieving data for _GEALL.*.*.*')
 
         result = json.loads(buffer)
@@ -436,7 +450,7 @@ class RouteCacheTests(unittest.TestCase):
             self.assertEqual(node['name'], 'dataselect',
                              'Service of node is not dataselect!')
 
-            self.assertTrue(node['params'][0]['net'] == 'GE',
+            self.assertTrue(node['params'][0]['net'] in ('GE', 'DK', 'WM'),
                             '%s is not the expected network' %
                             node['params'][0]['net'])
 
@@ -455,7 +469,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = ul.urlopen(req)
             buffer = u.read().decode('utf-8')
-        except:
+        except Exception:
             raise Exception('Error retrieving data for _GEALL.*.*.*')
 
         result = json.loads(buffer)
@@ -470,8 +484,7 @@ class RouteCacheTests(unittest.TestCase):
                                  params['net'])
 
                 self.assertIn(params['sta'], ['APE', 'APEZ'],
-                                 '%s is not the expected station' %
-                                 params['sta'])
+                              '%s is not the expected station' % params['sta'])
 
                 self.assertEqual(expec[params['net']], node['url'],
                                  'URL for network %s is not from %s!' %
@@ -483,7 +496,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = ul.urlopen(req)
             buffer = u.read().decode('utf-8')
-        except:
+        except Exception:
             raise Exception('Error retrieving data for ZE.*.*.*')
 
         result = json.loads(buffer)
@@ -502,7 +515,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = ul.urlopen(req)
             buffer = u.read().decode('utf-8')
-        except:
+        except Exception:
             raise Exception('Error retrieving data for GE.*.*.*')
 
         jsonBuf = json.loads(buffer)
@@ -519,7 +532,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = ul.urlopen(req)
             buffer = u.read().decode('utf-8')
-        except:
+        except Exception:
             raise Exception('Error retrieving data for GE.*.*.*')
 
         jsonBuf = json.loads(buffer)
@@ -535,7 +548,7 @@ class RouteCacheTests(unittest.TestCase):
             try:
                 u = ul.urlopen(req)
                 buffer = u.read().decode('utf-8')
-            except:
+            except Exception:
                 raise Exception('Error retrieving GE stations with latitude between -10 and 10')
 
             for line in buffer.splitlines():
@@ -558,7 +571,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = ul.urlopen(req)
             buffer = u.read().decode('utf-8')
-        except:
+        except Exception:
             raise Exception('Error retrieving data for GE.*.*.*')
 
         jsonBuf = json.loads(buffer)
@@ -574,7 +587,7 @@ class RouteCacheTests(unittest.TestCase):
             try:
                 u = ul.urlopen(req)
                 buffer = u.read().decode('utf-8')
-            except:
+            except Exception:
                 raise Exception('Error retrieving GE stations with latitude between -10 and 10 from the Station-WS')
 
             for line in buffer.splitlines():
@@ -599,7 +612,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = ul.urlopen(req)
             buffer = u.read().decode('utf-8')
-        except:
+        except Exception:
             raise Exception('Error retrieving data for GE,RO.*.*.*')
 
         result = json.loads(buffer)
@@ -624,7 +637,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = ul.urlopen(req)
             buffer = u.read().decode('utf-8')
-        except:
+        except Exception:
             raise Exception('Error retrieving data for GE.APE.*.*')
 
         jsonBuf = json.loads(buffer)
@@ -645,7 +658,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = ul.urlopen(req)
             buffer = u.read().decode('utf-8')
-        except:
+        except Exception:
             raise Exception('Error retrieving data for CH.LIENZ.*.HHZ')
 
         jsonBuf = json.loads(buffer)
@@ -666,7 +679,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = ul.urlopen(req)
             buffer = u.read().decode('utf-8')
-        except:
+        except Exception:
             raise Exception('Error retrieving data for CH.LIENZ.*.BHZ')
 
         jsonBuf = json.loads(buffer)
@@ -687,7 +700,7 @@ class RouteCacheTests(unittest.TestCase):
         try:
             u = ul.urlopen(req)
             buffer = u.read().decode('utf-8')
-        except:
+        except Exception:
             raise Exception('Error retrieving data for RO.BZS.*.BHZ')
 
         jsonBuf = json.loads(buffer)
@@ -721,7 +734,7 @@ if __name__ == '__main__':
         configP = configparser.RawConfigParser()
         configP.read(os.path.join(directory, '..', 'routing.cfg'))
         host = configP.get('Service', 'baseURL') + '/query'
-    except:
+    except Exception:
         pass
 
     for ind in range(len(sys.argv)-1, -1, -1):

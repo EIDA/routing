@@ -6,7 +6,7 @@ the Free Software Foundation, either version 3 of the License, or
 any later version.
 
    :Copyright:
-       2014-2019 Javier Quinteros, Deutsches GFZ Potsdam <javier@gfz-potsdam.de>
+       2014-2020 Javier Quinteros, Deutsches GFZ Potsdam <javier@gfz-potsdam.de>
    :License:
        GPLv3
    :Platform:
@@ -186,7 +186,7 @@ def makeQueryPOST(postText):
                    'minlon', 'minlongitude',
                    'maxlon', 'maxlongitude']
 
-    # Defualt values
+    # Default values
     ser = 'dataselect'
     alt = False
 
@@ -200,6 +200,7 @@ def makeQueryPOST(postText):
     minlon = -180.0
     maxlon = 180.0
 
+    filterdefined = False
     for line in postText.splitlines():
         if not len(line):
             continue
@@ -237,19 +238,27 @@ def makeQueryPOST(postText):
 
         # I'm already in the main part of the POST body, where the streams are
         # specified
+        filterdefined = True
+
         net, sta, loc, cha, start, endt = line.split()
         net = net.upper()
         sta = sta.upper()
         loc = loc.upper()
         try:
-            start = str2date(start)
-        except:
+            if start.strip() == '*':
+                start = None
+            else:
+                start = str2date(start)
+        except Exception:
             msg = 'Error while converting %s to datetime' % start
             raise WIClientError(msg)
 
         try:
-            endt = str2date(endt)
-        except:
+            if endt.strip() == '*':
+                endt = None
+            else:
+                endt = str2date(endt)
+        except Exception:
             msg = 'Error while converting %s to datetime' % endt
             raise WIClientError(msg)
 
@@ -265,6 +274,12 @@ def makeQueryPOST(postText):
             result.extend(routes.getRoute(st, tw, ser, geoLoc, alt))
         except RoutingException:
             pass
+
+    if not filterdefined:
+        st = Stream('*', '*', '*', '*')
+        tw = TW(None, None)
+        geoLoc = None
+        result.extend(routes.getRoute(st, tw, ser, geoLoc, alt))
 
     if len(result) == 0:
         raise WIContentError()
@@ -309,7 +324,6 @@ def application(environ, start_response):
             if 'format' in form:
                 outForm = form['format'].value.lower()
         elif environ['REQUEST_METHOD'] == 'POST':
-            form = ''
             try:
                 length = int(environ.get('CONTENT_LENGTH', '0'))
             except ValueError:
@@ -346,7 +360,8 @@ def application(environ, start_response):
 
     # Check whether the function called is implemented
     implementedFunctions = ['query', 'application.wadl', 'localconfig',
-                            'globalconfig', 'version', 'info', '']
+                            'globalconfig', 'version', 'info', '',
+                            'virtualnets', 'endpoints']
 
     if routes is None:
         # Add routing cache here, to be accessible to all modules
@@ -361,7 +376,6 @@ def application(environ, start_response):
                                    start_response)
 
     if fname == '':
-        iterObj = ''
         here = os.path.dirname(__file__)
         helpFile = os.path.join(here, 'help.html')
         with open(helpFile, 'r') as helpHandle:
@@ -370,7 +384,6 @@ def application(environ, start_response):
             return send_html_response(status, iterObj, start_response)
 
     elif fname == 'application.wadl':
-        iterObj = ''
         here = os.path.dirname(__file__)
         appWadl = os.path.join(here, 'application.wadl')
         with open(appWadl, 'r') \
@@ -385,7 +398,6 @@ def application(environ, start_response):
         try:
             iterObj = makeQuery(form)
 
-            # print iterObj
             iterObj = applyFormat(iterObj, outForm)
 
             status = '200 OK'
@@ -399,6 +411,10 @@ def application(environ, start_response):
         except WIError as w:
             return send_error_response(w.status, w.body, start_response)
 
+    elif fname == 'endpoints':
+        result = routes.endpoints()
+        return send_plain_response('200 OK', result, start_response)
+
     elif fname == 'localconfig':
         result = routes.localConfig()
         if outForm == 'xml':
@@ -411,9 +427,17 @@ def application(environ, start_response):
             return send_json_response('200 OK', result,
                                       start_response)
 
+        # Only FDSN format is supported for the time being
+        text = 'Only format=FDSN is supported'
+        return send_error_response("400 Bad Request", text, start_response)
+
+    elif fname == 'virtualnets':
+        result = routes.virtualNets()
+        return send_json_response('200 OK', result,
+                                  start_response)
 
     elif fname == 'version':
-        text = "1.2.0-b3"
+        text = "1.2.1"
         return send_plain_response('200 OK', text, start_response)
 
     elif fname == 'info':

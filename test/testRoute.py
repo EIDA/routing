@@ -8,7 +8,7 @@ the Free Software Foundation, either version 3 of the License, or
 any later version.
 
    :Copyright:
-       2014-2019 Javier Quinteros, Deutsches GFZ Potsdam <javier@gfz-potsdam.de>
+       2014-2020 Javier Quinteros, Deutsches GFZ Potsdam <javier@gfz-potsdam.de>
    :License:
        GPLv3
    :Platform:
@@ -20,11 +20,12 @@ any later version.
 import sys
 import os
 import datetime
+import urllib.request as ul
+import unittest
 
 here = os.path.dirname(__file__)
 sys.path.append(os.path.join(here, '..'))
 
-import unittest
 from routeutils.unittestTools import WITestRunner
 from routeutils.utils import RoutingCache
 from routeutils.utils import RequestMerge
@@ -33,12 +34,6 @@ from routeutils.utils import Stream
 from routeutils.utils import TW
 from routeutils.utils import geoRectangle
 from routeutils.utils import RoutingException
-
-# More Python 3 compatibility
-try:
-    import urllib.request as ul
-except ImportError:
-    import urllib2 as ul
 
 
 class RouteCacheTests(unittest.TestCase):
@@ -123,13 +118,13 @@ class RouteCacheTests(unittest.TestCase):
         self.assertEqual(len(result), 2,
                          'Wrong number of data centers for GE.*.*.*!')
         self.assertIn(expURL_DS, [result[0]['url'], result[1]['url']],
-                         'Wrong URL for GE.*.*.*')
+                      'Wrong URL for GE.*.*.*')
         self.assertIn(expURL_ST, [result[0]['url'], result[1]['url']],
-                         'Wrong URL for GE.*.*.*')
+                      'Wrong URL for GE.*.*.*')
         self.assertIn('dataselect', [result[0]['name'], result[1]['name']],
-                         'Wrong service name!')
+                      'Wrong service name!')
         self.assertIn('station', [result[0]['name'], result[1]['name']],
-                         'Wrong service name!')
+                      'Wrong service name!')
 
     def test2services_GE_DS_ST_FDSN(self):
         """Dataselect AND Station GE.*.*.* in FDSN format"""
@@ -144,16 +139,16 @@ class RouteCacheTests(unittest.TestCase):
                          'Wrong number of services for GE.*.*.*!')
         self.assertIn(expURL_DS, [fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][0]['url'],
                                   fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][1]['url']],
-                         'Dataselect URL not found for GE.*.*.*')
+                      'Dataselect URL not found for GE.*.*.*')
         self.assertIn(expURL_ST, [fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][0]['url'],
                                   fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][1]['url']],
-                         'StationWS URL not found for GE.*.*.*')
+                      'StationWS URL not found for GE.*.*.*')
         self.assertIn('fdsnws-dataselect', [fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][0]['name'],
                                             fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][1]['name']],
-                         'Dataselect name not found for GE.*.*.*')
+                      'Dataselect name not found for GE.*.*.*')
         self.assertIn('fdsnws-station', [fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][0]['name'],
                                          fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][1]['name']],
-                         'StationWS name not found for GE.*.*.*')
+                      'StationWS name not found for GE.*.*.*')
 
     def test2services_GE_DS_ST_WF(self):
         """Dataselect AND Station AND WFCatalog GE.*.*.*"""
@@ -167,17 +162,17 @@ class RouteCacheTests(unittest.TestCase):
         self.assertEqual(len(result), 3,
                          'Wrong number of data centers for GE.*.*.*!')
         self.assertIn(expURL_DS, [result[0]['url'], result[1]['url'], result[2]['url']],
-                         'Wrong URL for GE.*.*.*')
+                      'Wrong URL for GE.*.*.*')
         self.assertIn(expURL_ST, [result[0]['url'], result[1]['url'], result[2]['url']],
-                         'Wrong URL for GE.*.*.*')
+                      'Wrong URL for GE.*.*.*')
         self.assertIn(expURL_WF, [result[0]['url'], result[1]['url'], result[2]['url']],
-                         'Wrong URL for GE.*.*.*')
+                      'Wrong URL for GE.*.*.*')
         self.assertIn('dataselect', [result[0]['name'], result[1]['name'], result[2]['name']],
-                         'Wrong service name!')
+                      'Wrong service name!')
         self.assertIn('station', [result[0]['name'], result[1]['name'], result[2]['name']],
-                         'Wrong service name!')
+                      'Wrong service name!')
         self.assertIn('wfcatalog', [result[0]['name'], result[1]['name'], result[2]['name']],
-                         'Wrong service name!')
+                      'Wrong service name!')
 
     def test2services_GE_DS_ST_WF_FDSN(self):
         """Dataselect AND Station AND WFCatalog GE.*.*.* in FDSN format"""
@@ -200,13 +195,13 @@ class RouteCacheTests(unittest.TestCase):
         self.assertEqual(len(result), 2,
                          'Wrong number of data centers for GE.*.*.*!')
         self.assertIn(expURL_ST, [result[0]['url'], result[1]['url']],
-                         'Wrong URL for GE.*.*.*')
+                      'Wrong URL for GE.*.*.*')
         self.assertIn(expURL_WF, [result[0]['url'], result[1]['url']],
-                         'Wrong URL for GE.*.*.*')
+                      'Wrong URL for GE.*.*.*')
         self.assertIn('station', [result[0]['name'], result[1]['name']],
-                         'Wrong service name!')
+                      'Wrong service name!')
         self.assertIn('wfcatalog', [result[0]['name'], result[1]['name']],
-                         'Wrong service name!')
+                      'Wrong service name!')
 
     def test2services_GE_ST_WF_FDSN(self):
         """Station AND WFCatalog GE.*.*.* in FDSN format"""
@@ -221,16 +216,16 @@ class RouteCacheTests(unittest.TestCase):
                          'Wrong number of services for GE.*.*.*!')
         self.assertIn(expURL_WF, [fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][0]['url'],
                                   fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][1]['url']],
-                         'WFCatalog URL not found for GE.*.*.*')
+                      'WFCatalog URL not found for GE.*.*.*')
         self.assertIn(expURL_ST, [fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][0]['url'],
                                   fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][1]['url']],
-                         'StationWS URL not found for GE.*.*.*')
+                      'StationWS URL not found for GE.*.*.*')
         self.assertIn('eidaws-wfcatalog', [fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][0]['name'],
                                            fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][1]['name']],
-                         'WFCatalog name not found for GE.*.*.*')
+                      'WFCatalog name not found for GE.*.*.*')
         self.assertIn('fdsnws-station', [fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][0]['name'],
                                          fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][1]['name']],
-                         'StationWS name not found for GE.*.*.*')
+                      'StationWS name not found for GE.*.*.*')
 
     def testDS_GE(self):
         """Dataselect GE.*.*.*"""
@@ -268,7 +263,7 @@ class RouteCacheTests(unittest.TestCase):
             try:
                 u = ul.urlopen(req)
                 buffer = u.read().decode('utf-8')
-            except:
+            except Exception:
                 raise Exception('Error retrieving GE stations with latitude between -10 and 10')
 
             for line in buffer.splitlines():
@@ -278,7 +273,7 @@ class RouteCacheTests(unittest.TestCase):
                 self.assertGreaterEqual(float(line.split('|')[2]), -10.0,
                                         'Latitude smaller than -10.0!')
                 self.assertLessEqual(float(line.split('|')[2]), 10.0,
-                                        'Latitude bigger than 10.0!')
+                                     'Latitude bigger than 10.0!')
                 break
 
 
@@ -378,6 +373,7 @@ class RouteCacheTests(unittest.TestCase):
 # ----------------------------------------------------------------------
 def usage():
     print('testRoute [-h] [-p]')
+
 
 if __name__ == '__main__':
 

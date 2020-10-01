@@ -6,7 +6,7 @@ the Free Software Foundation, either version 3 of the License, or
 any later version.
 
    :Copyright:
-       2014-2019 Javier Quinteros, Deutsches GFZ Potsdam <javier@gfz-potsdam.de>
+       2014-2020 Javier Quinteros, Deutsches GFZ Potsdam <javier@gfz-potsdam.de>
    :License:
        GPLv3
    :Platform:
@@ -18,23 +18,18 @@ any later version.
 import os
 import datetime
 import fnmatch
-import telnetlib
 import json
 import xml.etree.cElementTree as ET
 from time import sleep
 from collections import namedtuple
 import logging
 from copy import deepcopy
-
-# Try to be Python 3 compliant as much as we can
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
-
+import pickle
 import configparser
 import urllib.request as ul
 from urllib.parse import urlparse
+from urllib.error import URLError
+from urllib.error import HTTPError
 
 
 # I need to find a mapping from (service, URL) to the schema below. It seems
@@ -392,6 +387,38 @@ eidaDCs = [
                 ]
             }
         ]
+    },
+    {
+        "name": "ICGC",
+        "website": "https://www.icgc.cat/",
+        "fullName": "Institut Cartogràfic i Geològic de Catalunya",
+        "summary": "Institut Cartogràfic i Geològic de Catalunya",
+        "repositories": [
+            {
+                "name": "archive",
+                "description": "Archive of continuous seismological data",
+                "website": "http://icgc.cat",
+                "services": [
+                    {
+                        "name": "fdsnws-dataselect-1",
+                        "description": "Access to raw time series data",
+                        "url": "http://ws.icgc.cat/fdsnws/dataselect/1/"
+                    },
+                    {
+                        "name": "fdsnws-station-1",
+                        "description": "Access to metadata describing raw time series data",
+                        "url": "http://ws.icgc.cat/fdsnws/station/1/"
+                    },
+                    {
+                        "name": "eidaws-wfcatalog",
+                        "description": "EIDA WFCatalog service",
+                        "url": "http://ws.icgc.cat/eidaws/wfcatalog/1/"
+                    }
+                ],
+                "datasets": [
+                ]
+            }
+        ]
     }
 ]
 
@@ -453,25 +480,6 @@ class FDSNRules(dict):
 
         raise Exception('Data centre not found! (%s, %s)' % (service, url))
 
-    # "datasets": [
-    #     {
-    #         "network": "N1",
-    #         "priority": 1,
-    #         "starttime": "1980-01-01T00:00:00Z"
-    #     },
-    #     {
-    #         "network": "N2",
-    #         "priority": 2,
-    #         "starttime": "2000-01-01T00:00:00Z",
-    #         "services": [
-    #             {
-    #                 "name": "fdsnws-station",
-    #                 "url": "http://orfeus.eu/fdsnws/station/1/"
-    #             }
-    #         ]
-    #     }
-    # ]
-
     def append(self, service, url, priority, stream, tw):
         """Append a new :class:`~Route` without repeating the datacenter.
 
@@ -488,10 +496,8 @@ class FDSNRules(dict):
         :type priority: int
         :param stream: Stream(s) associated with the Route
         :type stream: :class:`~Stream`
-        :param start: Start date for the Route
-        :type start: datetime or None
-        :param end: End date for the Route
-        :type end: datetime or None
+        :param tw: Start date for the Route
+        :type tw: :class:`~TW`
 
         """
 
@@ -530,7 +536,7 @@ class FDSNRules(dict):
 
             # This is empty and then it can be already added
             # toAdd["services"] = [service]
-        except:
+        except Exception:
             raise
 
         toAdd["services"] = [{"name": service, "url": url}]
@@ -592,7 +598,7 @@ class FDSNRules(dict):
         appended in *params* for the datacenter. If this is the first
         :class:`~Route` for the datacenter, everything is added.
 
-        :param listReqM: Requests from (posibly) different datacenters to be
+        :param listReqM: Requests from (possibly) different datacenters to be
             added
         :type listReqM: list of :class:`~RequestMerge`
 
@@ -672,16 +678,13 @@ def getStationCache(st, rt):
         u = ul.urlopen(req, timeout=15)
         # What is read has to be decoded in python3
         buf = u.read().decode('utf-8')
-    except ul.URLError as e:
+    except URLError as e:
         logging.warning('The URL does not seem to be a valid Station-WS')
         if hasattr(e, 'reason'):
             logging.warning('%s - Reason: %s\n' % (rt.address, e.reason))
         elif hasattr(e, 'code'):
             logging.warning('The server couldn\'t fulfill the request.')
             logging.warning('Error code: %s\n', e.code)
-        return list()
-    except ul.HTTPError as e:
-        logging.warning(str(e))
         return list()
     except Exception as e:
         logging.warning('WATCH THIS! %s' % e)
@@ -753,10 +756,12 @@ def addVirtualNets(fileName, **kwargs):
 
     :param fileName: File with virtual networks to add to the routing table.
     :type fileName: str
-    :param vnTable: Table with virtual networks where aliases should be added.
-    :type vnTable: dict
+    :param **kwargs: See below
     :returns: Updated table containing aliases from the input file.
     :rtype: dict
+
+    :Keyword Arguments:
+        * *vnTable* (``dict``) Table with virtual networks where aliases should be added.
     """
     # VN table is empty (default)
     ptVN = kwargs.get('vnTable', dict())
@@ -764,10 +769,9 @@ def addVirtualNets(fileName, **kwargs):
     logs = logging.getLogger('addVirtualNets')
     logs.debug('Entering addVirtualNets()\n')
 
-    vnHandle = None
     try:
         vnHandle = open(fileName, 'r', encoding='utf-8')
-    except:
+    except Exception:
         msg = 'Error: %s could not be opened.\n'
         logs.error(msg % fileName)
         return
@@ -826,7 +830,7 @@ def addVirtualNets(fileName, **kwargs):
                                 (('*' in net) and (len(net) > 1))):
                             logs.warning(msg)
                             continue
-                    except:
+                    except Exception:
                         net = '*'
 
                     # Extract the stationCode
@@ -836,7 +840,7 @@ def addVirtualNets(fileName, **kwargs):
                                 (('*' in sta) and (len(sta) > 1))):
                             logs.warning(msg)
                             continue
-                    except:
+                    except Exception:
                         sta = '*'
 
                     # Extract the locationCode
@@ -846,7 +850,7 @@ def addVirtualNets(fileName, **kwargs):
                                 (('*' in loc) and (len(loc) > 1))):
                             logs.warning(msg)
                             continue
-                    except:
+                    except Exception:
                         loc = '*'
 
                     # Extract the streamCode
@@ -856,13 +860,13 @@ def addVirtualNets(fileName, **kwargs):
                                 (('*' in cha) and (len(cha) > 1))):
                             logs.warning(msg)
                             continue
-                    except:
+                    except Exception:
                         cha = '*'
 
                     try:
                         auxStart = stream.get('start')
                         startD = str2date(auxStart)
-                    except:
+                    except Exception:
                         startD = None
                         msg = 'Error while converting START attribute.\n'
                         logs.warning(msg)
@@ -870,7 +874,7 @@ def addVirtualNets(fileName, **kwargs):
                     try:
                         auxEnd = stream.get('end')
                         endD = str2date(auxEnd)
-                    except:
+                    except Exception:
                         endD = None
                         msg = 'Error while converting END attribute.\n'
                         logs.warning(msg)
@@ -902,10 +906,12 @@ def addRoutes(fileName, **kwargs):
 
     :param fileName: File with routes to add the the routing table.
     :type fileName: str
-    :param ptRT: Routing Table where routes should be added to.
-    :type ptRT: dict
+    :param **kwargs: See below
     :returns: Updated routing table containing routes from the input file.
     :rtype: dict
+
+    :Keyword Arguments:
+        * *routingTable* (``dict``) Routing Table where routes should be added to.
     """
     # Routing table is empty (default)
     ptRT = kwargs.get('routingTable', dict())
@@ -972,7 +978,7 @@ def addRoutes(fileName, **kwargs):
                             logs.error('Wildcard "?" is not allowed!')
                             continue
 
-                    except:
+                    except Exception:
                         locationCode = '*'
 
                     # Extract the network code
@@ -988,7 +994,7 @@ def addRoutes(fileName, **kwargs):
                             logs.error('Wildcard "?" is not allowed!')
                             continue
 
-                    except:
+                    except Exception:
                         networkCode = '*'
 
                     # Extract the station code
@@ -1004,7 +1010,7 @@ def addRoutes(fileName, **kwargs):
                             logs.error('Wildcard "?" is not allowed!')
                             continue
 
-                    except:
+                    except Exception:
                         stationCode = '*'
 
                     # Extract the stream code
@@ -1020,7 +1026,7 @@ def addRoutes(fileName, **kwargs):
                             logs.error('Wildcard "?" is not allowed!')
                             continue
 
-                    except:
+                    except Exception:
                         streamCode = '*'
 
                     # Traverse through the sources
@@ -1036,21 +1042,21 @@ def addRoutes(fileName, **kwargs):
                             if len(address) == 0:
                                 logs.error('Could not add %s' % att)
                                 continue
-                        except:
+                        except Exception:
                             logs.error('Could not add %s' % att)
                             continue
 
                         try:
                             auxStart = att.get('start', None)
                             startD = str2date(auxStart)
-                        except:
+                        except Exception:
                             startD = None
 
                         # Extract the end datetime
                         try:
                             auxEnd = att.get('end', None)
                             endD = str2date(auxEnd)
-                        except:
+                        except Exception:
                             endD = None
 
                         # Extract the priority
@@ -1060,7 +1066,7 @@ def addRoutes(fileName, **kwargs):
                                 priority = 99
                             else:
                                 priority = int(priority)
-                        except:
+                        except Exception:
                             priority = 99
 
                         # Append the network to the list of networks
@@ -1132,7 +1138,7 @@ def addRemote(fileName, url):
     try:
         os.remove(fileName)
         logs.debug('Successfully removed %s\n' % fileName)
-    except:
+    except Exception:
         pass
 
     # Connect to the proper Routing-WS
@@ -1161,7 +1167,7 @@ def addRemote(fileName, url):
             # Close the connection to avoid overloading the server
             u.close()
 
-    except ul.URLError as e:
+    except URLError as e:
         logs.warning('The URL does not seem to be a valid Routing Service')
         if hasattr(e, 'reason'):
             logs.warning('%s/localconfig - Reason: %s\n' % (url, e.reason))
@@ -1187,7 +1193,7 @@ def addRemote(fileName, url):
 
                 # Close the connection to avoid overloading the server
                 u.close()
-        except ul.URLError as e:
+        except URLError as e:
             if hasattr(e, 'reason'):
                 logs.error('%s - Reason: %s\n' % (url, e.reason))
             elif hasattr(e, 'code'):
@@ -1201,19 +1207,19 @@ def addRemote(fileName, url):
     try:
         os.remove(name + '.bck')
         logs.debug('Successfully removed %s\n' % (name + '.bck'))
-    except:
+    except Exception:
         pass
 
     try:
         os.rename(name, name + '.bck')
         logs.debug('Successfully renamed %s to %s.bck\n' % (name, name))
-    except:
+    except Exception:
         pass
 
     try:
         os.rename(fileName, name)
         logs.debug('Successfully renamed %s to %s\n' % (fileName, name))
-    except:
+    except Exception:
         raise Exception('Could not create the final version of %s.xml' %
                         os.path.basename(fileName))
 
@@ -1243,10 +1249,8 @@ class RequestMerge(list):
         :type priority: int
         :param stream: Stream(s) associated with the Route
         :type stream: :class:`~Stream`
-        :param start: Start date for the Route
-        :type start: datetime or None
-        :param end: End date for the Route
-        :type end: datetime or None
+        :param tw: Time window for the Route
+        :type tw: :class:`~TW`
 
         """
         try:
@@ -1256,7 +1260,7 @@ class RequestMerge(list):
                                         'start': tw.start, 'end': tw.end,
                                         'priority': priority if priority
                                         is not None else ''})
-        except:
+        except Exception:
             # Take a reference to the inherited *list* and do a normal append
             listPar = super(RequestMerge, self)
 
@@ -1284,7 +1288,7 @@ class RequestMerge(list):
 
         """
         for ind, r in enumerate(self):
-            if ((r['name'] == service) and (r['url'] == url)):
+            if (r['name'] == service) and (r['url'] == url):
                 return ind
 
         raise ValueError()
@@ -1306,7 +1310,7 @@ class RequestMerge(list):
             try:
                 pos = self.index(r['name'], r['url'])
                 self[pos]['params'].extend(r['params'])
-            except:
+            except Exception:
                 super(RequestMerge, self).append(r)
 
 
@@ -1595,8 +1599,6 @@ class TW(namedtuple('TW', ['start', 'end'])):
         :rtype: :class:`~TW`
 
         """
-        resSt = None
-        resEn = None
 
         # Trivial case
         if otherTW.start is None and otherTW.end is None:
@@ -1614,7 +1616,7 @@ class TW(namedtuple('TW', ['start', 'end'])):
         else:
             resEn = self.end
 
-        if ((resSt is not None) and (resEn is not None) and (resSt >= resEn)):
+        if (resSt is not None) and (resEn is not None) and (resSt >= resEn):
             raise ValueError('Intersection is empty')
 
         return TW(resSt, resEn)
@@ -1646,8 +1648,8 @@ class Route(namedtuple('Route', ['service', 'address', 'tw', 'priority'])):
     def overlap(self, otherRoute):
         """Check if there is an overlap between this route and otherRoute.
 
-        :param other: :class:`~Stream` which should be checked for overlaps
-        :type other: :class:`~Stream`
+        :param otherRoute: :class:`~Route` which should be checked for overlaps
+        :type otherRoute: :class:`~Route`
         :returns: Value specifying whether there is an overlap between this
                   stream and the one passed as a parameter
         :rtype: Bool
@@ -1668,7 +1670,7 @@ class Route(namedtuple('Route', ['service', 'address', 'tw', 'priority'])):
             if (((self.tw.start is None) or (self.tw.start < pointTime)) and
                     ((self.tw.end is None) or (pointTime < self.tw.end))):
                 return True
-        except:
+        except Exception:
             pass
         return False
 
@@ -1743,6 +1745,15 @@ class RoutingCache(object):
                 fo.write(st.toXMLclose())
             fo.write('</ns0:routing>')
 
+    def virtualNets(self):
+        """Return the virtual networks defined in the system
+
+        :returns: Virtual networks in this system in JSON format
+        :rtype: str
+
+        """
+        return json.dumps(self.vnTable, default=datetime.datetime.isoformat)
+
     def localConfig(self, format='xml'):
         """Return the local routing configuration.
 
@@ -1770,8 +1781,6 @@ class RoutingCache(object):
             return json.dumps(fdsnresult, default=datetime.datetime.isoformat)
 
         raise Exception('Format (%s) is not fdsn.' % format)
-
-
 
     def getRoute(self, stream, tw, service='dataselect', geoLoc=None,
                  alternative=False):
@@ -1818,7 +1827,7 @@ class RoutingCache(object):
             except RoutingException:
                 pass
 
-        if ((result is None) or (not len(result))):
+        if (result is None) or (not len(result)):
             # Through an exception if there is an error
             raise RoutingException('No routes found!')
 
@@ -1847,7 +1856,7 @@ class RoutingCache(object):
         for strtw in self.vnTable[stream.n]:
             try:
                 s = strtw[0].strictMatch(auxStr)
-            except:
+            except Exception:
                 # Overlap or match cannot be calculated between streams
                 continue
 
@@ -1855,7 +1864,7 @@ class RoutingCache(object):
                 auxSt, auxEn = strtw[1].intersection(tw)
                 t = TW(auxSt if auxSt is not None else None,
                        auxEn if auxEn is not None else None)
-            except:
+            except Exception:
                 continue
 
             result.append((s, t))
@@ -2030,7 +2039,7 @@ class RoutingCache(object):
                                 result.append(service, ro.address, ro.priority
                                               if ro.priority is not None
                                               else '', st2add, twAux)
-                            except:
+                            except Exception:
                                 pass
 
                             # If we don't filter by location, one route covers
@@ -2067,10 +2076,9 @@ class RoutingCache(object):
         # Just to shorten notation
         ptVN = self.vnTable
 
-        vnHandle = None
         try:
             vnHandle = open(self.routingFile, 'r')
-        except:
+        except Exception:
             msg = 'Error: %s could not be opened.\n'
             self.logs.error(msg % self.routingFile)
             return
@@ -2117,7 +2125,7 @@ class RoutingCache(object):
                         vnCode = vnet.get('networkCode')
                         if len(vnCode) == 0:
                             vnCode = None
-                    except:
+                    except Exception:
                         vnCode = None
 
                     # Traverse through the sources
@@ -2131,7 +2139,7 @@ class RoutingCache(object):
                                     (('*' in net) and (len(net) > 1))):
                                 self.logs.warning(msg)
                                 continue
-                        except:
+                        except Exception:
                             net = '*'
 
                         # Extract the stationCode
@@ -2141,7 +2149,7 @@ class RoutingCache(object):
                                     (('*' in sta) and (len(sta) > 1))):
                                 self.logs.warning(msg)
                                 continue
-                        except:
+                        except Exception:
                             sta = '*'
 
                         # Extract the locationCode
@@ -2151,7 +2159,7 @@ class RoutingCache(object):
                                     (('*' in loc) and (len(loc) > 1))):
                                 self.logs.warning(msg)
                                 continue
-                        except:
+                        except Exception:
                             loc = '*'
 
                         # Extract the streamCode
@@ -2161,13 +2169,13 @@ class RoutingCache(object):
                                     (('*' in cha) and (len(cha) > 1))):
                                 self.logs.warning(msg)
                                 continue
-                        except:
+                        except Exception:
                             cha = '*'
 
                         try:
                             auxStart = stream.get('start')
                             startD = str2date(auxStart)
-                        except:
+                        except Exception:
                             startD = None
                             msg = 'Error while converting START attribute.\n'
                             self.logs.error(msg)
@@ -2175,7 +2183,7 @@ class RoutingCache(object):
                         try:
                             auxEnd = stream.get('end')
                             endD = str2date(auxEnd)
-                        except:
+                        except Exception:
                             endD = None
                             msg = 'Error while converting END attribute.\n'
                             self.logs.error(msg)
@@ -2193,6 +2201,43 @@ class RoutingCache(object):
 
                 # FIXME Probably the indentation below is wrong.
                 root.clear()
+
+    def endpoints(self):
+        """Read the list of endpoints from the configuration file.
+
+        :returns: List of URLs from endpoints including this RS instance
+        :rtype: str
+
+        """
+        self.logs.debug('Entering endpoints()\n')
+
+        # Read cfg file
+        config = configparser.RawConfigParser()
+        self.logs.debug(self.configFile)
+        with open(self.configFile, encoding='utf-8') as c:
+            config.read_file(c)
+
+        if not config.has_section('Service'):
+            return ''
+
+        result = list()
+
+        # Add this RS endpoint
+        if 'baseurl' in config.options('Service'):
+            result.append(config.get('Service', 'baseurl'))
+
+        if 'synchronize' in config.options('Service'):
+
+            synchroList = config.get('Service', 'synchronize')
+
+            # Loop for the data centres which should be integrated
+            for line in synchroList.splitlines():
+                if not len(line):
+                    break
+                dcid, url = line.split(',')
+                result.append(url.strip())
+
+        return '\n'.join(result)
 
     def update(self):
         """Read the routing data from the file saved by the off-line process.
@@ -2216,13 +2261,13 @@ class RoutingCache(object):
 
             if 'synchronize' in config.options('Service'):
                 synchroList = config.get('Service', 'synchronize')
-        except:
+        except Exception:
             pass
 
         try:
             if 'allowOverlaps' in config.options('Service'):
                 allowOverlaps = config.getboolean('Service', 'allowoverlap')
-        except:
+        except Exception:
             pass
 
         self.logs.debug(synchroList)
@@ -2240,7 +2285,7 @@ class RoutingCache(object):
             with open(binFile, 'rb') as rMerged:
                 self.routingTable, self.stationTable, self.vnTable = \
                     pickle.load(rMerged)
-        except:
+        except Exception:
             ptRT = addRoutes(self.routingFile, allowOverlaps=allowOverlaps)
             ptVN = addVirtualNets(self.routingFile)
             # Loop for the data centres which should be integrated
