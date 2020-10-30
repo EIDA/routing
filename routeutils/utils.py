@@ -230,14 +230,14 @@ eidaDCs = [
     },
     {
         "name": "NIEP",
-        "website": "http://www.infp.ro/en/",
+        "website": "http://www.infp.ro",
         "fullName": "NIEP Data Centre",
         "summary": "National Institute for Earth Physics",
         "repositories": [
             {
                 "name": "archive",
                 "description": "Archive of continuous seismological data",
-                "website": "http://www.infp.ro/en/",
+                "website": "http://www.infp.ro",
                 "services": [
                     {
                         "name": "fdsnws-dataselect-1",
@@ -252,7 +252,7 @@ eidaDCs = [
                     {
                         "name": "eidaws-wfcatalog",
                         "description": "EIDA WFCatalog service",
-                        "url": "http://eida-sc3.infp.ro/eidaws/wfcatalog/alpha/"
+                        "url": "http://eida-sc3.infp.ro/eidaws/wfcatalog/1/ "
                     }
                 ],
                 "datasets": [
