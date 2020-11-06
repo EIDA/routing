@@ -774,7 +774,7 @@ def addVirtualNets(fileName, **kwargs):
     except Exception:
         msg = 'Error: %s could not be opened.\n'
         logs.error(msg % fileName)
-        return
+        return ptVN
 
     # Traverse through the virtual networks
     # get an iterable
@@ -782,7 +782,7 @@ def addVirtualNets(fileName, **kwargs):
         context = ET.iterparse(vnHandle, events=("start", "end"))
     except IOError as e:
         logs.error(str(e))
-        return
+        return ptVN
 
     # turn it into an iterator
     context = iter(context)
