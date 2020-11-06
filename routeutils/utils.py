@@ -2327,10 +2327,10 @@ class RoutingCache(object):
                                                   dcid.strip()),
                                      routingTable=ptRT,
                                      allowOverlaps=allowOverlaps)
-                    ptVN = addRoutes(os.path.join(os.getcwd(), 'data',
-                                                  'routing-%s.xml' %
-                                                  dcid.strip()),
-                                     vnTable=ptVN)
+                    ptVN = addVirtualNets(os.path.join(os.getcwd(), 'data',
+                                                       'routing-%s.xml' %
+                                                       dcid.strip()),
+                                          vnTable=ptVN)
 
             # Set here self.stationTable
             self.stationTable = dict()
