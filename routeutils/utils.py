@@ -946,10 +946,24 @@ def addRoutes(fileName, **kwargs):
                 event, root = context.next()
             else:
                 event, root = next(context)
-        except:
-            msg = 'Error: %s could not be parsed. Skipping it!\n' % fileName
+        except Exception:
+            msg = 'Error: %s could not be parsed. Reading backup!\n' % fileName
             logs.error(msg)
-            return ptRT
+            testFile.close()
+            os.rename(fileName, fileName + '.wrong')
+            try:
+                os.rename(fileName + '.bck', fileName)
+                testFile = open(fileName, 'r', encoding='utf-8')
+                context = ET.iterparse(testFile, events=("start", "end"))
+                context = iter(context)
+                # get the root element
+                # More Python 3 compatibility
+                if hasattr(context, 'next'):
+                    event, root = context.next()
+                else:
+                    event, root = next(context)
+            except Exception:
+                return ptRT
             
         # Check that it is really an inventory
         if root.tag[-len('routing'):] != 'routing':
