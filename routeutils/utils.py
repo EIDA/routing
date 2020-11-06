@@ -939,13 +939,18 @@ def addRoutes(fileName, **kwargs):
         # turn it into an iterator
         context = iter(context)
 
-        # get the root element
-        # More Python 3 compatibility
-        if hasattr(context, 'next'):
-            event, root = context.next()
-        else:
-            event, root = next(context)
-
+        try:  
+            # get the root element
+            # More Python 3 compatibility
+            if hasattr(context, 'next'):
+                event, root = context.next()
+            else:
+                event, root = next(context)
+        except:
+            msg = 'Error: %s could not be parsed. Skipping it!\n' % fileName
+            logs.error(msg)
+            return ptRT
+            
         # Check that it is really an inventory
         if root.tag[-len('routing'):] != 'routing':
             msg = '%s seems not to be a routing file (XML). Skipping it!\n' \
