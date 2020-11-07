@@ -29,7 +29,7 @@ import configparser
 import urllib.request as ul
 from urllib.parse import urlparse
 from urllib.error import URLError
-from urllib.error import HTTPError
+# from urllib.error import HTTPError
 
 
 # I need to find a mapping from (service, URL) to the schema below. It seems
@@ -501,7 +501,7 @@ class FDSNRules(dict):
 
         """
 
-        print(service, url, priority, stream, tw)
+        # print(service, url, priority, stream, tw)
         url = url[:-len('query')] if url.endswith('query') else url
         service = 'fdsnws-%s-1' % service if service in ('station', 'dataselect', 'availability') else service
         service = 'eidaws-%s' % service if service in ('wfcatalog') else service
@@ -700,7 +700,7 @@ def getStationCache(st, rt):
             endt = str2date(lSplit[7])
             result.append(Station(lSplit[1], float(lSplit[2]),
                           float(lSplit[3]), start, endt))
-        except:
+        except Exception:
             logging.error('Error trying to add station: (%s, %s, %s, %s, %s)' %
                           (lSplit[1], lSplit[2], lSplit[3], lSplit[6],
                            lSplit[7]))
@@ -816,7 +816,7 @@ def addVirtualNets(fileName, **kwargs):
                     vnCode = vnet.get('networkCode')
                     if len(vnCode) == 0:
                         vnCode = None
-                except:
+                except Exception:
                     vnCode = None
 
                 # Traverse through the sources
@@ -1566,11 +1566,11 @@ class TW(namedtuple('TW', ['start', 'end'])):
 
         # Check if this is included in otherTW
         if inOrder2(oStart, sStart, sEnd):
-                return inOrder2(sStart, sEnd, oEnd)
+            return inOrder2(sStart, sEnd, oEnd)
 
         # Check if otherTW is included in this one
         if inOrder2(sStart, oStart, oEnd):
-                return inOrder2(oStart, oEnd, sEnd)
+            return inOrder2(oStart, oEnd, sEnd)
 
         if self == otherTW:
             return True
@@ -1682,16 +1682,16 @@ class Route(namedtuple('Route', ['service', 'address', 'tw', 'priority'])):
     def __contains__(self, pointTime):
         """DEPRECATED METHOD."""
         raise Exception('This should not be used! Switch to the TW method!')
-        if pointTime is None:
-            return True
+        # if pointTime is None:
+        #     return True
 
-        try:
-            if (((self.tw.start is None) or (self.tw.start < pointTime)) and
-                    ((self.tw.end is None) or (pointTime < self.tw.end))):
-                return True
-        except Exception:
-            pass
-        return False
+        # try:
+        #     if (((self.tw.start is None) or (self.tw.start < pointTime)) and
+        #             ((self.tw.end is None) or (pointTime < self.tw.end))):
+        #         return True
+        # except Exception:
+        #     pass
+        # return False
 
 
 Route.__eq__ = lambda self, other: self.priority == other.priority
@@ -2272,8 +2272,8 @@ class RoutingCache(object):
         synchroList = ''
         allowOverlaps = False
 
+        config = configparser.RawConfigParser()
         try:
-            config = configparser.RawConfigParser()
             self.logs.debug(self.configFile)
             with open(self.configFile, encoding='utf-8') as c:
                 config.readfp(c)
@@ -2299,8 +2299,8 @@ class RoutingCache(object):
         # Clear all previous information
         ptRT.clear()
         ptVN.clear()
+        binFile = self.routingFile + '.bin'
         try:
-            binFile = self.routingFile + '.bin'
             with open(binFile, 'rb') as rMerged:
                 self.routingTable, self.stationTable, self.vnTable = \
                     pickle.load(rMerged)

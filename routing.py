@@ -92,7 +92,7 @@ def makeQueryGET(parameters):
     try:
         if start is not None:
             start = str2date(start)
-    except:
+    except Exception:
         msg = 'Error while converting starttime parameter.'
         raise WIClientError(msg)
 
@@ -100,35 +100,35 @@ def makeQueryGET(parameters):
     try:
         if endt is not None:
             endt = str2date(endt)
-    except:
+    except Exception:
         msg = 'Error while converting endtime parameter.'
         raise WIClientError(msg)
 
     try:
         minlat = float(getParam(parameters, ['minlat', 'minlatitude'],
                                 '-90.0'))
-    except:
+    except Exception:
         msg = 'Error while converting the minlatitude parameter.'
         raise WIClientError(msg)
 
     try:
         maxlat = float(getParam(parameters, ['maxlat', 'maxlatitude'],
                                 '90.0'))
-    except:
+    except Exception:
         msg = 'Error while converting the maxlatitude parameter.'
         raise WIClientError(msg)
 
     try:
         minlon = float(getParam(parameters, ['minlon', 'minlongitude'],
                                 '-180.0'))
-    except:
+    except Exception:
         msg = 'Error while converting the minlongitude parameter.'
         raise WIClientError(msg)
 
     try:
         maxlon = float(getParam(parameters, ['maxlon', 'maxlongitude'],
                                 '180.0'))
-    except:
+    except Exception:
         msg = 'Error while converting the maxlongitude parameter.'
         raise WIClientError(msg)
 
@@ -144,12 +144,12 @@ def makeQueryGET(parameters):
 
     form = getParam(parameters, ['format'], 'xml').lower()
 
-    if ((alt) and (form == 'get')):
+    if alt and (form == 'get'):
         msg = 'alternative=true and format=get are incompatible parameters'
         raise WIClientError(msg)
 
     # print start, type(start), endt, type(endt), (start > endt)
-    if ((start is not None) and (endt is not None) and (start > endt)):
+    if (start is not None) and (endt is not None) and (start > endt):
         msg = 'Start datetime cannot be greater than end datetime'
         raise WIClientError(msg)
 
@@ -213,7 +213,7 @@ def makeQueryPOST(postText):
                 key, value = line.split('=')
                 key = key.strip()
                 value = value.strip()
-            except:
+            except Exception:
                 msg = 'Wrong format detected while processing: %s' % line
                 raise WIClientError(msg)
 

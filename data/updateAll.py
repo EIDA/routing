@@ -42,7 +42,7 @@ try:
     from routeutils.utils import cacheStations
     from routeutils.utils import Route
     from routeutils.utils import RoutingCache
-except:
+except Exception:
     raise
 
 
@@ -100,7 +100,7 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
 
     try:
         os.remove('./%s.bin' % fileRoutes)
-    except:
+    except Exception:
         pass
 
     stationTable = dict()
@@ -134,12 +134,12 @@ def main():
     # Command line parameter has priority
     try:
         verbo = getattr(logging, args.loglevel)
-    except:
+    except Exception:
         # If no command-line parameter then read from config file
         try:
             verbo = config.get('Service', 'verbosity')
             verbo = getattr(logging, verbo)
-        except:
+        except Exception:
             # Otherwise, default value
             verbo = logging.INFO
 
@@ -156,15 +156,16 @@ def main():
 
     try:
         os.remove('routing-tmp.xml.bin')
-    except:
+    except Exception:
         pass
 
+    # Otherwise, default value
+    synchroList = ''
     try:
         if 'synchronize' in config.options('Service'):
             synchroList = config.get('Service', 'synchronize')
-    except:
-        # Otherwise, default value
-        synchroList = ''
+    except Exception:
+        pass
 
     mergeRoutes('routing.xml', synchroList)
 
