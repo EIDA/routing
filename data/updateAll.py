@@ -21,17 +21,9 @@ import os
 import sys
 import argparse
 import logging
+import configparser
+import pickle
 from urllib.parse import urlparse
-
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
-
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
 
 sys.path.append('..')
 
