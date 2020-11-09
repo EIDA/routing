@@ -23,6 +23,7 @@ import argparse
 import logging
 import configparser
 import pickle
+import json
 from urllib.parse import urlparse
 
 sys.path.append('..')
@@ -58,6 +59,7 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
 
     ptRT = addRoutes(fileRoutes, allowOverlaps=allowOverlaps)
     ptVN = addVirtualNets(fileRoutes)
+    eidaDCs = list()
 
     for line in synchroList.splitlines():
         if not len(line):
@@ -76,7 +78,8 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
         else:
             try:
                 addRemote('./routing-%s.xml' % dcid.strip(), url.strip())
-            except:
+                addRemote('./routing-%s.json' % dcid.strip(), url.strip(), method='dc')
+            except Exception:
                 msg = 'Failure updating routing information from %s (%s)' % \
                       (dcid, url)
                 logs.error(msg)
@@ -90,6 +93,10 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
             ptVN = addVirtualNets('./routing-%s.xml' % dcid.strip(),
                                   vnTable=ptVN)
 
+        if os.path.exists('./routing-%s.json' % dcid.strip()):
+            print('Adding REMOTE data center information from %s' % dcid)
+            eidaDCs.append(json.load(open('./routing-%s.json' % dcid.strip())))
+
     try:
         os.remove('./%s.bin' % fileRoutes)
     except Exception:
@@ -99,12 +106,13 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
     cacheStations(ptRT, stationTable)
 
     with open('./%s.bin' % fileRoutes, 'wb') as finalRoutes:
-        pickle.dump((ptRT, stationTable, ptVN), finalRoutes)
+        pickle.dump((ptRT, stationTable, ptVN, eidaDCs), finalRoutes)
         logs.info('Routes in main Routing Table: %s\n' % len(ptRT))
         logs.info('Stations cached: %s\n' %
                   sum([len(stationTable[dc][st]) for dc in stationTable
                        for st in stationTable[dc]]))
         logs.info('Virtual Networks defined: %s\n' % len(ptVN))
+        logs.info('Information from data centers: %s\n' % len(eidaDCs))
 
 
 def main():

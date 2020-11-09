@@ -20,6 +20,7 @@ import cgi
 import datetime
 import logging
 import configparser
+import json
 
 from routeutils.wsgicomm import WIContentError
 from routeutils.wsgicomm import WIClientError
@@ -361,7 +362,7 @@ def application(environ, start_response):
     # Check whether the function called is implemented
     implementedFunctions = ['query', 'application.wadl', 'localconfig',
                             'globalconfig', 'version', 'info', '',
-                            'virtualnets', 'endpoints']
+                            'virtualnets', 'endpoints', 'dc']
 
     if routes is None:
         # Add routing cache here, to be accessible to all modules
@@ -376,7 +377,7 @@ def application(environ, start_response):
                                    start_response)
 
     if fname == '':
-        here = os.path.dirname(__file__)
+        # here = os.path.dirname(__file__)
         helpFile = os.path.join(here, 'help.html')
         with open(helpFile, 'r') as helpHandle:
             iterObj = helpHandle.read()
@@ -384,7 +385,7 @@ def application(environ, start_response):
             return send_html_response(status, iterObj, start_response)
 
     elif fname == 'application.wadl':
-        here = os.path.dirname(__file__)
+        # here = os.path.dirname(__file__)
         appWadl = os.path.join(here, 'application.wadl')
         with open(appWadl, 'r') \
                 as appFile:
@@ -410,6 +411,15 @@ def application(environ, start_response):
 
         except WIError as w:
             return send_error_response(w.status, w.body, start_response)
+
+    elif fname == 'dc':
+        try:
+            with open(os.path.join(here, 'routing.json')) as fin:
+                dc = json.load(fin)
+        except Exception:
+            dc = dict()
+
+        return send_json_response('200 OK', dc, start_response)
 
     elif fname == 'endpoints':
         result = routes.endpoints()
@@ -442,7 +452,7 @@ def application(environ, start_response):
 
     elif fname == 'info':
         config = configparser.RawConfigParser()
-        here = os.path.dirname(__file__)
+        # here = os.path.dirname(__file__)
         config.read(os.path.join(here, 'routing.cfg'))
 
         text = config.get('Service', 'info')
