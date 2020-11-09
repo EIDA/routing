@@ -18,10 +18,12 @@ any later version.
 """
 
 import sys
+import json
 
 response_headers_template = [('Access-Control-Allow-Origin', '*'),
                     ('Access-Control-Allow-Headers', 'Authorization'),
                     ('Access-Control-Expose-Headers', 'WWW-Authenticate')]
+
 
 class Logs(object):
     """Given a log level and a stream, redirect the output to the proper place.
@@ -261,6 +263,9 @@ def send_json_response(status, body, start_response):
 
     """
     response_headers = response_headers_template.copy()
+    if not isinstance(body, str):
+        body = json.dumps(body)
+
     response_headers.extend([('Content-Type', 'application/json'),
                         ('Content-Length', str(len(body)))])
     start_response(status, response_headers)
