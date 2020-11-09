@@ -414,7 +414,7 @@ def application(environ, start_response):
 
     elif fname == 'dc':
         try:
-            with open(os.path.join(here, 'routing.json')) as fin:
+            with open(os.path.join(here, 'data', 'routing.json')) as fin:
                 dc = json.load(fin)
         except Exception:
             dc = dict()
