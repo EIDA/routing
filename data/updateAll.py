@@ -35,6 +35,7 @@ try:
     from routeutils.utils import cacheStations
     from routeutils.utils import Route
     from routeutils.utils import RoutingCache
+    from routeutils.utils import replacelast
 except Exception:
     raise
 
@@ -60,6 +61,7 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
     ptRT = addRoutes(fileRoutes, allowOverlaps=allowOverlaps)
     ptVN = addVirtualNets(fileRoutes)
     eidaDCs = list()
+    eidaDCs.append(json.load(open(replacelast(fileRoutes, '.xml', '.json'))))
 
     for line in synchroList.splitlines():
         if not len(line):
