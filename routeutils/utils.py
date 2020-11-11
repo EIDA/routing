@@ -433,7 +433,7 @@ class FDSNRules(dict):
 
     """
 
-    __slots__ = ()
+    # __slots__ = ()
 
     def __init__(self, rm=None, eidaDCs=None):
         super().__init__()
