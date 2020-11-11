@@ -35,7 +35,7 @@ from urllib.error import URLError
 # I need to find a mapping from (service, URL) to the schema below. It seems
 # that it could be feasible to put all routes in the datasets item
 
-eidaDCs = list()
+# eidaDCs = list()
 
 # eidaDCs = [
 #     {
@@ -435,11 +435,12 @@ class FDSNRules(dict):
 
     __slots__ = ()
 
-    def __init__(self, rm=None):
+    def __init__(self, rm=None, eidaDCs=None):
         super().__init__()
         self['version'] = 1
         self['datacenters'] = list()
 
+        self.eidaDCs = eidaDCs
         if rm is None:
             return
 
@@ -473,7 +474,7 @@ class FDSNRules(dict):
                         return inddc
 
         # After the for...else variable indList points to the DC in this object
-        for inddc, dc in enumerate(eidaDCs):
+        for inddc, dc in enumerate(self.eidaDCs):
             for indrepo, repo in enumerate(dc['repositories']):
                 for inddcservice, dcservice in enumerate(repo['services']):
                     if ((service == dcservice['name']) and
@@ -534,7 +535,7 @@ class FDSNRules(dict):
             indList = self.index(service, url)
         except KeyError as k:
             indList = len(self['datacenters'])
-            self['datacenters'].append(deepcopy(eidaDCs[k.args[0]]))
+            self['datacenters'].append(deepcopy(self.eidaDCs[k.args[0]]))
 
             # This is empty and then it can be already added
             # toAdd["services"] = [service]
@@ -1806,7 +1807,7 @@ class RoutingCache(object):
         if format == 'fdsn':
             result = self.getRoute(Stream('*', '*', '*', '*'), TW(None, None), service='dataselect,wfcatalog,station',
                                    alternative=True)
-            fdsnresult = FDSNRules(result)
+            fdsnresult = FDSNRules(result, self.eidaDCs)
             return json.dumps(fdsnresult, default=datetime.datetime.isoformat)
 
         raise Exception('Format (%s) is not fdsn.' % format)
@@ -2312,7 +2313,7 @@ class RoutingCache(object):
         binFile = self.routingFile + '.bin'
         try:
             with open(binFile, 'rb') as rMerged:
-                self.routingTable, self.stationTable, self.vnTable, eidaDCs = \
+                self.routingTable, self.stationTable, self.vnTable, self.eidaDCs = \
                     pickle.load(rMerged)
         except Exception:
             ptRT = addRoutes(self.routingFile, allowOverlaps=allowOverlaps)
@@ -2349,5 +2350,5 @@ class RoutingCache(object):
             with open(binFile, 'wb') \
                     as finalRoutes:
                 self.logs.debug('Writing %s\n' % binFile)
-                pickle.dump((ptRT, self.stationTable, ptVN, eidaDCs), finalRoutes)
+                pickle.dump((ptRT, self.stationTable, ptVN, self.eidaDCs), finalRoutes)
                 self.routingTable = ptRT
