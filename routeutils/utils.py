@@ -540,7 +540,7 @@ class FDSNRules(dict):
             # This is empty and then it can be already added
             # toAdd["services"] = [service]
         except Exception:
-            raise
+            return
 
         toAdd["services"] = [{"name": service, "url": url}]
 
