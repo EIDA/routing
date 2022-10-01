@@ -32,7 +32,7 @@ from routeutils.wsgicomm import send_xml_response
 from routeutils.wsgicomm import send_error_response
 from routeutils.utils import Stream
 from routeutils.utils import TW
-from routeutils.utils import geoRectangle
+from routeutils.utils import GeoRectangle
 from routeutils.utils import RequestMerge
 from routeutils.utils import RoutingCache
 from routeutils.utils import RoutingException
@@ -158,7 +158,7 @@ def makeQueryGET(parameters):
             (maxlon == 180.0)):
         geoLoc = None
     else:
-        geoLoc = geoRectangle(minlat, maxlat, minlon, maxlon)
+        geoLoc = GeoRectangle(minlat, maxlat, minlon, maxlon)
 
     result = RequestMerge()
     # Expand lists in parameters (f.i., cha=BHZ,HHN) and yield all possible
@@ -267,7 +267,7 @@ def makeQueryPOST(postText):
                 (maxlon == 180.0)):
             geoLoc = None
         else:
-            geoLoc = geoRectangle(minlat, maxlat, minlon, maxlon)
+            geoLoc = GeoRectangle(minlat, maxlat, minlon, maxlon)
 
         try:
             st = Stream(net, sta, loc, cha)

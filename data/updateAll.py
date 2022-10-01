@@ -29,10 +29,10 @@ from urllib.parse import urlparse
 sys.path.append('..')
 
 try:
-    from routeutils.utils import addRemote
-    from routeutils.utils import addRoutes
-    from routeutils.utils import addVirtualNets
-    from routeutils.utils import cacheStations
+    from routeutils.utils import addremote
+    from routeutils.utils import addroutes
+    from routeutils.utils import addvirtualnets
+    from routeutils.utils import cachestations
     from routeutils.utils import Route
     from routeutils.utils import RoutingCache
     from routeutils.utils import replacelast
@@ -40,30 +40,30 @@ except Exception:
     raise
 
 
-def mergeRoutes(fileRoutes, synchroList, allowOverlaps=False):
+def mergeRoutes(fileroutes: str, synchrolist: str, allowOverlaps: bool = False):
     """Retrieve routes from different sources and merge them with the local
 ones in the routing tables. The configuration file is checked to see whether
 overlapping routes are allowed or not. A pickled version of the the routing
 table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
 
-:param fileRoutes: File containing the local routing table
-:type fileRoutes: str
-:param synchroList: List of data centres where routes should be imported from
-:type synchroList: str
+:param fileroutes: File containing the local routing table
+:type fileroutes: str
+:param synchrolist: List of data centres where routes should be imported from
+:type synchrolist: str
 :param allowOverlaps: Specify if overlapping streams should be allowed or not
-:type allowOverlaps: boolean
+:type allowOverlaps: bool
 
 """
 
     logs = logging.getLogger('mergeRoutes')
-    logs.info('Synchronizing with: %s' % synchroList)
+    logs.info('Synchronizing with: %s' % synchrolist)
 
-    ptRT = addRoutes(fileRoutes, allowOverlaps=allowOverlaps)
-    ptVN = addVirtualNets(fileRoutes)
+    ptRT = addroutes(fileroutes, allowOverlaps=allowOverlaps)
+    ptVN = addvirtualnets(fileroutes)
     eidaDCs = list()
-    eidaDCs.append(json.load(open(replacelast(fileRoutes, '.xml', '.json'))))
+    eidaDCs.append(json.load(open(replacelast(fileroutes, '.xml', '.json'))))
 
-    for line in synchroList.splitlines():
+    for line in synchrolist.splitlines():
         if not len(line):
             break
         logs.debug(str(line.split(',')))
@@ -79,20 +79,20 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
                 raise Exception('File must be called "routing-%s.xml"' % dcid)
         else:
             try:
-                addRemote('./routing-%s.xml' % dcid.strip(), url.strip())
-                addRemote('./routing-%s.json' % dcid.strip(), url.strip(), method='dc')
+                addremote('./routing-%s.xml' % dcid.strip(), url.strip())
+                addremote('./routing-%s.json' % dcid.strip(), url.strip(), method='dc')
             except Exception:
                 msg = 'Failure updating routing information from %s (%s)' % \
                       (dcid, url)
                 logs.error(msg)
 
         if os.path.exists('./routing-%s.xml' % dcid.strip()):
-            # FIXME addRoutes should return no Exception ever and skip a
+            # FIXME addroutes should return no Exception ever and skip a
             # problematic file returning a coherent version of the routes
             print('Adding REMOTE %s' % dcid)
-            ptRT = addRoutes('./routing-%s.xml' % dcid.strip(),
+            ptRT = addroutes('./routing-%s.xml' % dcid.strip(),
                              routingTable=ptRT, allowOverlaps=allowOverlaps)
-            ptVN = addVirtualNets('./routing-%s.xml' % dcid.strip(),
+            ptVN = addvirtualnets('./routing-%s.xml' % dcid.strip(),
                                   vnTable=ptVN)
 
         if os.path.exists('./routing-%s.json' % dcid.strip()):
@@ -100,14 +100,14 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
             eidaDCs.append(json.load(open('./routing-%s.json' % dcid.strip())))
 
     try:
-        os.remove('./%s.bin' % fileRoutes)
+        os.remove('./%s.bin' % fileroutes)
     except Exception:
         pass
 
     stationTable = dict()
-    cacheStations(ptRT, stationTable)
+    cachestations(ptRT, stationTable)
 
-    with open('./%s.bin' % fileRoutes, 'wb') as finalRoutes:
+    with open('./%s.bin' % fileroutes, 'wb') as finalRoutes:
         pickle.dump((ptRT, stationTable, ptVN, eidaDCs), finalRoutes)
         logs.info('Routes in main Routing Table: %s\n' % len(ptRT))
         logs.info('Stations cached: %s\n' %
