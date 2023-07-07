@@ -46,7 +46,7 @@ ones in the routing tables. The configuration file is checked to see whether
 overlapping routes are allowed or not. A pickled version of the the routing
 table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
 
-:param fileroutes: File containing the local routing table
+:param fileroutes: File containing the local routing table. Based on this name the JSON file containing the data centre information is derived.
 :type fileroutes: str
 :param synchrolist: List of data centres where routes should be imported from
 :type synchrolist: str
