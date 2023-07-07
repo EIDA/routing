@@ -981,7 +981,7 @@ class FDSNRules(dict):
             "starttime": tw.start
         }
 
-        # Add attributes with values different than the default ones
+        # Add attributes with values different from the default ones
         if stream.n != '*' and len(stream.n):
             toAdd["network"] = stream.n
         if stream.s != '*' and len(stream.s):
@@ -1042,7 +1042,7 @@ class FDSNRules(dict):
                 len(self['datacenters'][indList]['repositories'][0]['services']):
             return
 
-        # Check that each datasets is in ['services']
+        # Check that each datases is in ['services']
         tsr = self['datacenters'][indList]['repositories'][0]['datasets'][tsrIndex]
 
         svcset = set()
@@ -1808,8 +1808,8 @@ class RoutingCache(object):
 
         """
         if fmt == 'fdsn':
-            result = self.getRoute(Stream('*', '*', '*', '*'), TW(None, None), service='dataselect,wfcatalog,station',
-                                   alternative=True)
+            result = self.getRoute(Stream('*', '*', '*', '*'), TW(None, None),
+                                   service='dataselect,wfcatalog,station,availability', alternative=True)
             fdsnresult = FDSNRules(result, self.eidaDCs)
             return json.dumps(fdsnresult, default=datetime.datetime.isoformat)
 
