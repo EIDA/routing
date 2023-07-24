@@ -6,7 +6,7 @@ the Free Software Foundation, either version 3 of the License, or
 any later version.
 
    :Copyright:
-       2014-2020 Javier Quinteros, Deutsches GFZ Potsdam <javier@gfz-potsdam.de>
+       2014-2023 Helmholtz Centre Potsdam GFZ German Research Centre for Geosciences, Potsdam, Germany
    :License:
        GPLv3
    :Platform:
@@ -447,7 +447,7 @@ def application(environ, start_response):
                                   start_response)
 
     elif fname == 'version':
-        text = "1.2.1"
+        text = "1.2.2"
         return send_plain_response('200 OK', text, start_response)
 
     elif fname == 'info':
