@@ -109,7 +109,7 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
     cachestations(ptRT, stationTable)
 
     # If in DEBUG logging level
-    if logs.level == logging.DEBUG:
+    if logs.getEffectiveLevel() <= logging.DEBUG:
         pprint(ptRT)
         pprint(ptVN)
         pprint(eidaDCs)
