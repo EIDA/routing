@@ -92,7 +92,7 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
             # problematic file returning a coherent version of the routes
             print('Adding REMOTE %s' % dcid)
             ptRT = addroutes('./routing-%s.xml' % dcid.strip(),
-                             routingTable=ptRT, allowOverlaps=allowOverlaps)
+                             routingtable=ptRT, allowOverlaps=allowOverlaps)
             ptVN = addvirtualnets('./routing-%s.xml' % dcid.strip(),
                                   vnTable=ptVN)
 
@@ -109,7 +109,7 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
     cachestations(ptRT, stationTable)
 
     # If in DEBUG logging level
-    if logs.level == 10:
+    if logs.level == logging.DEBUG:
         pprint(ptRT)
         pprint(ptVN)
         pprint(eidaDCs)
