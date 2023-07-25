@@ -925,7 +925,7 @@ class FDSNRules(dict):
          the routes/rules should be added. If the data centre is still
          not in the list returns a KeyError with an index to the eidaDCs
          list. That is the DC to add. If both searches fail an Exception
-         is raised"""
+         is raised."""
 
         service = 'fdsnws-availability-1' if service == 'availability' else service
         service = 'fdsnws-dataselect-1' if service == 'dataselect' else service
@@ -937,7 +937,7 @@ class FDSNRules(dict):
                 for inddcservice, dcservice in enumerate(repo['services']):
                     if ((service == dcservice['name']) and
                             (url.startswith(dcservice['url']))):
-                        return inddc
+                        return inddc, indrepo
 
         # After the for...else variable indList points to the DC in this object
         for inddc, dc in enumerate(self.eidaDCs):
@@ -998,9 +998,9 @@ class FDSNRules(dict):
 
         # Search in which data centre should this be added
         try:
-            indList = self.index(service, url)
+            inddc, indrepo = self.index(service, url)
         except KeyError as k:
-            indList = len(self['datacenters'])
+            inddc, indrepo = len(self['datacenters']), 0
             self['datacenters'].append(deepcopy(self.eidaDCs[k.args[0]]))
 
             # This is empty and then it can be already added
@@ -1013,8 +1013,9 @@ class FDSNRules(dict):
         # print(self['datacenters'][indList]['repositories'][0]['datasets'])
         tsrIndex = 0
         # FIXME the position in repositories is hard-coded!
+        # Check if the new self.index signature returning the repository solves the issue from the previous line
         # Check if the request line had been already added
-        for ind, srvDC in enumerate(self['datacenters'][indList]['repositories'][0]['datasets']):
+        for ind, srvDC in enumerate(self['datacenters'][inddc]['repositories'][indrepo]['datasets']):
             if not (toAdd.get("network", '*') == srvDC.get("network", '*')):
                 continue
             if not (toAdd.get("station", '*') == srvDC.get("station", '*')):
@@ -1034,19 +1035,19 @@ class FDSNRules(dict):
             tsrIndex = ind
             break
         else:
-            tsrIndex = len(self['datacenters'][indList]['repositories'][0]['datasets'])
-            self['datacenters'][indList]['repositories'][0]['datasets'].append(toAdd)
+            tsrIndex = len(self['datacenters'][inddc]['repositories'][indrepo]['datasets'])
+            self['datacenters'][inddc]['repositories'][indrepo]['datasets'].append(toAdd)
 
         # Check that there is the same number of routes for datasets and services
-        if len(self['datacenters'][indList]['repositories'][0]['datasets'][tsrIndex]['services']) != \
-                len(self['datacenters'][indList]['repositories'][0]['services']):
+        if len(self['datacenters'][inddc]['repositories'][indrepo]['datasets'][tsrIndex]['services']) != \
+                len(self['datacenters'][inddc]['repositories'][indrepo]['services']):
             return
 
         # Check that each datases is in ['services']
-        tsr = self['datacenters'][indList]['repositories'][0]['datasets'][tsrIndex]
+        tsr = self['datacenters'][inddc]['repositories'][indrepo]['datasets'][tsrIndex]
 
         svcset = set()
-        for dcservice in self['datacenters'][indList]['repositories'][0]['services']:
+        for dcservice in self['datacenters'][inddc]['repositories'][indrepo]['services']:
             svcset.add((dcservice['name'], dcservice['url']))
 
         for svc in tsr['services']:
@@ -1057,7 +1058,7 @@ class FDSNRules(dict):
                 return
 
         # Remove all datasets because it is the same as services
-        del self['datacenters'][indList]['repositories'][0]['datasets'][tsrIndex]['services']
+        del self['datacenters'][inddc]['repositories'][indrepo]['datasets'][tsrIndex]['services']
 
     def extend(self, listReqM: RequestMerge):
         """Append all the items in :class:`~RequestMerge` grouped by datacenter.
@@ -1075,7 +1076,7 @@ class FDSNRules(dict):
         # FIXME Re-implement this!!!
         for r in listReqM:
             try:
-                pos = self.index(r['name'], r['url'])
+                pos, indrepo = self.index(r['name'], r['url'])
                 self['datacenters'][pos]['params'].extend(r['params'])
             except Exception:
                 self['datacenters'].append(r)
