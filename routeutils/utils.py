@@ -1141,7 +1141,7 @@ def getStationCache(st: Stream, rt: Route):
 
     # FIXME INGV must fix their firewall rules!
     if 'ingv.it' in query:
-        sleep(1)
+        sleep(0.1)
 
     req = ul.Request(query)
     try:
