@@ -24,6 +24,7 @@ import logging
 import configparser
 import pickle
 import json
+from pprint import pprint
 from urllib.parse import urlparse
 
 sys.path.append('..')
@@ -106,6 +107,12 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
 
     stationTable = dict()
     cachestations(ptRT, stationTable)
+
+    # If in DEBUG logging level
+    if logs.level == 10:
+        pprint(ptRT)
+        pprint(ptVN)
+        pprint(eidaDCs)
 
     with open('./%s.bin' % fileroutes, 'wb') as finalRoutes:
         pickle.dump((ptRT, stationTable, ptVN, eidaDCs), finalRoutes)
