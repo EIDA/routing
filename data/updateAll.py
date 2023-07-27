@@ -112,7 +112,7 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
 
     # Check that the FDSNRules object can be created
     rm = RequestMerge()
-    for st, routes in ptRT:
+    for st, routes in ptRT.items():
         for ro in routes:
             rm.append(ro.service, ro.address, ro.priority, st, ro.tw)
 
