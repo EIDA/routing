@@ -24,6 +24,7 @@ import logging
 import configparser
 import pickle
 import json
+import datetime
 from pprint import pprint
 from urllib.parse import urlparse
 
@@ -36,6 +37,10 @@ try:
     from routeutils.utils import cachestations
     from routeutils.utils import Route
     from routeutils.utils import RoutingCache
+    from routeutils.utils import FDSNRules
+    from routeutils.utils import RequestMerge
+    from routeutils.utils import TW
+    from routeutils.utils import Stream
     from routeutils.utils import replacelast
 except Exception:
     raise
@@ -104,6 +109,17 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
         os.remove('./%s.bin' % fileroutes)
     except Exception:
         pass
+
+    # Check that the FDSNRules object can be created
+    rm = RequestMerge()
+    for st, routes in ptRT:
+        for ro in routes:
+            rm.append(ro.service, ro.address, ro.priority, st, ro.tw)
+
+    # result = self.getRoute(Stream('*', '*', '*', '*'), TW(None, None),
+    #                        service='dataselect,wfcatalog,station,availability', alternative=True)
+    fdsnresult = FDSNRules(rm, eidaDCs)
+    json.dumps(fdsnresult, default=datetime.datetime.isoformat)
 
     stationTable = dict()
     cachestations(ptRT, stationTable)
