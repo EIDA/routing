@@ -58,7 +58,7 @@ def getParam(parameters, names, default, csv=False):
     return result
 
 
-def makeQueryGET(parameters):
+def makeQueryGET(parameters) -> RequestMerge:
     """Process a request made via a GET method."""
     global routes
 
@@ -176,7 +176,7 @@ def makeQueryGET(parameters):
     return result
 
 
-def makeQueryPOST(postText):
+def makeQueryPOST(postText) -> RequestMerge:
     """Process a request made via a POST method."""
     global routes
 
@@ -206,7 +206,7 @@ def makeQueryPOST(postText):
         if not len(line):
             continue
 
-        if (inHeader and ('=' not in line)):
+        if inHeader and ('=' not in line):
             inHeader = False
 
         if inHeader:
