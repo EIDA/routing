@@ -114,6 +114,10 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
     rm = RequestMerge()
     for st, routes in ptRT.items():
         for ro in routes:
+            # For each dataset we export details only about the four basic services
+            # The other services are informed in the main part of the JSON representation (not in the datasets)
+            if ro.service not in ('dataselect', 'station', 'wfcatalog', 'availability'):
+                continue
             rm.append(ro.service, ro.address, ro.priority, st, ro.tw)
 
     # result = self.getRoute(Stream('*', '*', '*', '*'), TW(None, None),
