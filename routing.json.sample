@@ -1,0 +1,38 @@
+{
+    "name": "DATACENTRE",
+    "website": "https://mydomain.edu/",
+    "fullName": "My Data centre name",
+    "summary": "This is the summary of the data centre",
+    "repositories": [
+        {
+            "name": "archive",
+            "description": "Archive of continuous seismological data",
+            "website": "https://mydomain.edu/waveform/",
+            "services": [
+                {
+                    "name": "fdsnws-dataselect-1",
+                    "description": "Access to raw time series data",
+                    "url": "https://mydomain.edu/fdsnws/dataselect/1/"
+                },
+                {
+                    "name": "fdsnws-station-1",
+                    "description": "Access to metadata describing raw time series data",
+                    "url": "https://mydomain.edu/fdsnws/station/1/"
+                },
+		{
+                    "description": "Availability of time series data",
+                    "name": "fdsnws-availability-1",
+                    "url": "https://mydomain.edu/fdsnws/availability/1/"
+                },
+                {
+                    "name": "eidaws-wfcatalog",
+                    "description": "EIDA WFCatalog service",
+                    "url": "https://mydomain.edu/eidaws/wfcatalog/1/"
+                }
+            ],
+            "datasets": [
+            ]
+        }
+    ]
+}
+
