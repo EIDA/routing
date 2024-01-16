@@ -8,7 +8,7 @@ the Free Software Foundation, either version 3 of the License, or
 any later version.
 
    :Copyright:
-       2014-2020 Javier Quinteros, Deutsches GFZ Potsdam <javier@gfz-potsdam.de>
+       2014-2023 Helmholtz Centre Potsdam GFZ German Research Centre for Geosciences, Potsdam, Germany
    :License:
        GPLv3
    :Platform:
@@ -23,6 +23,7 @@ import json
 from .wsgicomm import WIClientError
 from .utils import RequestMerge
 from .utils import FDSNRules
+from typing import Tuple
 
 
 def _ConvertDictToXmlRecurse(parent, dictitem):
@@ -64,7 +65,7 @@ def ConvertDictToXml(listdict):
 
 
 # Important to support the comma-syntax from FDSN (f.i. GE,RO,XX)
-def lsNSLC(net, sta, loc, cha):
+def lsNSLC(net: list, sta: list, loc: list, cha: list) -> Tuple:
     """Iterator providing NSLC tuples from comma separated components.
 
     :param net: Network code(s) in comma-separated format.
@@ -82,10 +83,10 @@ def lsNSLC(net, sta, loc, cha):
         for s in sta:
             for l in loc:
                 for c in cha:
-                    yield (n, s, l, c)
+                    yield n, s, l, c
 
 
-def applyFormat(resultRM, outFormat='xml'):
+def applyFormat(resultRM: RequestMerge, outFormat: str = 'xml') -> str:
     """Apply the format specified to the RequestMerge object received.
 
     :param resultRM: List with the result of a query.

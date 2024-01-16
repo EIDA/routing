@@ -1,7 +1,7 @@
 #
 # Routing Service
 #
-# 2014-2020 Javier Quinteros, Deutsches GFZ Potsdam <javier@gfz-potsdam.de>
+# 2014-2023 Helmholtz Centre Potsdam GFZ German Research Centre for Geosciences, Potsdam, Germany
 #
 # ----------------------------------------------------------------------
 

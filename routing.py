@@ -6,7 +6,7 @@ the Free Software Foundation, either version 3 of the License, or
 any later version.
 
    :Copyright:
-       2014-2020 Javier Quinteros, Deutsches GFZ Potsdam <javier@gfz-potsdam.de>
+       2014-2023 Helmholtz Centre Potsdam GFZ German Research Centre for Geosciences, Potsdam, Germany
    :License:
        GPLv3
    :Platform:
@@ -32,7 +32,7 @@ from routeutils.wsgicomm import send_xml_response
 from routeutils.wsgicomm import send_error_response
 from routeutils.utils import Stream
 from routeutils.utils import TW
-from routeutils.utils import geoRectangle
+from routeutils.utils import GeoRectangle
 from routeutils.utils import RequestMerge
 from routeutils.utils import RoutingCache
 from routeutils.utils import RoutingException
@@ -58,7 +58,7 @@ def getParam(parameters, names, default, csv=False):
     return result
 
 
-def makeQueryGET(parameters):
+def makeQueryGET(parameters) -> RequestMerge:
     """Process a request made via a GET method."""
     global routes
 
@@ -158,7 +158,7 @@ def makeQueryGET(parameters):
             (maxlon == 180.0)):
         geoLoc = None
     else:
-        geoLoc = geoRectangle(minlat, maxlat, minlon, maxlon)
+        geoLoc = GeoRectangle(minlat, maxlat, minlon, maxlon)
 
     result = RequestMerge()
     # Expand lists in parameters (f.i., cha=BHZ,HHN) and yield all possible
@@ -176,7 +176,7 @@ def makeQueryGET(parameters):
     return result
 
 
-def makeQueryPOST(postText):
+def makeQueryPOST(postText) -> RequestMerge:
     """Process a request made via a POST method."""
     global routes
 
@@ -206,7 +206,7 @@ def makeQueryPOST(postText):
         if not len(line):
             continue
 
-        if (inHeader and ('=' not in line)):
+        if inHeader and ('=' not in line):
             inHeader = False
 
         if inHeader:
@@ -267,7 +267,7 @@ def makeQueryPOST(postText):
                 (maxlon == 180.0)):
             geoLoc = None
         else:
-            geoLoc = geoRectangle(minlat, maxlat, minlon, maxlon)
+            geoLoc = GeoRectangle(minlat, maxlat, minlon, maxlon)
 
         try:
             st = Stream(net, sta, loc, cha)
@@ -447,7 +447,7 @@ def application(environ, start_response):
                                   start_response)
 
     elif fname == 'version':
-        text = "1.2.1"
+        text = "1.2.2"
         return send_plain_response('200 OK', text, start_response)
 
     elif fname == 'info':
