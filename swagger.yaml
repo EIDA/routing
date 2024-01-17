@@ -9,11 +9,11 @@ info:
     url: https://www.gnu.org/licenses/gpl-3.0.html
   contact:
     name: Javier Quinteros
-    url: http://www.gfz-potsdam.de/en/section/seismology/staff/profil/javier-quinteros/
+    url: https://www.gfz-potsdam.de/staff/javier.quinteros/sec24
     email: javier@gfz-potsdam.de
 
 servers:
-  - url: 'http://geofon.gfz-potsdam.de/eidaws/routing/1'
+  - url: 'https://geofon.gfz-potsdam.de/eidaws/routing/1'
     description: Routing Service at GEOFON
 
 paths:
@@ -40,6 +40,40 @@ paths:
             text/plain:
               schema:
                 type: string
+
+  /localconfig:
+    get:
+      summary: Get the local routes and virtual networks
+      description: Returns an XML file with local routes and virtual networks.
+      responses:
+        '200':
+          description: Routes and virtual networks
+          content:
+            application/xml:
+              schema:
+                type: string
+
+  /globalconfig:
+    get:
+      summary: Get information about the data centre
+      description: Returns information as requested by FDSN in JSON format.
+      responses:
+        '200':
+          description: Data centre information
+          content:
+            application/json:
+              schema:
+                type: string
+      parameters:
+        - name: format
+          in: query
+          description: Format of the output
+          required: true
+          schema:
+            type: string
+            enum:
+              - "fdsn"
+
 
   /info:
     get:
@@ -305,12 +339,12 @@ components:
           schema:
             type: array
             items:
-              $ref: '#components/schemas/Route'
+              $ref: '#/components/schemas/Route'
         application/xml:
           schema:
             type: array
             items:
-              $ref: '#components/schemas/Route'
+              $ref: '#/components/schemas/Route'
         text/plain:
           schema:
             type: string
