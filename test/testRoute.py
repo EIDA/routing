@@ -204,10 +204,10 @@ class RouteCacheTests(unittest.TestCase):
     def test2services_GE_ST_WF_FDSN(self):
         """Station AND WFCatalog GE.*.*.* in FDSN format"""
 
-        expURL_WF = 'http://geofon.gfz-potsdam.de/eidaws/wfcatalog/1/'
-        expURL_ST = 'http://geofon.gfz-potsdam.de/fdsnws/station/1/'
+        expURL_WF = 'https://geofon.gfz-potsdam.de/eidaws/wfcatalog/1/'
+        expURL_ST = 'https://geofon.gfz-potsdam.de/fdsnws/station/1/'
         result = self.rc.getRoute(Stream('GE', '*', '*', '*'), TW(None, None), service='wfcatalog,station')
-        fdsnresult = FDSNRules(result)
+        fdsnresult = FDSNRules(result, self.rc.eidaDCs)
         self.assertIsInstance(fdsnresult, FDSNRules,
                               'A FDSNRules object was expected!')
         self.assertEqual(len(fdsnresult['datacenters'][0]['repositories'][0]['datasets'][0]['services']), 2,
