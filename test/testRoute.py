@@ -51,23 +51,23 @@ class RouteCacheTests(unittest.TestCase):
     def testDS_GE_FDSN_output(self):
         """Dataselect GE.*.*.* start=2010 format=fdsn"""
 
-        expURL = 'http://geofon.gfz-potsdam.de/fdsnws/dataselect/1/'
+        expURL = 'https://geofon.gfz-potsdam.de/fdsnws/dataselect/1/'
         startD = datetime.datetime(2010, 1, 1)
         result = self.rc.getRoute(Stream('GE', '*', '*', '*'), TW(startD, None))
         self.assertIsInstance(result, RequestMerge,
                               'A RequestMerge object was expected!')
 
-        fdsnResult = FDSNRules(result)
+        fdsnResult = FDSNRules(result, self.rc.eidaDCs)
         self.assertEqual(len(fdsnResult['datacenters']), 1,
                          'Wrong number of data centers for GE.*.*.*!')
-        tsr = fdsnResult['datacenters'][0]['repositories'][0]['timeseriesRouting']
+        tsr = fdsnResult['datacenters'][0]['repositories'][0]['datasets']
         self.assertEqual(len(tsr), 1,
                          'Wrong number of rules for GE.*.*.*!')
         self.assertEqual(tsr[0]['network'], 'GE',
                          'Wrong network code')
         self.assertEqual(tsr[0]['services'][0]['url'], expURL,
                          'Wrong URL for GE.*.*.*')
-        self.assertEqual(tsr[0]['services'][0]['name'], 'fdsnws-dataselect',
+        self.assertEqual(tsr[0]['services'][0]['name'], 'fdsnws-dataselect-1',
                          'Wrong service name!')
 
     def testDS_XXX(self):
