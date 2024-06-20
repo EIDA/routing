@@ -1335,7 +1335,7 @@ defRectangle = GeoRectangle(-90, 90, -180, 180)
 
 
 class RoutingCache(object):
-    """Manage routing information of streams read from an Arclink-XML file.
+    """Manage routing information of streams read from an XML file.
 
     :platform: Linux (maybe also Windows)
 

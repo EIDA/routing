@@ -13,7 +13,8 @@ verbosity = INFO
 # and the only valid name is "routing-DCID.xml"
 # synchronize = SERVER2, http://remotehost/eidaws/routing/1
 #               SERVER3, file:routing-SERVER3.xml
-synchronize =
+synchronize = LOCAL, file:data/routing.sample.xml
+
 # Can overlapping routes be saved in the routing table?
 # If yes, the Arclink-inventory.xml must be used to expand the routes and
 # produce a coherent response.
