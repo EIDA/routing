@@ -141,10 +141,10 @@ class RouteCacheTests(unittest.TestCase):
                       'Dataselect URL not found for GE.*.*.*')
         self.assertIn(expURL_ST, [svc['url'] for svc in fdsnresult['datacenters'][0]['repositories'][0]['services']],
                       'StationWS URL not found for GE.*.*.*')
-        self.assertIn('fdsnws-dataselect',
+        self.assertIn('fdsnws-dataselect-1',
                       [svc['name'] for svc in fdsnresult['datacenters'][0]['repositories'][0]['services']],
                       'Dataselect name not found for GE.*.*.*')
-        self.assertIn('fdsnws-station',
+        self.assertIn('fdsnws-station-1',
                       [svc['name'] for svc in fdsnresult['datacenters'][0]['repositories'][0]['services']],
                       'StationWS name not found for GE.*.*.*')
 
@@ -280,10 +280,8 @@ class RouteCacheTests(unittest.TestCase):
         expURL = 'https://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
         startD = datetime.datetime(2010, 1, 1)
         result = self.rc.getRoute(Stream('GE', '*', '*', '*'), TW(startD, None))
-        print(type(result))
         self.assertIsInstance(result, RequestMerge,
                               'A RequestMerge object was expected!')
-        print(len(result))
         self.assertEqual(len(result), 1,
                          'Wrong number of data centers for GE.*.*.*!')
         self.assertEqual(result[0]['url'], expURL,
