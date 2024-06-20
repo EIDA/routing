@@ -32,7 +32,7 @@ from routeutils.utils import RequestMerge
 from routeutils.utils import FDSNRules
 from routeutils.utils import Stream
 from routeutils.utils import TW
-from routeutils.utils import geoRectangle
+from routeutils.utils import GeoRectangle
 from routeutils.utils import RoutingException
 
 
@@ -247,7 +247,7 @@ class RouteCacheTests(unittest.TestCase):
         expURL = 'http://geofon.gfz-potsdam.de/fdsnws/station/1/query'
         result = self.rc.getRoute(Stream('GE', '*', '*', '*'), TW(None, None),
                                   'station',
-                                  geoLoc=geoRectangle(-10, 10, -180, 180))
+                                  geoLoc=GeoRectangle(-10, 10, -180, 180))
         self.assertIsInstance(result, RequestMerge,
                               'A RequestMerge object was expected!')
         self.assertEqual(len(result), 1,
