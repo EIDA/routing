@@ -732,7 +732,7 @@ if __name__ == '__main__':
     try:
         directory = os.path.dirname(__file__)
         configP = configparser.RawConfigParser()
-        configP.read(os.path.join(directory, '..', 'routing.cfg'))
+        configP.read(os.path.join(directory, '..', 'routing.cfg.sample'))
         host = configP.get('Service', 'baseURL') + '/query'
     except Exception:
         pass
