@@ -46,7 +46,7 @@ class RouteCacheTests(unittest.TestCase):
         "Setting up test"
         if hasattr(cls, 'rc'):
             return
-        cls.rc = RoutingCache('../data/routing.xml.sample')
+        cls.rc = RoutingCache('../data/routing.sample.xml')
 
     def testDS_GE_FDSN_output(self):
         """Dataselect GE.*.*.* start=2010 format=fdsn"""
