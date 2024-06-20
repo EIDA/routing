@@ -135,7 +135,7 @@ class RouteCacheTests(unittest.TestCase):
         fdsnresult = FDSNRules(result, self.rc.eidaDCs)
         self.assertIsInstance(fdsnresult, FDSNRules,
                               'A FDSNRules object was expected!')
-        self.assertEqual(len(fdsnresult['datacenters'][0]['repositories'][0]['services']), 4,
+        self.assertEqual(len(fdsnresult['datacenters'][0]['repositories'][0]['datasets'][0]['services']), 2,
                          'Wrong number of services for GE.*.*.*!')
         self.assertIn(expURL_DS, [svc['url'] for svc in fdsnresult['datacenters'][0]['repositories'][0]['services']],
                       'Dataselect URL not found for GE.*.*.*')
@@ -179,7 +179,7 @@ class RouteCacheTests(unittest.TestCase):
         fdsnresult = FDSNRules(result, self.rc.eidaDCs)
         self.assertIsInstance(fdsnresult, FDSNRules,
                               'A FDSNRules object was expected!')
-        self.assertEqual(len(fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services']), 0,
+        self.assertEqual(len(fdsnresult['datacenters'][0]['repositories'][0]['datasets'][0]['services']), 3,
                          'Wrong number of services for GE.*.*.*! An empty list is expected.')
 
     def test2services_GE_ST_WF(self):
@@ -210,19 +210,19 @@ class RouteCacheTests(unittest.TestCase):
         fdsnresult = FDSNRules(result)
         self.assertIsInstance(fdsnresult, FDSNRules,
                               'A FDSNRules object was expected!')
-        self.assertEqual(len(fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services']), 2,
+        self.assertEqual(len(fdsnresult['datacenters'][0]['repositories'][0]['datasets'][0]['services']), 2,
                          'Wrong number of services for GE.*.*.*!')
-        self.assertIn(expURL_WF, [fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][0]['url'],
-                                  fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][1]['url']],
+        self.assertIn(expURL_WF,
+                      [svc['url'] for svc in fdsnresult['datacenters'][0]['repositories'][0]['datasets'][0]['services']],
                       'WFCatalog URL not found for GE.*.*.*')
-        self.assertIn(expURL_ST, [fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][0]['url'],
-                                  fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][1]['url']],
+        self.assertIn(expURL_ST,
+                      [svc['url'] for svc in fdsnresult['datacenters'][0]['repositories'][0]['datasets'][0]['services']],
                       'StationWS URL not found for GE.*.*.*')
-        self.assertIn('eidaws-wfcatalog', [fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][0]['name'],
-                                           fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][1]['name']],
+        self.assertIn('eidaws-wfcatalog',
+                      [svc['name'] for svc in fdsnresult['datacenters'][0]['repositories'][0]['datasets'][0]['services']],
                       'WFCatalog name not found for GE.*.*.*')
-        self.assertIn('fdsnws-station', [fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][0]['name'],
-                                         fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services'][1]['name']],
+        self.assertIn('fdsnws-station-1',
+                      [svc['name'] for svc in fdsnresult['datacenters'][0]['repositories'][0]['datasets'][0]['services']],
                       'StationWS name not found for GE.*.*.*')
 
     def testDS_GE(self):
