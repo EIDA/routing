@@ -1367,6 +1367,9 @@ class RoutingCache(object):
         # Dictionary with list of stations inside each virtual network
         self.vnTable = dict()
 
+        # Dictionary with list of data centres
+        self.eidaDCs = list()
+
         if self.routingFile is not None:
             self.logs.info('Wait until the RoutingCache is updated...')
             self.update()
@@ -1898,7 +1901,7 @@ class RoutingCache(object):
         try:
             self.logs.debug(self.configFile)
             with open(self.configFile, encoding='utf-8') as c:
-                config.readfp(c)
+                config.read_file(c)
 
             if 'synchronize' in config.options('Service'):
                 synchroList = config.get('Service', 'synchronize')
@@ -1929,6 +1932,9 @@ class RoutingCache(object):
         except Exception:
             ptRT = addroutes(self.routingFile, allowOverlaps=allowOverlaps)
             ptVN = addvirtualnets(self.routingFile)
+            self.eidaDCs = list()
+            self.eidaDCs.append(json.load(open(replacelast(self.routingFile, '.xml', '.json'))))
+
             # Loop for the data centres which should be integrated
             for line in synchroList.splitlines():
                 if not len(line):
