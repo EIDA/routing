@@ -132,7 +132,7 @@ class RouteCacheTests(unittest.TestCase):
         expURL_DS = 'https://geofon.gfz-potsdam.de/fdsnws/dataselect/1/'
         expURL_ST = 'https://geofon.gfz-potsdam.de/fdsnws/station/1/'
         result = self.rc.getRoute(Stream('GE', '*', '*', '*'), TW(None, None), service='dataselect,station')
-        fdsnresult = FDSNRules(result)
+        fdsnresult = FDSNRules(result, self.rc.eidaDCs)
         self.assertIsInstance(fdsnresult, FDSNRules,
                               'A FDSNRules object was expected!')
         self.assertEqual(len(fdsnresult['datacenters'][0]['repositories'][0]['services']), 4,
@@ -176,7 +176,7 @@ class RouteCacheTests(unittest.TestCase):
         """Dataselect AND Station AND WFCatalog GE.*.*.* in FDSN format"""
 
         result = self.rc.getRoute(Stream('GE', '*', '*', '*'), TW(None, None), service='dataselect,wfcatalog,station')
-        fdsnresult = FDSNRules(result)
+        fdsnresult = FDSNRules(result, self.rc.eidaDCs)
         self.assertIsInstance(fdsnresult, FDSNRules,
                               'A FDSNRules object was expected!')
         self.assertEqual(len(fdsnresult['datacenters'][0]['repositories'][0]['timeseriesRouting'][0]['services']), 0,
@@ -280,8 +280,10 @@ class RouteCacheTests(unittest.TestCase):
         expURL = 'https://geofon.gfz-potsdam.de/fdsnws/dataselect/1/query'
         startD = datetime.datetime(2010, 1, 1)
         result = self.rc.getRoute(Stream('GE', '*', '*', '*'), TW(startD, None))
+        print(type(result))
         self.assertIsInstance(result, RequestMerge,
                               'A RequestMerge object was expected!')
+        print(len(result))
         self.assertEqual(len(result), 1,
                          'Wrong number of data centers for GE.*.*.*!')
         self.assertEqual(result[0]['url'], expURL,
