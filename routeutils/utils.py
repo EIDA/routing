@@ -1155,6 +1155,13 @@ def addroutes(filename: str, **kwargs) -> dict:
                         except Exception:
                             endD = None
 
+                        # Check that the time window is reasonable
+                        if (startD is not None) and (endD is not None) and (startD > endD):
+                            logs.error('Starttime is later than the endtime! %s.%s %s %s' % (networkCode,
+                                                                                             stationCode,
+                                                                                             startD, endD))
+                            continue
+
                         # Extract the priority
                         try:
                             priority = att.get('priority', '99')
