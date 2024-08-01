@@ -133,6 +133,14 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
     stationTable = dict()
     cachestations(ptRT, stationTable)
 
+    result = dict()
+    for st in stationTable['dataselect']:
+        try:
+            result[st.n] += 1
+        except KeyError:
+            result[st.n] = 1
+    pprint(result)
+
     # If in DEBUG logging level
     if logs.getEffectiveLevel() <= logging.DEBUG:
         # pprint(ptRT)
