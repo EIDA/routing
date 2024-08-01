@@ -133,7 +133,14 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
     stationTable = dict()
     cachestations(ptRT, stationTable)
 
-    pprint([(dc, len(stationTable[dc][st])) for dc in stationTable for st in stationTable[dc]])
+    result = dict()
+    for dc in stationTable:
+        for st in stationTable[dc]:
+            try:
+                result[dc] += len(stationTable[dc][st])
+            except KeyError:
+                result[dc] = len(stationTable[dc][st])
+    pprint(result)
 
     # If in DEBUG logging level
     if logs.getEffectiveLevel() <= logging.DEBUG:
