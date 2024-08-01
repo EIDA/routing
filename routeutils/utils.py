@@ -19,6 +19,7 @@ import os
 import datetime
 import fnmatch
 import json
+import pprint
 import xml.etree.cElementTree as ET
 from time import sleep
 from collections import namedtuple
@@ -1970,6 +1971,14 @@ class RoutingCache(object):
             # Set here self.stationtable
             self.stationTable = dict()
             cachestations(ptRT, self.stationTable)
+
+            result = dict()
+            for st in self.stationTable['dataselect']:
+                try:
+                    result[st.n] += 1
+                except KeyError:
+                    result[st.n] = 1
+            pprint.pprint(result)
 
             with open(binFile, 'wb') \
                     as finalRoutes:
