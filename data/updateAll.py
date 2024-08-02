@@ -159,7 +159,6 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
 
 
 def main():
-    # FIXME logLevel must be used via argparser
     # Check verbosity in the output
     msg = 'Get EIDA routing configuration and export it to the FDSN-WS style.'
     parser = argparse.ArgumentParser(description=msg)

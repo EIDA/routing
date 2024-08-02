@@ -1277,12 +1277,10 @@ def addremote(filename: str, url: str, method: str = 'localconfig'):
             u.close()
 
     except URLError as e:
-        logs.warning('The URL does not seem to be a valid Routing Service')
         if hasattr(e, 'reason'):
-            logs.warning('%s/%s - Reason: %s\n' % (url, method, e.reason))
+            logs.warning('URL non valid: %s/%s - Reason: %s' % (url, method, e.reason))
         elif hasattr(e, 'code'):
-            logs.warning('The server couldn\'t fulfill the request.')
-            logs.warning('Error code: %s\n', e.code)
+            logs.warning('URL non valid: Error code: %s', e.code)
         logs.warning('Retrying with a static configuration file')
 
         # TODO Think a way to do this better
@@ -1308,10 +1306,9 @@ def addremote(filename: str, url: str, method: str = 'localconfig'):
                 u.close()
         except URLError as e:
             if hasattr(e, 'reason'):
-                logs.error('%s - Reason: %s\n' % (url, e.reason))
+                logs.error('URL non valid: %s - Reason: %s' % (url, e.reason))
             elif hasattr(e, 'code'):
-                logs.error('The server couldn\'t fulfill the request.')
-                logs.error('Error code: %s\n', e.code)
+                logs.error('URL non valid: Error code: %s', e.code)
             # I have to return because there is no data. Otherwise, the old
             # data will be removed (see below).
             return
