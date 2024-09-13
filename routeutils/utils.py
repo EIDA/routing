@@ -778,9 +778,7 @@ def getStationCache(st: Stream, rt: Route) -> List[Station]:
             result.append(Station(lsplit[1], float(lsplit[2]),
                           float(lsplit[3]), start, endt))
         except Exception:
-            logging.error('Error trying to add station: (%s, %s, %s, %s, %s)' %
-                          (lsplit[1], lsplit[2], lsplit[3], lsplit[6],
-                           lsplit[7]))
+            logging.error('Error trying to add station with this line (%s)' % (lsplit,))
     # print(result)
     if not len(result):
         logging.warning('No stations found for streams %s in %s' %
