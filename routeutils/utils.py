@@ -746,9 +746,10 @@ def getStationCache(st: Stream, rt: Route) -> List[Station]:
 
     logging.debug(query)
 
-    # FIXME INGV must fix their firewall rules!
-    if 'ingv.it' in query:
-        sleep(0.1)
+    # TODO Check that INGV works again without this sleep command
+    # INGV must fix their firewall rules!
+    # if 'ingv.it' in query:
+    #     sleep(0.1)
 
     req = ul.Request(query)
     try:
