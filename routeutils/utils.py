@@ -34,6 +34,9 @@ from typing import List
 from typing import Tuple
 
 
+__version__ = "1.2.2"
+
+
 class TW(namedtuple('TW', ['start', 'end'])):
     pass
 
@@ -746,12 +749,9 @@ def getStationCache(st: Stream, rt: Route) -> List[Station]:
 
     logging.debug(query)
 
-    # TODO Check that INGV works again without this sleep command
-    # INGV must fix their firewall rules!
-    # if 'ingv.it' in query:
-    #     sleep(0.1)
-
     req = ul.Request(query)
+    # Customize the default User-Agent header value:
+    req.add_header('User-Agent', 'Routing Service/' + __version__)
     try:
         u = ul.urlopen(req, timeout=15)
         # What is read has to be decoded in python3
@@ -1254,6 +1254,8 @@ def addremote(filename: str, url: str, method: str = 'localconfig'):
         if url.startswith('http://') or url.startswith('https://'):
             # Prepare Request
             req = ul.Request(url + '/%s' % method)
+            # Customize the default User-Agent header value:
+            req.add_header('User-Agent', 'Routing Service/' + __version__)
             u = ul.urlopen(req)
         else:
             u = open(url, 'r')
@@ -1288,6 +1290,8 @@ def addremote(filename: str, url: str, method: str = 'localconfig'):
 
         # Prepare Request without the "localconfig" method
         req = ul.Request(url)
+        # Customize the default User-Agent header value:
+        req.add_header('User-Agent', 'Routing Service/' + __version__)
         try:
             u = ul.urlopen(req)
 
