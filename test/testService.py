@@ -409,7 +409,7 @@ class RouteCacheTests(unittest.TestCase):
             msg = 'Components of the version number seem not to be integers.'
             self.assertEqual(1, 0, msg)
         # Check for exact version
-        self.assertEqual(components, [1, 2, 2], 'Version is not 1.2.2 !')
+        self.assertEqual(components, [1, 2, 3], 'Version is not 1.2.3 !')
 
     def test_issue_63(self):
         """Query without start and endtime via POST method."""

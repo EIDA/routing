@@ -34,7 +34,7 @@ from typing import List
 from typing import Tuple
 
 
-__version__ = "1.2.2"
+__version__ = "1.2.3"
 
 
 class TW(namedtuple('TW', ['start', 'end'])):

@@ -1,7 +1,7 @@
 openapi: 3.0.0
 
 info:
-  version: 1.2.2
+  version: 1.2.3
   title: Routing Service API
   description: API specification of the Routing Service
   license:
