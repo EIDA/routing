@@ -20,7 +20,6 @@ import datetime
 import fnmatch
 import json
 import xml.etree.cElementTree as ET
-from time import sleep
 from collections import namedtuple
 import logging
 from copy import deepcopy
