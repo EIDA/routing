@@ -12,6 +12,18 @@
         </response>
       </method>
     </resource>
+    <resource path="globalconfig">
+      <request>
+        <param name="format" type="xsd:string">
+          <option value="fdsn"/>
+        </param>
+      </request>
+      <method name="GET">
+        <response>
+          <representation mediaType="application/json"/>
+        </response>
+      </method>
+    </resource>
     <resource path="version">
       <method name="GET">
         <response>
