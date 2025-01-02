@@ -39,10 +39,16 @@ from routeutils.utils import RoutingException
 from routeutils.utils import str2date
 from routeutils.routing import lsNSLC
 from routeutils.routing import applyFormat
+from typing import Union
+from typing import List
 
 
-def getParam(parameters, names, default, csv=False):
-    """Read a parameter and return its value or a default value."""
+def getParam(parameters: Union[cgi.FieldStorage, dict], names: Union[list, set],
+             default: Union[str, None], csv=False) -> Union[str, List[str], None]:
+    """Read a parameter and return its value or a default value in case it is not found.
+
+    The csv parameter is used to split the value in case of multiple values separated by commas.
+    """
     for n in names:
         if n in parameters:
             if isinstance(parameters[n], list):
@@ -58,7 +64,7 @@ def getParam(parameters, names, default, csv=False):
     return result
 
 
-def makeQueryGET(parameters) -> RequestMerge:
+def makeQueryGET(parameters: Union[cgi.FieldStorage, dict]) -> RequestMerge:
     """Process a request made via a GET method."""
     global routes
 
