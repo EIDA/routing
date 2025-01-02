@@ -44,10 +44,11 @@ from typing import List
 
 
 def getParam(parameters: Union[cgi.FieldStorage, dict], names: Union[list, set],
-             default: Union[str, None], csv=False) -> Union[str, List[str], None]:
+             default: Union[str, None], csv: bool = False) -> Union[str, List[str], None]:
     """Read a parameter and return its value or a default value in case it is not found.
 
-    The csv parameter is used to split the value in case of multiple values separated by commas.
+    The csv parameter is used to split the value in case of multiple values separated by commas. This means
+    that the result will be a string if csv is False, and a list of string(s) if csv is True.
     """
     for n in names:
         if n in parameters:
@@ -58,6 +59,7 @@ def getParam(parameters: Union[cgi.FieldStorage, dict], names: Union[list, set],
     else:
         result = default
 
+    # WARNING This converts the result from a string to a list with a string(s) if "cvs" is True
     if csv:
         result = result.split(',')
 
@@ -88,10 +90,12 @@ def makeQueryGET(parameters: Union[cgi.FieldStorage, dict]) -> RequestMerge:
             raise WIClientError(msg)
 
     try:
+        # If CSV is True the result will be a list!
         net = getParam(parameters, ['net', 'network'], '*', csv=True)
         sta = getParam(parameters, ['sta', 'station'], '*', csv=True)
         loc = getParam(parameters, ['loc', 'location'], '*', csv=True)
         cha = getParam(parameters, ['cha', 'channel'], '*', csv=True)
+        # Here the result will be a string
         start = getParam(parameters, ['start', 'starttime'], None)
     except Exception as e:
         raise WIClientError(str(e))
@@ -103,6 +107,7 @@ def makeQueryGET(parameters: Union[cgi.FieldStorage, dict]) -> RequestMerge:
         msg = 'Error while converting starttime parameter.'
         raise WIClientError(msg)
 
+    # The result will be a string (not a list)
     endt = getParam(parameters, ['end', 'endtime'], None)
     try:
         if endt is not None:
@@ -139,6 +144,7 @@ def makeQueryGET(parameters: Union[cgi.FieldStorage, dict]) -> RequestMerge:
         msg = 'Error while converting the maxlongitude parameter.'
         raise WIClientError(msg)
 
+    # These two results will be strings
     ser = getParam(parameters, ['service'], 'dataselect').lower()
     aux = getParam(parameters, ['alternative'], 'false').lower()
     if aux == 'true':
@@ -149,6 +155,7 @@ def makeQueryGET(parameters: Union[cgi.FieldStorage, dict]) -> RequestMerge:
         msg = 'Wrong value passed in parameter "alternative"'
         raise WIClientError(msg)
 
+    # form will be a string
     form = getParam(parameters, ['format'], 'xml').lower()
 
     if alt and (form == 'get'):
