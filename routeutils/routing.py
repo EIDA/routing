@@ -20,13 +20,14 @@ any later version.
 import datetime
 import xml.etree.cElementTree as ET
 import json
+from routeutils.utils import date2str
 from .wsgicomm import WIClientError
 from .utils import RequestMerge
 from .utils import FDSNRules
 from typing import Tuple
 
 
-def _ConvertDictToXmlRecurse(parent, dictitem):
+def _ConvertDictToXmlRecurse(parent: ET.Element, dictitem):
     assert not isinstance(dictitem, list)
 
     if isinstance(dictitem, dict):
@@ -43,15 +44,17 @@ def _ConvertDictToXmlRecurse(parent, dictitem):
                 elem = ET.Element(tag)
                 parent.append(elem)
                 _ConvertDictToXmlRecurse(elem, child)
+    elif isinstance(dictitem, datetime.datetime):
+        parent.text = date2str(dictitem)
     else:
         parent.text = str(dictitem)
 
 
-def ConvertDictToXml(listdict):
+def ConvertDictToXml(listdict: RequestMerge) -> ET.Element:
     """Convert a list with dictionaries to an XML ElementTree Element.
 
-    :param listdict: Dictionaries
-    :type listdict: list
+    :param listdict: List of dictionaries
+    :type listdict: RequestMerge
     :returns: XML Tree with the dictionaries received as parameter.
     :rtype: xml.etree.cElementTree.Element
     """
@@ -100,7 +103,7 @@ def applyFormat(resultRM: RequestMerge, outFormat: str = 'xml') -> str:
         raise Exception('applyFormat expects a RequestMerge object!')
 
     if outFormat == 'json':
-        iterObj = json.dumps(resultRM, default=datetime.datetime.isoformat)
+        iterObj = json.dumps(resultRM, default=date2str)
         return iterObj
     elif outFormat == 'get':
         iterObj = []
