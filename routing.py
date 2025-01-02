@@ -411,7 +411,8 @@ def application(environ, start_response):
 
         except WIError as w:
             if isinstance(w, WIContentError) and 'nodata' in form:
-                retstatus = '%s %s' % (form['nodata'], HTTPStatus(int(form['nodata'])).phrase)
+                retcode = getParam(form, ['nodata'], '204')
+                retstatus = '%s %s' % (retcode, HTTPStatus(int(retcode)).phrase)
             else:
                 retstatus = w.status
             return send_error_response(retstatus, w.body, start_response)
