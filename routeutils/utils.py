@@ -911,7 +911,6 @@ def addvirtualnets(filename: str, **kwargs) -> dict:
                     vnCode = None
 
                 # Traverse through the sources
-                # for arcl in route.findall(namesp + 'dataselect'):
                 for stream in vnet:
                     # Extract the networkCode
                     msg = 'Only the * wildcard is allowed in virtual nets.'
@@ -1375,10 +1374,10 @@ class RoutingCache(object):
         # Save the logging object
         self.logs = logging.getLogger('RoutingCache')
 
-        # Arclink routing file in XML format
+        # Routing file in XML format
         self.routingFile = routingfile
 
-        # Arclink routing file in XML format
+        # Config file for the service
         self.configFile = config
 
         # Dictionary with all the routes
@@ -1423,7 +1422,7 @@ class RoutingCache(object):
     def localConfig(self, fmt: str = 'xml') -> str:
         """Return the local routing configuration.
 
-        :returns: Local routing information in Arclink-XML format
+        :returns: Local routing information in the old Arclink-XML format
         :rtype: str
 
         """
@@ -1795,7 +1794,6 @@ class RoutingCache(object):
                         vnCode = None
 
                     # Traverse through the sources
-                    # for arcl in route.findall(namesp + 'dataselect'):
                     for stream in vnet:
                         # Extract the networkCode
                         msg = 'Only the * wildcard is allowed in virtual nets.'
