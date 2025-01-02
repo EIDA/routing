@@ -79,6 +79,73 @@ such as `/var/www/eidaws/routing/1/` ::
 This location will depend on the location of the root (in the file system)
 for your web server.
 
+.. _oper_installation-on-uwsgi:
+
+Installation on UWSGI
+---------------------
+
+To deploy the EIDA Routing Service on an UWSGI web server:
+
+1. Extract the package in the desired directory.
+   In these instructions we assume this directory is `/var/www/eidaws/routing/1/`.
+
+   * If you downloaded the package from the GEOFON website, unpack the files
+     into the chosen directory. (See Download_ above.)
+
+   * If you want to get the package from Github, use the following commands: ::
+
+       $ cd /var/www/eidaws/routing
+       $ git clone https://github.com/EIDA/routing.git 1
+       $ cd 1
+
+#. Deploy UWSGI following the instructions at https://uwsgi-docs.readthedocs.io/en/latest/Install.html
+
+   For example, for **Ubuntu/Mint** that would be ::
+
+       $ sudo apt-get install build-essential python3
+       $ sudo apt-get install apt-get install python3-dev
+       $ pip3 install uwsgi
+
+#. Change into the root directory of your installation and copy `routing.cfg.sample` to `routing.cfg`,
+   or make a symbolic link ::
+
+      $ cd /var/www/eidaws/routing/1
+      $ cp routing.cfg.sample routing.cfg
+
+#. Edit `routing.wsgi` and check that the paths there reflect the ones selected for your installation.
+
+#. Edit `routing.cfg` and be sure to configure everything correctly. This is discussed under "`Configuration Options`_" below.
+
+#. Start/restart the UWSGI web server ::
+
+      $ uwsgi --http :9000 --mount /eidaws/routing/1=/var/www/eidaws/routing/1/routing.wsgi
+
+#. Get initial metadata in the `data` directory. To do that you have to feed the system with
+   some routes. Edit by hand (or copy from some other place) a file with your local
+   streams and save them into `data/routing.xml`. Also the data centre information in `data/routing.json`.
+   Once the file contains all routes available change into the `data` directory and run the
+   ``updateAll.py`` script there. ::
+
+      $ cd /var/www/eidaws/routing/1/data
+      $ ./updateAll.py -l DEBUG
+
+   If you don't specify any parameters to the script, the information needed will be read from
+   the configuration file at the default location `../routing.cfg`. You can use the switch `-h`
+   to see the parameters you can use. ::
+
+      $ ./updateAll.py -h
+      usage: updateAll.py [-h] [-l {CRITICAL,ERROR,WARNING,INFO,DEBUG}] [-s SERVER]
+                          [-c CONFIG]
+
+      Get EIDA routing configuration and "export" it to the FDSN-WS style.
+
+      optional arguments:
+        -h, --help            show this help message and exit
+        -l {CRITICAL,ERROR,WARNING,INFO,DEBUG}, --loglevel {CRITICAL,ERROR,WARNING,INFO,DEBUG}
+                              Verbosity in the output.
+        -c CONFIG, --config CONFIG
+                              Config file to use.
+
 .. _oper_installation-on-apache:
 
 Installation on Apache
@@ -95,7 +162,7 @@ To deploy the EIDA Routing Service on an Apache2 web server using `mod_wsgi`:
    * If you want to get the package from Github, use the following commands: ::
 
        $ cd /var/www/eidaws/routing
-       $ git clone https://github.com/GEOFON/routing.git 1
+       $ git clone https://github.com/EIDA/routing.git 1
        $ cd 1
 
 #. Enable `mod_wsgi` for Python3. For openSUSE, add 'wsgi' to the list of modules
