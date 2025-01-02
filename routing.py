@@ -21,7 +21,7 @@ import datetime
 import logging
 import configparser
 import json
-
+from http import HTTPStatus
 from routeutils.wsgicomm import WIContentError
 from routeutils.wsgicomm import WIClientError
 from routeutils.wsgicomm import WIError
@@ -74,7 +74,7 @@ def makeQueryGET(parameters) -> RequestMerge:
                      'minlon', 'minlongitude',
                      'maxlon', 'maxlongitude',
                      'service', 'format',
-                     'alternative']
+                     'alternative', 'nodata']
 
     for param in parameters:
         if param not in allowedParams:
@@ -181,7 +181,7 @@ def makeQueryPOST(postText) -> RequestMerge:
     global routes
 
     # These are the parameters accepted appart from N.S.L.C
-    extraParams = ['format', 'service', 'alternative',
+    extraParams = ['format', 'service', 'alternative', 'nodata',
                    'minlat', 'minlatitude',
                    'maxlat', 'maxlatitude',
                    'minlon', 'minlongitude',
@@ -410,7 +410,12 @@ def application(environ, start_response):
                 return send_plain_response(status, iterObj, start_response)
 
         except WIError as w:
-            return send_error_response(w.status, w.body, start_response)
+            if isinstance(w, WIContentError) and 'nodata' in form:
+                retcode = getParam(form, ['nodata'], '204')
+                retstatus = '%s %s' % (retcode, HTTPStatus(int(retcode)).phrase)
+            else:
+                retstatus = w.status
+            return send_error_response(retstatus, w.body, start_response)
 
     elif fname == 'dc':
         try:
