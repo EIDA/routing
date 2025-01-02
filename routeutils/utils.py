@@ -710,6 +710,22 @@ def str2date(dstr: str) -> datetime.datetime:
     return datetime.datetime(*map(int, dateparts))
 
 
+def date2str(dt: datetime.datetime) -> str:
+    """Transform a datetime to a string.
+
+    :param dt: A datetime to be serialized.
+    :type dt: datetime
+    :return: A datetime in isoformat representation.
+    :rtype: str
+    """
+    assert isinstance(dt, datetime.datetime)
+
+    # Add explicitly the UTC timezone
+    aux2 = dt.replace(tzinfo=datetime.timezone.utc)
+    # Use Z notation
+    return aux2.isoformat().replace("+00:00", "Z")
+
+
 def checkOverlap(str1: Stream, routelist: list, str2: Stream, route: Route) -> bool:
     """Check overlap of routes from stream str1 and a route from str2.
 
