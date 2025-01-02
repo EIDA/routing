@@ -2,7 +2,7 @@
 # Base URL of the current Routing Service
 baseURL = http://mydomain.dom/eidaws/routing/1
 # String that must be returned when the method "config" is called
-info = Routing information from the Arclink Server at GEOFON.
+info = Routing information from EIDA data centres.
    All the routes related to the data in EIDA are supposed to be available here.
 # Verbosity of the logging system
 # Possible values are:
@@ -16,6 +16,4 @@ verbosity = INFO
 synchronize = LOCAL, file:data/routing.sample.xml
 
 # Can overlapping routes be saved in the routing table?
-# If yes, the Arclink-inventory.xml must be used to expand the routes and
-# produce a coherent response.
 allowoverlap = false
