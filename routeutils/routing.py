@@ -44,6 +44,8 @@ def _ConvertDictToXmlRecurse(parent: ET.Element, dictitem):
                 elem = ET.Element(tag)
                 parent.append(elem)
                 _ConvertDictToXmlRecurse(elem, child)
+    elif isinstance(dictitem, datetime.datetime):
+        parent.text = date2str(dictitem)
     else:
         parent.text = str(dictitem)
 
