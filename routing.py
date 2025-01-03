@@ -331,12 +331,14 @@ def application(environ, start_response):
                                    start_response)
 
     try:
-        outForm = 'xml'
-
         if environ['REQUEST_METHOD'] == 'GET':
             form = cgi.FieldStorage(fp=environ['wsgi.input'], environ=environ)
-            if 'format' in form:
-                outForm = form['format'].value.lower()
+            try:
+                outForm = getParam(form, ['format'], default='xml').lower()
+            except Exception:
+                message = "Error while parsing parameter 'format': %s" % str(form['format'])
+                return send_error_response("400 Bad Request", message, start_response)
+
         elif environ['REQUEST_METHOD'] == 'POST':
             try:
                 length = int(environ.get('CONTENT_LENGTH', '0'))
