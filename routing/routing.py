@@ -95,6 +95,13 @@ class Cache(object):
 routingws = FastAPI()
 
 
+@routingws.get("/endpoints")
+async def rsendpoints():
+    routingcache = Cache()
+    result = routingcache.endpoints()
+    return result
+
+
 @routingws.get("/", response_class=HTMLResponse)
 async def rsroot():
     """Show a help page"""
@@ -129,9 +136,35 @@ async def rsapplicationwadl():
 @routingws.get("/localconfig", response_class=XMLResponse)
 async def rslocalconfig():
     """Show the local routes"""
-    with open('data/routing.xml') as fin:
-        lcpage = fin.read().encode()
-    return lcpage
+    routingcache = Cache()
+    result = routingcache.localConfig()
+    return XMLResponse(content=result, status_code=200)
+
+
+@routingws.get("/virtualnets", response_class=XMLResponse)
+async def rsvirtualnets():
+    """Show the virtual networks defined"""
+    routingcache = Cache()
+    result = routingcache.virtualNets()
+    return XMLResponse(content=result, status_code=200)
+
+
+@routingws.get("/globalconfig")
+async def rsglobalconfig(outform: Literal['fdsn']):
+    """Export all routes to FDSN"""
+    if outform != 'fdsn':
+        return
+    routingcache = Cache()
+    result = routingcache.globalConfig()
+    return JSONResponse(content=result, status_code=200)
+
+
+@routingws.get("/dc")
+async def rsdc():
+    """Show information about the data centre"""
+    with open(os.path.expanduser('~/routing/data/routing.json')) as fin:
+        dcpage = json.load(fin)
+    return JSONResponse(content=dcpage, status_code=200)
 
 
 def getParam(parameters: Union[cgi.FieldStorage, dict], names: Union[list, set],
