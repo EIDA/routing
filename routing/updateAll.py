@@ -31,17 +31,17 @@ from urllib.parse import urlparse
 sys.path.append('..')
 
 try:
-    from routeutils.utils import addremote
-    from routeutils.utils import addroutes
-    from routeutils.utils import addvirtualnets
-    from routeutils.utils import cachestations
-    from routeutils.utils import Route
-    from routeutils.utils import RoutingCache
-    from routeutils.utils import FDSNRules
-    from routeutils.utils import RequestMerge
-    from routeutils.utils import TW
-    from routeutils.utils import Stream
-    from routeutils.utils import replacelast
+    from routing.utils import addremote
+    from routing.utils import addroutes
+    from routing.utils import addvirtualnets
+    from routing.utils import cachestations
+    from routing.utils import Route
+    from routing.utils import RoutingCache
+    from routing.utils import FDSNRules
+    from routing.utils import RequestMerge
+    from routing.utils import TW
+    from routing.utils import Stream
+    from routing.utils import replacelast
 except Exception:
     raise
 
