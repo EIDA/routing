@@ -26,14 +26,14 @@ import unittest
 here = os.path.dirname(__file__)
 sys.path.append(os.path.join(here, '..'))
 
-from routeutils.unittestTools import WITestRunner
-from routeutils.utils import RoutingCache
-from routeutils.utils import RequestMerge
-from routeutils.utils import FDSNRules
-from routeutils.utils import Stream
-from routeutils.utils import TW
-from routeutils.utils import GeoRectangle
-from routeutils.utils import RoutingException
+from routing.unittestTools import WITestRunner
+from routing.utils import RoutingCache
+from routing.utils import RequestMerge
+from routing.utils import FDSNRules
+from routing.utils import Stream
+from routing.utils import TW
+from routing.utils import GeoRectangle
+from routing.utils import RoutingException
 
 
 class RouteCacheTests(unittest.TestCase):

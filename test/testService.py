@@ -31,7 +31,7 @@ from urllib.error import HTTPError
 
 here = os.path.dirname(__file__)
 sys.path.append(os.path.join(here, '..'))
-from routeutils.unittestTools import WITestRunner
+from routing.unittestTools import WITestRunner
 
 
 class RouteCacheTests(unittest.TestCase):
