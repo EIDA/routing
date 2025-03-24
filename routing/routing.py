@@ -15,6 +15,11 @@ any later version.
 .. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
 """
 
+import uvicorn
+from fastapi import FastAPI
+from fastapi import Response
+from fastapi.responses import HTMLResponse
+from fastapi.responses import PlainTextResponse
 import os
 import cgi
 import datetime
@@ -22,25 +27,82 @@ import logging
 import configparser
 import json
 from http import HTTPStatus
-from routeutils.wsgicomm import WIContentError
-from routeutils.wsgicomm import WIClientError
-from routeutils.wsgicomm import WIError
-from routeutils.wsgicomm import send_plain_response
-from routeutils.wsgicomm import send_json_response
-from routeutils.wsgicomm import send_html_response
-from routeutils.wsgicomm import send_xml_response
-from routeutils.wsgicomm import send_error_response
-from routeutils.utils import Stream
-from routeutils.utils import TW
-from routeutils.utils import GeoRectangle
-from routeutils.utils import RequestMerge
-from routeutils.utils import RoutingCache
-from routeutils.utils import RoutingException
-from routeutils.utils import str2date
-from routeutils.routing import lsNSLC
-from routeutils.routing import applyFormat
+from routing import __version__
+from routing.wsgicomm import WIContentError
+from routing.wsgicomm import WIClientError
+from routing.wsgicomm import WIError
+from routing.wsgicomm import send_plain_response
+from routing.wsgicomm import send_json_response
+from routing.wsgicomm import send_html_response
+from routing.wsgicomm import send_xml_response
+from routing.wsgicomm import send_error_response
+from routing.basemodels import Stream
+from routing.basemodels import TW
+from routing.basemodels import GeoRectangle
+from routing.utils import RequestMerge
+from routing.utils import RoutingCache
+from routing.utils import RoutingException
+from routing.utils import str2date
+from routing.utils import lsNSLC
+from routing.utils import applyFormat
 from typing import Union
 from typing import List
+
+
+class XMLResponse(Response):
+    media_type = "application/xml"
+
+    def render(self, content) -> bytes:
+        return super().render(content)
+
+
+class Config(object):
+    """Class reading the configuration of the Routing Service. It is based in the pythonic implementation
+    of the Singleton design pattern."""
+    config = None
+
+    def __new__(cls):
+        if cls.config is None:
+            cfgfile = 'routing.cfg'
+            # Open configuration file
+            config = configparser.RawConfigParser()
+            config.read(cfgfile)
+
+            cls.config = dict()
+            # Read connection parameters
+            cls.config['baseURL'] = config.get('Service', 'baseURL')
+            cls.config['info'] = config.get('Service', 'info')
+            cls.config['allowoverlap'] = config.get('Service', 'allowoverlap', fallback=False)
+            cls.config['verbosity'] = config.get('Service', 'verbosity', fallback='INFO')
+
+            cls.config['synchronize'] = config.get('Service', 'synchronize', fallback=None)
+
+            logging.info('Configuration read: %s' % Config)
+
+
+routingws = FastAPI()
+
+
+@routingws.get("/", response_class=HTMLResponse)
+async def rsroot():
+    """Show a help page"""
+    with open('help.html') as fin:
+        htmlpage = fin.read().encode()
+    return htmlpage
+
+
+@routingws.get("/version", response_class=PlainTextResponse)
+async def rsversion():
+    """Return the version of the Routing Service"""
+    return __version__
+
+
+@routingws.get("/application.wadl", response_class=XMLResponse)
+async def rsapplicationwadl():
+    """Show a help page"""
+    with open('application.wadl') as fin:
+        awpage = fin.read().encode()
+    return awpage
 
 
 def getParam(parameters: Union[cgi.FieldStorage, dict], names: Union[list, set],
@@ -479,3 +541,17 @@ def application(environ, start_response):
         return send_plain_response('200 OK', text, start_response)
 
     raise Exception('This point should have never been reached!')
+
+
+def main():
+    uvicorn.run(
+        "routing:routingws",
+        host="0.0.0.0",
+        port=8000,
+        log_level="debug",
+        reload=True,
+    )
+
+
+if __name__ == "__main__":
+    main()
