@@ -14,18 +14,19 @@ any later version.
 
 .. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
 """
+import json
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi import Response
 from fastapi.responses import HTMLResponse
 from fastapi.responses import PlainTextResponse
+from fastapi.responses import JSONResponse
 import os
 import cgi
 import datetime
 import logging
 import configparser
-import json
 from http import HTTPStatus
 from routing import __version__
 from routing.wsgicomm import WIContentError
@@ -33,7 +34,6 @@ from routing.wsgicomm import WIClientError
 from routing.wsgicomm import WIError
 from routing.wsgicomm import send_plain_response
 from routing.wsgicomm import send_json_response
-from routing.wsgicomm import send_html_response
 from routing.wsgicomm import send_xml_response
 from routing.wsgicomm import send_error_response
 from routing.basemodels import Stream
@@ -47,6 +47,7 @@ from routing.utils import lsNSLC
 from routing.utils import applyFormat
 from typing import Union
 from typing import List
+from typing import Literal
 
 
 class XMLResponse(Response):
@@ -63,7 +64,7 @@ class Config(object):
 
     def __new__(cls):
         if cls.config is None:
-            cfgfile = 'routing.cfg'
+            cfgfile = os.path.expanduser('~/routing/routing.cfg')
             # Open configuration file
             config = configparser.RawConfigParser()
             config.read(cfgfile)
@@ -87,9 +88,9 @@ routingws = FastAPI()
 @routingws.get("/", response_class=HTMLResponse)
 async def rsroot():
     """Show a help page"""
-    with open('data/help.html') as fin:
+    with open(os.path.expanduser('~/routing/help.html')) as fin:
         htmlpage = fin.read().encode()
-    return htmlpage
+    return HTMLResponse(content=htmlpage, status_code=200)
 
 
 @routingws.get("/version", response_class=PlainTextResponse)
@@ -108,9 +109,11 @@ async def rsinfo():
 @routingws.get("/application.wadl", response_class=XMLResponse)
 async def rsapplicationwadl():
     """Show a help page"""
-    with open('data/application.wadl') as fin:
-        awpage = fin.read().encode()
-    return awpage
+    cfg = Config()
+    tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+    with open(os.path.expanduser('~/routing/application.wadl')) as fin:
+        awpage = fin.read() % (cfg['baseURL'], tomorrow)
+    return XMLResponse(content=awpage.encode(), status_code=200)
 
 
 @routingws.get("/localconfig", response_class=XMLResponse)
@@ -383,25 +386,16 @@ routes = None
 
 
 def application(environ, start_response):
-    """Main WSGI handler. Process requests and calls proper functions."""
-    global routes
-    fname = environ['PATH_INFO']
-
-    config = configparser.RawConfigParser()
-    here = os.path.dirname(__file__)
-    config.read(os.path.join(here, 'routing.cfg'))
-    verbo = config.get('Service', 'verbosity')
-    baseURL = config.get('Service', 'baseURL')
     # Warning is the default value
-    verboNum = getattr(logging, verbo.upper(), 30)
-    logging.info('Verbosity configured with %s' % verboNum)
-    logging.basicConfig(level=verboNum)
+    # verboNum = getattr(logging, verbo.upper(), 30)
+    # logging.info('Verbosity configured with %s' % verboNum)
+    # logging.basicConfig(level=verboNum)
 
     # Among others, this will filter wrong function names,
     # but also the favicon.ico request, for instance.
-    if fname is None:
-        raise WIClientError('Method name not recognized!')
-        # return send_html_response(status, 'Error! ' + status, start_response)
+    # if fname is None:
+    #     raise WIClientError('Method name not recognized!')
+    #     # return send_html_response(status, 'Error! ' + status, start_response)
 
     if len(environ['QUERY_STRING']) > 1000:
         return send_error_response("414 Request URI too large",
@@ -453,39 +447,14 @@ def application(environ, start_response):
         return send_error_response("400 Bad Request", str(e), start_response)
 
     # Check whether the function called is implemented
-    implementedFunctions = ['query', 'application.wadl', 'localconfig',
-                            'globalconfig', 'version', 'info', '',
-                            'virtualnets', 'endpoints', 'dc']
-
-    if routes is None:
-        # Add routing cache here, to be accessible to all modules
-        routesFile = os.path.join(here, 'data', 'routing.xml')
-        configFile = os.path.join(here, 'routing.cfg')
-        routes = RoutingCache(routesFile, configFile)
+    implementedFunctions = ['query',
+                            'endpoints']
 
     fname = environ['PATH_INFO'].split('/')[-1]
     if fname not in implementedFunctions:
         return send_error_response("400 Bad Request",
                                    'Function "%s" not implemented.' % fname,
                                    start_response)
-
-    if fname == '':
-        # here = os.path.dirname(__file__)
-        helpFile = os.path.join(here, 'help.html')
-        with open(helpFile, 'r') as helpHandle:
-            iterObj = helpHandle.read()
-            status = '200 OK'
-            return send_html_response(status, iterObj, start_response)
-
-    elif fname == 'application.wadl':
-        # here = os.path.dirname(__file__)
-        appWadl = os.path.join(here, 'application.wadl')
-        with open(appWadl, 'r') \
-                as appFile:
-            tomorrow = datetime.date.today() + datetime.timedelta(days=1)
-            iterObj = appFile.read() % (baseURL, tomorrow)
-            status = '200 OK'
-            return send_xml_response(status, iterObj, start_response)
 
     elif fname == 'query':
         makeQuery = globals()['makeQuery%s' % environ['REQUEST_METHOD']]
@@ -510,25 +479,6 @@ def application(environ, start_response):
                 retstatus = w.status
             return send_error_response(retstatus, w.body, start_response)
 
-    elif fname == 'dc':
-        try:
-            with open(os.path.join(here, 'data', 'routing.json')) as fin:
-                dc = json.load(fin)
-        except Exception:
-            dc = dict()
-
-        return send_json_response('200 OK', dc, start_response)
-
-    elif fname == 'endpoints':
-        result = routes.endpoints()
-        return send_plain_response('200 OK', result, start_response)
-
-    elif fname == 'localconfig':
-        result = routes.localConfig()
-        if outForm == 'xml':
-            return send_xml_response('200 OK', result,
-                                     start_response)
-
     elif fname == 'globalconfig':
         result = routes.globalConfig()
         if outForm == 'fdsn':
@@ -538,23 +488,6 @@ def application(environ, start_response):
         # Only FDSN format is supported for the time being
         text = 'Only format=FDSN is supported'
         return send_error_response("400 Bad Request", text, start_response)
-
-    elif fname == 'virtualnets':
-        result = routes.virtualNets()
-        return send_json_response('200 OK', result,
-                                  start_response)
-
-    elif fname == 'version':
-        text = "1.2.3"
-        return send_plain_response('200 OK', text, start_response)
-
-    elif fname == 'info':
-        config = configparser.RawConfigParser()
-        # here = os.path.dirname(__file__)
-        config.read(os.path.join(here, 'routing.cfg'))
-
-        text = config.get('Service', 'info')
-        return send_plain_response('200 OK', text, start_response)
 
     raise Exception('This point should have never been reached!')
 
