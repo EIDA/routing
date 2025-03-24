@@ -82,6 +82,16 @@ class Config(object):
         return cls.config
 
 
+class Cache(object):
+    routes = None
+
+    def __new__(cls):
+        if cls.routes is None:
+            cls.routes = RoutingCache(os.path.expanduser('~/routing/data/routing.xml'),
+                                      os.path.expanduser('~/routing/routing.cfg'))
+        return cls.routes
+
+
 routingws = FastAPI()
 
 
