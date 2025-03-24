@@ -39,7 +39,6 @@ from routing.basemodels import Route
 from routing import __version__
 
 
-
 class RequestMerge(list):
     pass
 
@@ -820,10 +819,10 @@ def addroutes(filename: str, **kwargs) -> dict:
                             priority = 99
 
                         # Append the network to the list of networks
-                        st = Stream(networkCode, stationCode, locationCode,
-                                    streamCode)
-                        tw = TW(startD, endD)
-                        rt = Route(service, address, tw, priority)
+                        st = Stream(n=networkCode, s=stationCode, l=locationCode,
+                                    c=streamCode)
+                        tw = TW(start=startD, end=endD)
+                        rt = Route(service=service, address=address, tw=tw, priority=priority)
 
                         try:
                             # Check the overlap between the routes to import
