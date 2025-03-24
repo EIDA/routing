@@ -8,42 +8,31 @@ the Free Software Foundation, either version 3 of the License, or
 any later version.
 
    :Copyright:
-       2014-2023 Helmholtz Centre Potsdam GFZ German Research Centre for Geosciences, Potsdam, Germany
+       2014-2025 GFZ Helmholtz Centre for Geosciences, Potsdam, Germany
    :License:
        GPLv3
    :Platform:
        Linux
 
-.. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
+.. moduleauthor:: Javier Quinteros <javier@gfz.de>, GEOFON, GFZ Potsdam
 """
 
 import os
-import sys
 import argparse
 import logging
-import configparser
 import pickle
 import json
 import datetime
 from pprint import pprint
 from urllib.parse import urlparse
-
-sys.path.append('..')
-
-try:
-    from routing.utils import addremote
-    from routing.utils import addroutes
-    from routing.utils import addvirtualnets
-    from routing.utils import cachestations
-    from routing.utils import Route
-    from routing.utils import RoutingCache
-    from routing.utils import FDSNRules
-    from routing.utils import RequestMerge
-    from routing.utils import TW
-    from routing.utils import Stream
-    from routing.utils import replacelast
-except Exception:
-    raise
+from routing.utils import addremote
+from routing.utils import addroutes
+from routing.utils import addvirtualnets
+from routing.utils import cachestations
+from routing.utils import FDSNRules
+from routing.utils import RequestMerge
+from routing.utils import replacelast
+from routing.routing import Config
 
 
 def mergeRoutes(fileroutes: str, synchrolist: str, allowOverlaps: bool = False):
@@ -85,28 +74,28 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
                 raise Exception('File must be called "routing-%s.xml"' % dcid)
         else:
             try:
-                addremote('./routing-%s.xml' % dcid.strip(), url.strip())
-                addremote('./routing-%s.json' % dcid.strip(), url.strip(), method='dc')
+                addremote(os.path.expanduser('~/routing/data/routing-%s.xml' % dcid.strip()), url.strip())
+                addremote(os.path.expanduser('~/routing/data/routing-%s.json' % dcid.strip()), url.strip(), method='dc')
             except Exception:
                 msg = 'Failure updating routing information from %s (%s)' % \
                       (dcid, url)
                 logs.error(msg)
 
-        if os.path.exists('./routing-%s.xml' % dcid.strip()):
+        if os.path.exists(os.path.expanduser('~/routing/data/routing-%s.xml' % dcid.strip())):
             # FIXME addroutes should return no Exception ever and skip a
             # problematic file returning a coherent version of the routes
             print('Adding REMOTE %s' % dcid)
-            ptRT = addroutes('./routing-%s.xml' % dcid.strip(),
+            ptRT = addroutes(os.path.expanduser('~/routing/data/routing-%s.xml' % dcid.strip()),
                              routingtable=ptRT, allowOverlaps=allowOverlaps)
-            ptVN = addvirtualnets('./routing-%s.xml' % dcid.strip(),
+            ptVN = addvirtualnets(os.path.expanduser('~/routing/data/routing-%s.xml' % dcid.strip()),
                                   vnTable=ptVN)
 
-        if os.path.exists('./routing-%s.json' % dcid.strip()):
+        if os.path.exists(os.path.expanduser('~/routing/data/routing-%s.json' % dcid.strip())):
             print('Adding REMOTE data center information from %s' % dcid)
-            eidaDCs.append(json.load(open('./routing-%s.json' % dcid.strip())))
+            eidaDCs.append(json.load(open(os.path.expanduser('~/routing/data/routing-%s.json' % dcid.strip()))))
 
     try:
-        os.remove('./%s.bin' % fileroutes)
+        os.remove(os.path.expanduser('~/routing/data/%s.bin' % fileroutes))
     except Exception:
         pass
 
@@ -148,7 +137,7 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
         pprint(ptVN)
         pprint(eidaDCs)
 
-    with open('./%s.bin' % fileroutes, 'wb') as finalRoutes:
+    with open(os.path.expanduser('~/routing/data/%s.bin') % fileroutes, 'wb') as finalRoutes:
         pickle.dump((ptRT, stationTable, ptVN, eidaDCs), finalRoutes)
         logs.info('Routes in main Routing Table: %s\n' % len(ptRT))
         logs.info('Stations cached: %s\n' %
@@ -166,20 +155,16 @@ def main():
                         help='Verbosity in the output.',
                         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO',
                                  'DEBUG'])
-    # TODO Add type=argparse.FileType
-    parser.add_argument('-c', '--config',
-                        help='Config file to use.',
-                        default='../routing.cfg')
     args = parser.parse_args()
 
-    config = configparser.RawConfigParser()
+    config = Config()
     # Command line parameter has priority
     try:
         verbo = getattr(logging, args.loglevel)
     except Exception:
         # If no command-line parameter then read from config file
         try:
-            verbo = config.get('Service', 'verbosity')
+            verbo = config['verbosity']
             verbo = getattr(logging, verbo)
         except Exception:
             # Otherwise, default value
@@ -190,26 +175,14 @@ def main():
     logs = logging.getLogger('getEIDAconfig')
     logs.setLevel(verbo)
 
-    if not len(config.read(args.config)):
-        logs.error('Configuration file %s could not be read' % args.config)
-
     print('Skipping routing information. Config file does not allow to '
           + 'overwrite the information. (%s)' % args.config)
-
     try:
         os.remove('routing-tmp.xml.bin')
     except Exception:
         pass
 
-    # Otherwise, default value
-    synchroList = ''
-    try:
-        if 'synchronize' in config.options('Service'):
-            synchroList = config.get('Service', 'synchronize')
-    except Exception:
-        pass
-
-    mergeRoutes('routing.xml', synchroList)
+    mergeRoutes(os.path.expanduser('~/routing/data/routing.xml'), config['synchronize'])
 
 
 if __name__ == '__main__':

@@ -15,7 +15,6 @@ any later version.
 .. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
 """
 import json
-
 import uvicorn
 from fastapi import FastAPI
 from fastapi import Response
