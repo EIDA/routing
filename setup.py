@@ -136,5 +136,6 @@ setup(
     entry_points='''
         [console_scripts]
         routingsvc=routing.routing:main
+        routing-update=routing.routingupdate:main
     '''
 )
