@@ -6,13 +6,13 @@ the Free Software Foundation, either version 3 of the License, or
 any later version.
 
    :Copyright:
-       2014-2023 Helmholtz Centre Potsdam GFZ German Research Centre for Geosciences, Potsdam, Germany
+       2014-2025 GFZ Helmholtz Centre for Geosciences, Potsdam, Germany
    :License:
        GPLv3
    :Platform:
        Linux
 
-.. moduleauthor:: Javier Quinteros <javier@gfz-potsdam.de>, GEOFON, GFZ Potsdam
+.. moduleauthor:: Javier Quinteros <javier@gfz.de>, GEOFON, GFZ Potsdam
 """
 
 import os
@@ -20,7 +20,7 @@ import datetime
 import fnmatch
 import json
 import xml.etree.cElementTree as ET
-from collections import namedtuple
+from typing import Union
 import logging
 from copy import deepcopy
 import pickle
@@ -28,290 +28,15 @@ import configparser
 import urllib.request as ul
 from urllib.parse import urlparse
 from urllib.error import URLError
-from numbers import Number
 from typing import List
 from typing import Tuple
+from routing.basemodels import Station
+from routing.basemodels import GeoRectangle
+from routing.basemodels import TW
+from routing.basemodels import Stream
+from routing.basemodels import Route
+from routing import __version__
 
-
-__version__ = "1.2.3"
-
-
-class TW(namedtuple('TW', ['start', 'end'])):
-    pass
-
-
-class TW(namedtuple('TW', ['start', 'end'])):
-    """Namedtuple with methods to perform calculations on timewindows.
-
-    Attributes are:
-           start: Start datetime
-           end: End datetime
-
-    :platform: Any
-
-    """
-
-    __slots__ = ()
-
-    # This method works with the "in" clause or with the "overlap" method
-    def __contains__(self, othertw: TW) -> bool:
-        """Wrap of the overlap method to allow  the use of the "in" clause.
-
-        :param otherTW: timewindow which should be checked for overlaps
-        :type otherTW: :class:`~TW`
-        :returns: Value specifying whether there is an overlap between this
-            timewindow and the one in the parameter
-        :rtype: Bool
-
-        """
-        return self.overlap(othertw)
-
-    def overlap(self, othertw: TW) -> bool:
-        """Check if the othertw is contained in this :class:`~TW`.
-
-        :param othertw: timewindow which should be checked for overlapping
-        :type othertw: :class:`~TW`
-        :returns: Value specifying whether there is an overlap between this
-                  timewindow and the one in the parameter
-        :rtype: Bool
-        :raises: ValueError if start is greater than end
-
-        .. rubric:: Examples
-
-        >>> y2011 = datetime.datetime(2011, 1, 1)
-        >>> y2012 = datetime.datetime(2012, 1, 1)
-        >>> y2013 = datetime.datetime(2013, 1, 1)
-        >>> y2014 = datetime.datetime(2014, 1, 1)
-        >>> TW(y2011, y2014).overlap(TW(y2012, y2013))
-        True
-        >>> TW(y2012, y2014).overlap(TW(y2011, y2013))
-        True
-        >>> TW(y2012, y2013).overlap(TW(y2011, y2014))
-        True
-        >>> TW(y2011, y2012).overlap(TW(y2013, y2014))
-        False
-
-        """
-        def inOrder(a, b, c) -> bool:
-            if (b is None) and (a is not None) and (c is not None):
-                return False
-
-            # Here I'm sure that b is not None
-            if (a is None) and (c is None):
-                return True
-
-            # Here I'm sure that b is not None
-            if (b is None) and (c is None):
-                return True
-
-            # I also know that a or c are not None
-            if a is None:
-                return b < c
-
-            if c is None:
-                return a < b
-
-            # The three are not None
-            # print a, b, c, a < b, b < c, a < b < c
-            return a < b < c
-
-        def inOrder2(a: datetime, b: datetime, c: datetime) -> bool:
-            # The three are not None
-            # print a, b, c, a < b, b < c, a < b < c
-            return a <= b <= c
-
-        # First of all check that the TWs are correctly created
-        if ((self.start is not None) and (self.end is not None) and
-                (self.start > self.end)):
-            raise ValueError('Start greater than End: %s > %s' % (self.start,
-                                                                  self.end))
-
-        if ((othertw.start is not None) and (othertw.end is not None) and
-                (othertw.start > othertw.end)):
-            raise ValueError('Start greater than End %s > %s' % (othertw.start,
-                                                                 othertw.end))
-
-        minDT = datetime.datetime(1900, 1, 1)
-        maxDT = datetime.datetime(3000, 1, 1)
-
-        sStart = self.start if self.start is not None else minDT
-        oStart = othertw.start if othertw.start is not None else minDT
-        sEnd = self.end if self.end is not None else maxDT
-        oEnd = othertw.end if othertw.end is not None else maxDT
-
-        if inOrder2(oStart, sStart, oEnd) or \
-                inOrder2(oStart, sEnd, oEnd):
-            return True
-
-        # Check if this is included in otherTW
-        if inOrder2(oStart, sStart, sEnd):
-            return inOrder2(sStart, sEnd, oEnd)
-
-        # Check if otherTW is included in this one
-        if inOrder2(sStart, oStart, oEnd):
-            return inOrder2(oStart, oEnd, sEnd)
-
-        if self == othertw:
-            return True
-
-        raise Exception('TW.overlap unresolved %s:%s' % (self, othertw))
-
-    def difference(self, othertw: TW) -> List[TW]:
-        """Substract othertw from this TW.
-
-        The result is a list of TW. This operation does not modify the data in
-        the current timewindow.
-
-        :param othertw: timewindow which should be substracted from this one
-        :type othertw: :class:`~TW`
-        :returns: Difference between this timewindow and the one in the
-                  parameter
-        :rtype: list of :class:`~TW`
-
-        """
-        result = []
-
-        if othertw.start is not None:
-            if ((self.start is None and othertw.start is not None) or
-                    ((self.start is not None) and
-                     (self.start < othertw.start))):
-                result.append(TW(self.start, othertw.start))
-
-        if othertw.end is not None:
-            if ((self.end is None and othertw.end is not None) or
-                    ((self.end is not None) and
-                     (self.end > othertw.end))):
-                result.append(TW(othertw.end, self.end))
-
-        return result
-
-    def intersection(self, othertw: TW) -> TW:
-        """Calculate the intersection between othertw and this TW.
-
-        This operation does not modify the data in the current timewindow.
-
-        :param othertw: timewindow which should be intersected with this one
-        :type othertw: :class:`~TW`
-        :returns: Intersection between this timewindow and the one in the
-                  parameter
-        :rtype: :class:`~TW`
-
-        """
-
-        # Trivial case
-        if othertw.start is None and othertw.end is None:
-            return self
-
-        if othertw.start is not None:
-            resst = max(self.start, othertw.start) if self.start is not None \
-                else othertw.start
-        else:
-            resst = self.start
-
-        if othertw.end is not None:
-            resen = min(self.end, othertw.end) if self.end is not None \
-                else othertw.end
-        else:
-            resen = self.end
-
-        if (resst is not None) and (resen is not None) and (resst >= resen):
-            raise ValueError('Intersection is empty')
-
-        return TW(resst, resen)
-
-
-class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
-    pass
-
-
-class Stream(namedtuple('Stream', ['n', 's', 'l', 'c'])):
-    """Namedtuple representing a Stream.
-
-    It includes methods to calculate matching and overlapping of streams
-    including (or not) wildcards. Components are the usual to determine a
-    stream:
-           n: network
-           s: station
-           l: location
-           c: channel
-
-    :platform: Any
-
-    """
-
-    __slots__ = ()
-
-    def toxmlopen(self, namespace: str = 'ns0', level: int = 1) -> str:
-        """Export the stream to XML representing a route.
-
-        XML representation is incomplete and needs to be closed by the method
-        toxmlclose.
-
-        """
-        conv = '%s<%s:route networkCode="%s" stationCode="%s" ' + \
-            'locationCode="%s" streamCode="%s">\n'
-        return conv % (' ' * level, namespace, self.n, self.s, self.l, self.c)
-
-    def toxmlclose(self, namespace: str = 'ns0', level: int = 1) -> str:
-        """Close the XML representation of a route given by toxmlopen."""
-        return '%s</%s:route>\n' % (' ' * level, namespace)
-
-    def __contains__(self, st: Stream) -> bool:
-        """Check if one :class:`~Stream` is contained in this :class:`~Stream`.
-
-        :param st: :class:`~Stream` which should checked for overlapping
-        :type st: :class:`~Stream`
-        :returns: Value specifying whether the given stream is contained in
-            this one
-        :rtype: Bool
-
-        """
-        if (fnmatch.fnmatch(st.n, self.n) and
-                fnmatch.fnmatch(st.s, self.s) and
-                fnmatch.fnmatch(st.l, self.l) and
-                fnmatch.fnmatch(st.c, self.c)):
-            return True
-
-        return False
-
-    def strictmatch(self, other: Stream) -> Stream:
-        """Return a *reduction* of this stream to match what's been received.
-
-        :param other: :class:`~Stream` which should be checked for overlaps
-        :type other: :class:`~Stream`
-        :returns: *reduced* version of this :class:`~Stream` to match the one
-            passed in the parameter
-        :rtype: :class:`~Stream`
-        :raises: Exception
-
-        """
-        res = list()
-        for i in range(len(other)):
-            if (self[i] is None) or (fnmatch.fnmatch(other[i], self[i])):
-                res.append(other[i])
-            elif (other[i] is None) or (fnmatch.fnmatch(self[i], other[i])):
-                res.append(self[i])
-            else:
-                raise Exception('No overlap or match between streams.')
-
-        return Stream(*tuple(res))
-
-    def overlap(self, other: Stream) -> bool:
-        """Check if there is an overlap between this stream and other one.
-
-        :param other: :class:`~Stream` which should be checked for overlaps
-        :type other: :class:`~Stream`
-        :returns: Value specifying whether there is an overlap between this
-                  stream and the one passed as a parameter
-        :rtype: Bool
-
-        """
-        for i in range(len(other)):
-            if ((self[i] is not None) and (other[i] is not None) and
-                    not fnmatch.fnmatch(self[i], other[i]) and
-                    not fnmatch.fnmatch(other[i], self[i])):
-                return False
-        return True
 
 
 class RequestMerge(list):
@@ -408,94 +133,6 @@ class RequestMerge(list):
                 super(RequestMerge, self).append(r)
 
 
-class Station(namedtuple('Station', ['name', 'latitude', 'longitude', 'start', 'end'])):
-    """Namedtuple representing a Station.
-
-    This is the minimum information which needs to be cached from a station in
-    order to be able to apply a proper filter to the inventory when queries
-    f.i. do not include the network name.
-           name: station name
-           latitude: latitude
-           longitude: longitude
-
-    :platform: Any
-
-    """
-
-    __slots__ = ()
-
-
-class GeoRectangle(namedtuple('GeoRectangle', ['minlat', 'maxlat', 'minlon', 'maxlon'])):
-    """Namedtuple representing a geographical rectangle.
-
-           minlat: minimum latitude
-           maxlat: maximum latitude
-           minlon: minimum longitude
-           maxlon: maximum longitude
-
-    :platform: Any
-
-    """
-
-    __slots__ = ()
-
-    def contains(self, lat: Number, lon: Number) -> bool:
-        """Check if the point belongs to the rectangle."""
-        return True if ((self.minlat <= lat <= self.maxlat) and
-                        (self.minlon <= lon <= self.maxlon)) else False
-
-
-class Route(namedtuple('Route', ['service', 'address', 'tw', 'priority'])):
-    pass
-
-
-class Route(namedtuple('Route', ['service', 'address', 'tw', 'priority'])):
-    """Namedtuple defining a :class:`~Route`.
-
-    The attributes are
-           service: service name
-           address: a URL
-           tw: timewindow
-           priority: priority of the route
-
-    :platform: Any
-
-    """
-
-    __slots__ = ()
-
-    def toxml(self, namespace: str = 'ns0', level: int = 2) -> str:
-        """Export the Route to an XML representation."""
-        return '%s<%s:%s address="%s" priority="%d" start="%s" end="%s" />\n' \
-            % (' ' * level, namespace, self.service, self.address,
-               self.priority, self.tw.start.isoformat()
-               if self.tw.start is not None else '',
-               self.tw.end.isoformat() if self.tw.end is not None else '')
-
-    def overlap(self, otherroute: Route) -> bool:
-        """Check if there is an overlap between this route and otherroute.
-
-        :param otherroute: :class:`~Route` which should be checked for overlaps
-        :type otherroute: :class:`~Route`
-        :returns: Value specifying whether there is an overlap between this
-                  stream and the one passed as a parameter
-        :rtype: Bool
-
-        """
-        if ((self.priority == otherroute.priority) and
-                (self.service == otherroute.service)):
-            return self.tw.overlap(otherroute.tw)
-        return False
-
-
-Route.__eq__ = lambda self, other: self.priority == other.priority
-Route.__ne__ = lambda self, other: self.priority != other.priority
-Route.__lt__ = lambda self, other: self.priority < other.priority
-Route.__le__ = lambda self, other: self.priority <= other.priority
-Route.__gt__ = lambda self, other: self.priority > other.priority
-Route.__ge__ = lambda self, other: self.priority >= other.priority
-
-
 class RoutingException(Exception):
     """Exception raised to flag a problem when searching for routes."""
 
@@ -527,8 +164,8 @@ class FDSNRules(dict):
         for r in rm:
             for p in r['params']:
                 self.append(r['name'], r['url'], p['priority'],
-                            Stream(p['net'], p['sta'], p['loc'], p['cha']),
-                            TW(p['start'], p['end']))
+                            Stream(n=p['net'], s=p['sta'], l=p['loc'], c=p['cha']),
+                            TW(start=p['start'], end=p['end']))
         return
 
     def index(self, service: str, url: str) -> Tuple[int, int]:
@@ -593,17 +230,15 @@ class FDSNRules(dict):
         }
 
         # Add attributes with values different from the default ones
-        if stream.n != '*' and len(stream.n):
+        if stream.n != '*':
             toAdd["network"] = stream.n
-        if stream.s != '*' and len(stream.s):
+        if stream.s != '*':
             toAdd["station"] = stream.s
-        if stream.l != '*' and len(stream.l):
+        if stream.l != '*':
             toAdd["location"] = stream.l
-        if stream.c != '*' and len(stream.c):
+        if stream.c != '*':
             toAdd["channel"] = stream.c
         if tw.end is not None:
-            if isinstance(tw.end, str) and len(tw.end):
-                toAdd["endtime"] = tw.end
             if isinstance(tw.end, datetime.datetime):
                 toAdd["endtime"] = tw.end
 
@@ -691,7 +326,7 @@ class FDSNRules(dict):
                 self['datacenters'].append(r)
 
 
-def str2date(dstr: str) -> datetime.datetime:
+def str2date(dstr: str) -> Union[datetime.datetime, None]:
     """Transform a string to a datetime.
 
     :param dstr: A datetime in ISO format.
@@ -725,7 +360,7 @@ def date2str(dt: datetime.datetime) -> str:
     return aux2.isoformat().replace("+00:00", "Z")
 
 
-def checkOverlap(str1: Stream, routelist: list, str2: Stream, route: Route) -> bool:
+def checkOverlap(str1: Stream, routelist: List[Route], str2: Stream, route: Route) -> bool:
     """Check overlap of routes from stream str1 and a route from str2.
 
     :param str1: First stream
@@ -743,7 +378,6 @@ def checkOverlap(str1: Stream, routelist: list, str2: Stream, route: Route) -> b
         for auxRoute in routelist:
             if auxRoute.overlap(route):
                 return True
-
     return False
 
 
@@ -791,8 +425,8 @@ def getStationCache(st: Stream, rt: Route) -> List[Station]:
         try:
             start = str2date(lsplit[6])
             endt = str2date(lsplit[7])
-            result.append(Station(lsplit[1], float(lsplit[2]),
-                          float(lsplit[3]), start, endt))
+            result.append(Station(name=lsplit[1], latitude=float(lsplit[2]),
+                          longitude=float(lsplit[3]), start=start, end=endt))
         except Exception:
             logging.error('Error trying to add station with this line (%s)' % (lsplit,))
     # print(result)
@@ -957,7 +591,7 @@ def addvirtualnets(filename: str, **kwargs) -> dict:
                         auxStart = stream.get('start')
                         startD = str2date(auxStart)
                     except Exception:
-                        startD = None
+                        startD = datetime.datetime(1900, 1, 1)
                         msg = 'Error while converting START attribute.\n'
                         logs.warning(msg)
 
@@ -970,17 +604,16 @@ def addvirtualnets(filename: str, **kwargs) -> dict:
                         logs.warning(msg)
 
                     if vnCode not in ptvn:
-                        ptvn[vnCode] = [(Stream(net, sta, loc, cha),
-                                         TW(startD, endD))]
+                        ptvn[vnCode] = [(Stream(n=net, s=sta, l=loc, c=cha),
+                                         TW(start=startD, end=endD))]
                     else:
-                        ptvn[vnCode].append((Stream(net, sta, loc, cha),
-                                             TW(startD, endD)))
+                        ptvn[vnCode].append((Stream(n=net, s=sta, l=loc, c=cha),
+                                             TW(start=startD, end=endD)))
 
                     stream.clear()
 
                 vnet.clear()
 
-            # FIXME Probably the indentation below is wrong.
             root.clear()
 
     return ptvn
@@ -1352,7 +985,7 @@ def addremote(filename: str, url: str, method: str = 'localconfig'):
 
 
 # Define this just to shorten the notation
-defRectangle = GeoRectangle(-90, 90, -180, 180)
+defRectangle = GeoRectangle(minlat=-90, maxlat=90, minlon=-180, maxlon=180)
 
 
 class RoutingCache(object):
@@ -1429,7 +1062,6 @@ class RoutingCache(object):
         if fmt == 'xml':
             with open(self.routingFile) as f:
                 return f.read()
-
         raise Exception('Format (%s) is not xml.' % fmt)
 
     def globalConfig(self, fmt: str = 'fdsn') -> str:
@@ -1440,7 +1072,8 @@ class RoutingCache(object):
 
         """
         if fmt == 'fdsn':
-            result = self.getRoute(Stream('*', '*', '*', '*'), TW(None, None),
+            result = self.getRoute(Stream(n='*', s='*', l='*', c='*'),
+                                   TW(start=datetime.datetime(1900, 1, 1), end=None),
                                    service='dataselect,wfcatalog,station,availability', alternative=True)
             fdsnresult = FDSNRules(result, self.eidaDCs)
             return json.dumps(fdsnresult, default=datetime.datetime.isoformat)
@@ -1515,7 +1148,7 @@ class RoutingCache(object):
         # or if there is no intersection, that is resolved in the try
 
         # Remove the virtual network code to avoid problems in strictmatch
-        auxStr = ('*', stream.s, stream.l, stream.c)
+        auxStr = Stream(n='*', s=stream.s, l=stream.l, c=stream.c)
 
         result = list()
         for strtw in self.vnTable[stream.n]:
@@ -1527,8 +1160,8 @@ class RoutingCache(object):
 
             try:
                 auxSt, auxEn = strtw[1].intersection(tw)
-                t = TW(auxSt if auxSt is not None else None,
-                       auxEn if auxEn is not None else None)
+                t = TW(start=auxSt if auxSt is not None else datetime.datetime(1900, 1, 1),
+                       end=auxEn if auxEn is not None else None)
             except Exception:
                 continue
 
@@ -1664,7 +1297,7 @@ class RoutingCache(object):
                 self.logs.debug('%s in %s = %s\n' % (str(toProc),
                                                      str(ro.tw),
                                                      (toProc in ro.tw)))
-                if (toProc in ro.tw):
+                if toProc in ro.tw:
 
                     # If the timewindow is not complete then add the missing
                     # ranges to the tw set.
@@ -1690,14 +1323,14 @@ class RoutingCache(object):
                                                        cacheSt.longitude)))):
                             try:
                                 auxSt, auxEn = toProc.intersection(ro.tw)
-                                twAux = TW(auxSt if auxSt is not None else '',
-                                           auxEn if auxEn is not None else '')
+                                twAux = TW(start=auxSt if auxSt is not None else datetime.datetime(1900, 1, 1),
+                                           end=auxEn if auxEn is not None else None)
                                 st2add = stream.strictmatch(st)
                                 # In case that routes have to be filter by
                                 # location, station names have to be expanded
                                 if geolocation is not None:
                                     st2add = st2add.strictmatch(
-                                        Stream('*', cacheSt.name, '*', '*'))
+                                        Stream(n='*', s=cacheSt.name, l='*', c='*'))
 
                                 # print('Add %s' % str(st2add))
 
@@ -1840,7 +1473,7 @@ class RoutingCache(object):
                             auxStart = stream.get('start')
                             startD = str2date(auxStart)
                         except Exception:
-                            startD = None
+                            startD = datetime.datetime(1900, 1, 1)
                             msg = 'Error while converting START attribute.\n'
                             self.logs.error(msg)
 
@@ -1853,16 +1486,14 @@ class RoutingCache(object):
                             self.logs.error(msg)
 
                         if vnCode not in ptVN:
-                            ptVN[vnCode] = [(Stream(net, sta, loc, cha),
-                                             TW(startD, endD))]
+                            ptVN[vnCode] = [(Stream(n=net, s=sta, l=loc, c=cha),
+                                             TW(start=startD, end=endD))]
                         else:
-                            ptVN[vnCode].append((Stream(net, sta, loc, cha),
-                                                 TW(startD, endD)))
+                            ptVN[vnCode].append((Stream(n=net, s=sta, l=loc, c=cha),
+                                                 TW(start=startD, end=endD)))
 
                         stream.clear()
-
                     vnet.clear()
-
                 # FIXME Probably the indentation below is wrong.
                 root.clear()
 
@@ -1891,7 +1522,6 @@ class RoutingCache(object):
             result.append(config.get('Service', 'baseurl'))
 
         if 'synchronize' in config.options('Service'):
-
             synchroList = config.get('Service', 'synchronize')
 
             # Loop for the data centres which should be integrated
