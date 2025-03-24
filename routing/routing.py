@@ -102,7 +102,7 @@ async def rsversion():
 async def rsinfo():
     """Return information about the content available in this Routing Service"""
     cfg = Config()
-    return __version__
+    return cfg['info']
 
 
 @routingws.get("/application.wadl", response_class=XMLResponse)
