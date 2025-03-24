@@ -78,6 +78,7 @@ class Config(object):
             cls.config['synchronize'] = config.get('Service', 'synchronize', fallback=None)
 
             logging.info('Configuration read: %s' % Config)
+        return cls.config
 
 
 routingws = FastAPI()
@@ -86,7 +87,7 @@ routingws = FastAPI()
 @routingws.get("/", response_class=HTMLResponse)
 async def rsroot():
     """Show a help page"""
-    with open('help.html') as fin:
+    with open('data/help.html') as fin:
         htmlpage = fin.read().encode()
     return htmlpage
 
@@ -97,12 +98,27 @@ async def rsversion():
     return __version__
 
 
+@routingws.get("/info", response_class=PlainTextResponse)
+async def rsinfo():
+    """Return information about the content available in this Routing Service"""
+    cfg = Config()
+    return __version__
+
+
 @routingws.get("/application.wadl", response_class=XMLResponse)
 async def rsapplicationwadl():
     """Show a help page"""
-    with open('application.wadl') as fin:
+    with open('data/application.wadl') as fin:
         awpage = fin.read().encode()
     return awpage
+
+
+@routingws.get("/localconfig", response_class=XMLResponse)
+async def rslocalconfig():
+    """Show the local routes"""
+    with open('data/routing.xml') as fin:
+        lcpage = fin.read().encode()
+    return lcpage
 
 
 def getParam(parameters: Union[cgi.FieldStorage, dict], names: Union[list, set],
@@ -545,7 +561,7 @@ def application(environ, start_response):
 
 def main():
     uvicorn.run(
-        "routing:routingws",
+        "routing.routing:routingws",
         host="0.0.0.0",
         port=8000,
         log_level="debug",
