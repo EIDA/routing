@@ -1269,7 +1269,7 @@ def addremote(filename: str, url: str, method: str = 'localconfig'):
             # Prepare Request
             req = ul.Request(url + '/%s' % method)
             # Customize the default User-Agent header value:
-            req.add_header('User-Agent', 'Routing Service/' + __version__)
+            req.add_header('User-Agent', 'RoutingService/' + __version__)
             u = ul.urlopen(req)
         else:
             u = open(url, 'r')
@@ -1305,7 +1305,7 @@ def addremote(filename: str, url: str, method: str = 'localconfig'):
         # Prepare Request without the "localconfig" method
         req = ul.Request(url)
         # Customize the default User-Agent header value:
-        req.add_header('User-Agent', 'Routing Service/' + __version__)
+        req.add_header('User-Agent', 'RoutingService/' + __version__)
         try:
             u = ul.urlopen(req)
 
