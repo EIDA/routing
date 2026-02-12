@@ -1328,8 +1328,10 @@ def addremote(filename: str, url: str, method: str = 'localconfig'):
                 logs.error('URL non valid: Error code: %s', e.code)
             # The old data will be used because the data centre is not responding.
             name = filename[:- len('.download')]
-            if os.path.exists(name+'.bck'):
-                logs.warning('Data centre not responding! File %s has an outdated version of the routes' % (name,))
+            if os.path.exists(name):
+                logs.warning('Data centre not responding! Using %s with an outdated version of the routes' % (name,))
+            elif os.path.exists(name+'.bck'):
+                logs.warning('Data centre not responding! Recovering old backup to %s with an outdated version of the routes' % (name,))
                 os.rename(name + '.bck', name)
             return
 
