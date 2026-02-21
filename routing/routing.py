@@ -23,7 +23,9 @@ from fastapi.responses import PlainTextResponse
 from fastapi.responses import JSONResponse
 import os
 import cgi
-import datetime
+from datetime import datetime
+from datetime import date
+from datetime import timedelta
 import logging
 import configparser
 from http import HTTPStatus
@@ -71,7 +73,7 @@ class Config(object):
             cls.config = dict()
             # Read connection parameters
             cls.config['baseURL'] = config.get('Service', 'baseURL')
-            cls.config['info'] = config.get('Service', 'info')
+            cls.config['info'] = config.get('Service', 'info', fallback='')
             cls.config['allowoverlap'] = config.get('Service', 'allowoverlap', fallback=False)
             cls.config['verbosity'] = config.get('Service', 'verbosity', fallback='INFO')
 
@@ -94,7 +96,7 @@ class Cache(object):
 routingws = FastAPI()
 
 
-@routingws.get("/endpoints")
+@routingws.get("/endpoints", response_class=PlainTextResponse)
 async def rsendpoints():
     routingcache = Cache()
     result = routingcache.endpoints()
@@ -126,7 +128,7 @@ async def rsinfo():
 async def rsapplicationwadl():
     """Show a help page"""
     cfg = Config()
-    tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+    tomorrow = date.today() + timedelta(days=1)
     with open(os.path.expanduser('~/routing/application.wadl')) as fin:
         awpage = fin.read() % (cfg['baseURL'], tomorrow)
     return XMLResponse(content=awpage.encode(), status_code=200)
@@ -148,17 +150,18 @@ async def rsvirtualnets():
     return XMLResponse(content=result, status_code=200)
 
 
-@routingws.get("/globalconfig")
+@routingws.get("/globalconfig", response_class=JSONResponse)
 async def rsglobalconfig(outform: Literal['fdsn']):
     """Export all routes to FDSN"""
     if outform != 'fdsn':
-        return
+        return JSONResponse(content={'message': 'Only format=FDSN is supported'},
+                            status_code=400)
     routingcache = Cache()
     result = routingcache.globalConfig()
-    return JSONResponse(content=result, status_code=200)
+    return result
 
 
-@routingws.get("/dc")
+@routingws.get("/dc", response_class=JSONResponse)
 async def rsdc():
     """Show information about the data centre"""
     with open(os.path.expanduser('~/routing/data/routing.json')) as fin:
@@ -169,22 +172,25 @@ async def rsdc():
 def getParam(parameters: Union[cgi.FieldStorage, dict], names: Union[list, set],
              default: Union[str, None], csv: bool = False) -> Union[str, List[str], None]:
     """Read a parameter and return its value or a default value in case it is not found.
+def simplifyparam(p1: Union[str, float, datetime], p2: Union[str, float, datetime],
+                  default: Union[str, float, None], csv: bool = False) -> Union[str, datetime, float, List[str], None]:
+    """Read two parameters and return the one that is valid or a default value if there is no one.
 
     The csv parameter is used to split the value in case of multiple values separated by commas. This means
     that the result will be a string if csv is False, and a list of string(s) if csv is True.
     """
-    for n in names:
-        if n in parameters:
-            if isinstance(parameters[n], list):
-                raise Exception('Parameter(s) %s returned a list instead of a value. Multiple input?' % names)
-            result = parameters[n].value.upper()
-            break
-    else:
-        result = default
+    result = None
+    # Empty parameter2 or both
+    if p2 is None:
+        result = p1 if p1 is not None else default
 
-    # WARNING This converts the result from a string to a list with a string(s) if "cvs" is True
-    if csv:
-        result = result.split(',')
+    # Empty parameter1
+    if p1 is None:
+        result = p2
+
+    if isinstance(result, str) and csv:
+        # WARNING This converts the result from a string to a list with a string(s) if "cvs" is True
+        return result.split(',')
 
     return result
 
