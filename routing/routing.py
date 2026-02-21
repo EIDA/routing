@@ -166,12 +166,84 @@ async def rsdc():
     """Show information about the data centre"""
     with open(os.path.expanduser('~/routing/data/routing.json')) as fin:
         dcpage = json.load(fin)
-    return JSONResponse(content=dcpage, status_code=200)
+    return dcpage
 
 
-def getParam(parameters: Union[cgi.FieldStorage, dict], names: Union[list, set],
-             default: Union[str, None], csv: bool = False) -> Union[str, List[str], None]:
-    """Read a parameter and return its value or a default value in case it is not found.
+@routingws.get("/query")
+async def rsqueryget(net: str = None, network: str = None, sta: str = None, station: str = None,
+                     loc: str = None, location: str = None, cha: str = None, channel: str = None,
+                     start: datetime = None, starttime: datetime = None,
+                     end: datetime = None, endtime: datetime = None,
+                     minlat: float = None, minlatitude: float = None,
+                     maxlat: float = None, maxlatitude: float = None,
+                     minlon: float = None, minlongitude: float = None,
+                     maxlon: float = None, maxlongitude: float = None,
+                     service: str = 'dataselect', format: Literal['json', 'get', 'post', 'xml'] = 'xml',
+                     alternative: str = 'false', nodata: int = None):
+    """Process a request made via a GET method."""
+    routingcache = Cache()
+
+    try:
+        # If CSV is True the result will be a list!
+        net = simplifyparam(net, network, '*', csv=True)
+        sta = simplifyparam(sta, station, '*', csv=True)
+        loc = simplifyparam(loc, location, '*', csv=True)
+        cha = simplifyparam(cha, channel, '*', csv=True)
+        startt = simplifyparam(start, starttime, None)
+        endt = simplifyparam(end, endtime, None)
+        minlati = simplifyparam(minlat, minlatitude, -90.0)
+        maxlati = simplifyparam(maxlat, maxlatitude, 90.0)
+        minlong = simplifyparam(minlon, minlongitude, -180.0)
+        maxlong = simplifyparam(maxlon, maxlongitude, 180.0)
+    except Exception as e:
+        return PlainTextResponse(content=str(e), status_code=400)
+
+    alt = False if alternative.lower() in ['false', '0'] else True
+    if alt and (format=='get'):
+        return PlainTextResponse(content='alternative=true and format=get are incompatible parameters',
+                                 status_code=400)
+
+    if (startt is not None) and (endt is not None) and (startt > endt):
+        return PlainTextResponse(content='Start datetime cannot be greater than end datetime',
+                                 status_code=400)
+
+    if ((minlati == -90.0) and (maxlati == 90.0) and (minlong == -180.0) and
+            (maxlong == 180.0)):
+        geoLoc = None
+    else:
+        geoLoc = GeoRectangle(minlati, maxlati, minlong, maxlong)
+
+    result = RequestMerge()
+    # Expand lists in parameters (f.i., cha=BHZ,HHN) and yield all possible
+    # values
+    for (n, s, l, c) in lsNSLC(net, sta, loc, cha):
+        try:
+            st = Stream(n, s, l, c)
+            tw = TW(startt, endt)
+            result.extend(routingcache.getRoute(st, tw, service, geoLoc, alt))
+        except RoutingException:
+            pass
+
+    if len(result) == 0:
+        return PlainTextResponse(content='No data', status_code=204)
+
+    if format == 'xml':
+        return XMLResponse(content=applyFormat(result, format), status_code=200)
+    elif format == 'json':
+        # FIXME There could be a problem here with the conversion from str to JSON
+        return JSONResponse(content=applyFormat(result, format), status_code=200)
+    elif format == 'get':
+        return PlainTextResponse(content=applyFormat(result, format), status_code=200)
+    elif format == 'post':
+        return PlainTextResponse(content=applyFormat(result, format), status_code=200)
+    return PlainTextResponse(content='Format %s not supported' % format, status_code=400)
+
+
+@routingws.post("/query")
+async def rsquerypost():
+    pass
+
+
 def simplifyparam(p1: Union[str, float, datetime], p2: Union[str, float, datetime],
                   default: Union[str, float, None], csv: bool = False) -> Union[str, datetime, float, List[str], None]:
     """Read two parameters and return the one that is valid or a default value if there is no one.
@@ -194,128 +266,6 @@ def simplifyparam(p1: Union[str, float, datetime], p2: Union[str, float, datetim
 
     return result
 
-
-def makeQueryGET(parameters: Union[cgi.FieldStorage, dict]) -> RequestMerge:
-    """Process a request made via a GET method."""
-    global routes
-
-    # List all the accepted parameters
-    allowedParams = ['net', 'network',
-                     'sta', 'station',
-                     'loc', 'location',
-                     'cha', 'channel',
-                     'start', 'starttime',
-                     'end', 'endtime',
-                     'minlat', 'minlatitude',
-                     'maxlat', 'maxlatitude',
-                     'minlon', 'minlongitude',
-                     'maxlon', 'maxlongitude',
-                     'service', 'format',
-                     'alternative', 'nodata']
-
-    for param in parameters:
-        if param not in allowedParams:
-            msg = 'Unknown parameter: %s' % param
-            raise WIClientError(msg)
-
-    try:
-        # If CSV is True the result will be a list!
-        net = getParam(parameters, ['net', 'network'], '*', csv=True)
-        sta = getParam(parameters, ['sta', 'station'], '*', csv=True)
-        loc = getParam(parameters, ['loc', 'location'], '*', csv=True)
-        cha = getParam(parameters, ['cha', 'channel'], '*', csv=True)
-        # Here the result will be a string
-        start = getParam(parameters, ['start', 'starttime'], None)
-    except Exception as e:
-        raise WIClientError(str(e))
-
-    try:
-        if start is not None:
-            start = str2date(start)
-    except Exception:
-        msg = 'Error while converting starttime parameter.'
-        raise WIClientError(msg)
-
-    # The result will be a string (not a list)
-    endt = getParam(parameters, ['end', 'endtime'], None)
-    try:
-        if endt is not None:
-            endt = str2date(endt)
-    except Exception:
-        msg = 'Error while converting endtime parameter.'
-        raise WIClientError(msg)
-
-    try:
-        minlat = float(getParam(parameters, ['minlat', 'minlatitude'],
-                                '-90.0'))
-    except Exception:
-        msg = 'Error while converting the minlatitude parameter.'
-        raise WIClientError(msg)
-
-    try:
-        maxlat = float(getParam(parameters, ['maxlat', 'maxlatitude'],
-                                '90.0'))
-    except Exception:
-        msg = 'Error while converting the maxlatitude parameter.'
-        raise WIClientError(msg)
-
-    try:
-        minlon = float(getParam(parameters, ['minlon', 'minlongitude'],
-                                '-180.0'))
-    except Exception:
-        msg = 'Error while converting the minlongitude parameter.'
-        raise WIClientError(msg)
-
-    try:
-        maxlon = float(getParam(parameters, ['maxlon', 'maxlongitude'],
-                                '180.0'))
-    except Exception:
-        msg = 'Error while converting the maxlongitude parameter.'
-        raise WIClientError(msg)
-
-    # These two results will be strings
-    ser = getParam(parameters, ['service'], 'dataselect').lower()
-    aux = getParam(parameters, ['alternative'], 'false').lower()
-    if aux == 'true':
-        alt = True
-    elif aux == 'false':
-        alt = False
-    else:
-        msg = 'Wrong value passed in parameter "alternative"'
-        raise WIClientError(msg)
-
-    # form will be a string
-    form = getParam(parameters, ['format'], 'xml').lower()
-
-    if alt and (form == 'get'):
-        msg = 'alternative=true and format=get are incompatible parameters'
-        raise WIClientError(msg)
-
-    # print start, type(start), endt, type(endt), (start > endt)
-    if (start is not None) and (endt is not None) and (start > endt):
-        msg = 'Start datetime cannot be greater than end datetime'
-        raise WIClientError(msg)
-
-    if ((minlat == -90.0) and (maxlat == 90.0) and (minlon == -180.0) and
-            (maxlon == 180.0)):
-        geoLoc = None
-    else:
-        geoLoc = GeoRectangle(minlat, maxlat, minlon, maxlon)
-
-    result = RequestMerge()
-    # Expand lists in parameters (f.i., cha=BHZ,HHN) and yield all possible
-    # values
-    for (n, s, l, c) in lsNSLC(net, sta, loc, cha):
-        try:
-            st = Stream(n, s, l, c)
-            tw = TW(start, endt)
-            result.extend(routes.getRoute(st, tw, ser, geoLoc, alt))
-        except RoutingException:
-            pass
-
-    if len(result) == 0:
-        raise WIContentError()
-    return result
 
 
 def makeQueryPOST(postText) -> RequestMerge:
@@ -494,16 +444,6 @@ def application(environ, start_response):
 
         return send_error_response("400 Bad Request", str(e), start_response)
 
-    # Check whether the function called is implemented
-    implementedFunctions = ['query',
-                            'endpoints']
-
-    fname = environ['PATH_INFO'].split('/')[-1]
-    if fname not in implementedFunctions:
-        return send_error_response("400 Bad Request",
-                                   'Function "%s" not implemented.' % fname,
-                                   start_response)
-
     elif fname == 'query':
         makeQuery = globals()['makeQuery%s' % environ['REQUEST_METHOD']]
         try:
@@ -526,18 +466,6 @@ def application(environ, start_response):
             else:
                 retstatus = w.status
             return send_error_response(retstatus, w.body, start_response)
-
-    elif fname == 'globalconfig':
-        result = routes.globalConfig()
-        if outForm == 'fdsn':
-            return send_json_response('200 OK', result,
-                                      start_response)
-
-        # Only FDSN format is supported for the time being
-        text = 'Only format=FDSN is supported'
-        return send_error_response("400 Bad Request", text, start_response)
-
-    raise Exception('This point should have never been reached!')
 
 
 def main():
