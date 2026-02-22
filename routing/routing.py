@@ -212,14 +212,14 @@ async def rsqueryget(net: str = None, network: str = None, sta: str = None, stat
     # values
     for (n, s, l, c) in lsNSLC(net, sta, loc, cha):
         try:
-            st = Stream(n, s, l, c)
-            tw = TW(startt, endt)
+            st = Stream(n=n, s=s, l=l, c=c)
+            tw = TW(start=startt, end=endt)
             result.extend(routingcache.getRoute(st, tw, service, geoLoc, alt))
         except RoutingException:
             pass
 
     if len(result) == 0:
-        return PlainTextResponse(content='No data', status_code=204)
+        return PlainTextResponse(status_code=nodata)
 
     if format == 'xml':
         return XMLResponse(content=applyFormat(result, format), status_code=200)
