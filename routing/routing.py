@@ -183,7 +183,7 @@ async def rsqueryget(net: str = None, network: str = None, sta: str = None, stat
         sta = simplifyparam(sta, station, '*', csv=True)
         loc = simplifyparam(loc, location, '*', csv=True)
         cha = simplifyparam(cha, channel, '*', csv=True)
-        startt = simplifyparam(start, starttime, None)
+        startt = simplifyparam(start, starttime, datetime(1900, 1, 1))
         endt = simplifyparam(end, endtime, None)
         minlati = simplifyparam(minlat, minlatitude, -90.0)
         maxlati = simplifyparam(maxlat, maxlatitude, 90.0)
