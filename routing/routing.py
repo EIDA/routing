@@ -135,12 +135,13 @@ async def rslocalconfig():
     return XMLResponse(content=result, status_code=200)
 
 
-@routingws.get("/virtualnets", response_class=XMLResponse)
+@routingws.get("/virtualnets", response_class=JSONResponse)
 async def rsvirtualnets():
     """Show the virtual networks defined"""
     routingcache = Cache()
     result = routingcache.virtualNets()
-    return XMLResponse(content=result, status_code=200)
+    return result
+    # return JSONResponse(content=result, status_code=200)
 
 
 @routingws.get("/globalconfig", response_class=JSONResponse)

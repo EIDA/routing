@@ -1135,7 +1135,7 @@ class RoutingCache(object):
 
         return result
 
-    def vn2real(self, stream: Stream, tw: TW) -> list:
+    def vn2real(self, stream: Stream, tw: TW) -> List[Tuple[Stream, TW]]:
         """Transform from a virtual network code to a list of streams.
 
         :param stream: requested stream including virtual network code.
