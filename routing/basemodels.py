@@ -228,6 +228,9 @@ class StreamBase(BaseModel):
     c: str = constr(min_length=1, max_length=3, to_upper=True, strip_whitespace=True)
     model_config = {"frozen": True}  # Enables hashing
 
+    def __lt__(self, other):
+        return tuple(self.model_dump().values()) < tuple(other.model_dump().values())
+
 
 class Stream(StreamBase):
     def toxmlopen(self, namespace: str = 'ns0', level: int = 1) -> str:
