@@ -22,7 +22,6 @@ from fastapi.responses import HTMLResponse
 from fastapi.responses import PlainTextResponse
 from fastapi.responses import JSONResponse
 import os
-import cgi
 from datetime import datetime
 from datetime import date
 from datetime import timedelta
@@ -141,7 +140,6 @@ async def rsvirtualnets():
     routingcache = Cache()
     result = routingcache.virtualNets()
     return result
-    # return JSONResponse(content=result, status_code=200)
 
 
 @routingws.get("/globalconfig", response_class=JSONResponse)
@@ -158,7 +156,7 @@ async def rsglobalconfig(outform: Literal['fdsn']):
 @routingws.get("/dc", response_class=JSONResponse)
 async def rsdc():
     """Show information about the data centre"""
-    with open(os.path.expanduser('~/routing/data/routing.json')) as fin:
+    with open(os.path.expanduser('./data/routing.json')) as fin:
         dcpage = json.load(fin)
     return dcpage
 
