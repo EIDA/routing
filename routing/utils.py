@@ -35,6 +35,7 @@ from basemodels import GeoRectangle
 from basemodels import TW
 from basemodels import Stream
 from basemodels import Route
+from basemodels import VirtualNetworks
 
 
 __version__ = "1.3.0a1"
@@ -490,7 +491,7 @@ def addvirtualnets(filename: str, **kwargs) -> dict:
         * *vnTable* (``dict``) Table with virtual networks where aliases should be added.
     """
     # VN table is empty (default)
-    ptvn = kwargs.get('vnTable', dict())
+    ptvn = kwargs.get('vnTable', VirtualNetworks({}))
 
     logs = logging.getLogger('addvirtualnets')
     logs.debug('Entering addvirtualnets()\n')
@@ -1020,7 +1021,7 @@ class RoutingCache(object):
         self.logs.info('Reading configuration from %s' % self.configFile)
 
         # Dictionary with list of stations inside each virtual network
-        self.vnTable = dict()
+        self.vnTable = VirtualNetworks({})
 
         # Dictionary with list of data centres
         self.eidaDCs = list()
@@ -1044,14 +1045,16 @@ class RoutingCache(object):
                 fo.write(st.toxmlclose())
             fo.write('</ns0:routing>')
 
-    def virtualNets(self) -> str:
+    def virtualNets(self) -> VirtualNetworks:
         """Return the virtual networks defined in the system
 
         :returns: Virtual networks in this system in JSON format
         :rtype: str
 
         """
-        return json.dumps(self.vnTable, default=datetime.datetime.isoformat)
+        # print(self.vnTable)
+        # print(self.vnTable.model_dump_json())
+        return self.vnTable   #  , default=datetime.datetime.isoformat)
 
     def localConfig(self, fmt: str = 'xml') -> str:
         """Return the local routing configuration.
@@ -1575,6 +1578,7 @@ class RoutingCache(object):
         # Clear all previous information
         ptRT.clear()
         ptVN.clear()
+
         binFile = self.routingFile + '.bin'
         try:
             with open(binFile, 'rb') as rMerged:

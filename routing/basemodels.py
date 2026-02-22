@@ -23,6 +23,7 @@ from datetime import datetime
 from typing import Union
 from typing import List
 from fnmatch import fnmatch
+from pydantic import RootModel
 
 
 class Station(BaseModel):
@@ -378,3 +379,22 @@ class Route(RouteBase):
 
     def __ge__(self, other: RouteBase) -> bool:
         return self.priority >= other.priority
+
+
+class VirtualNetworks(RootModel):
+    root: dict[str, list[tuple[Stream, TW]]]
+
+    def __iter__(self):
+        return iter(self.root)
+
+    def __getitem__(self, item):
+        return self.root[item]
+
+    def __setitem__(self, key, value):
+        self.root[key] = value
+
+    def clear(self):
+        self.root = {}
+
+    def __len__(self):
+        return len(self.root)
