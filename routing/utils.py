@@ -21,6 +21,7 @@ import fnmatch
 import json
 import xml.etree.cElementTree as ET
 from typing import Union
+from typing import Literal
 import logging
 from copy import deepcopy
 import pickle
@@ -1111,7 +1112,7 @@ class RoutingCache(object):
         """
         # Convert from virtual network to real networks (if needed)
         strtwList = self.vn2real(stream, tw)
-        self.logs.debug('Converting %s to %s' % (stream, strtwList))
+        # print('Converting %s to %s' % (stream, strtwList))
 
         if not len(strtwList):
             msg = 'No routes found after resolving virtual network code.'
@@ -1282,7 +1283,7 @@ class RoutingCache(object):
         # In finalset I have all the streams (including expanded and
         # the ones with wildcards), that I need to request.
         # Now I need the URLs
-        self.logs.debug('Selected streams and routes: %s\n' % finalset)
+        # print('Selected streams and routes: %s\n' % finalset)
 
         while finalset:
             (st, ro) = finalset.pop()
@@ -1326,21 +1327,21 @@ class RoutingCache(object):
                                  (geolocation.contains(cacheSt.latitude,
                                                        cacheSt.longitude)))):
                             try:
-                                auxSt, auxEn = toProc.intersection(ro.tw)
-                                twAux = TW(start=auxSt if auxSt is not None else datetime.datetime(1900, 1, 1),
-                                           end=auxEn if auxEn is not None else None)
+                                twAux = toProc.intersection(ro.tw)
+                                # print(auxSt, auxEn)
+                                # twAux = TW(start=auxSt if auxSt is not None else datetime.datetime(1900, 1, 1),
+                                #            end=auxEn if auxEn is not None else None)
+                                # print(twAux)
                                 st2add = stream.strictmatch(st)
-                                # In case that routes have to be filter by
+                                # In case that routes have to be filtered by
                                 # location, station names have to be expanded
                                 if geolocation is not None:
                                     st2add = st2add.strictmatch(
                                         Stream(n='*', s=cacheSt.name, l='*', c='*'))
-
                                 # print('Add %s' % str(st2add))
 
-                                result.append(service, ro.address, ro.priority
-                                              if ro.priority is not None
-                                              else '', st2add, twAux)
+                                result.append(service, ro.address, ro.priority if ro.priority is not None else '',
+                                              st2add, twAux)
                             except Exception:
                                 pass
 
@@ -1667,7 +1668,7 @@ def ConvertDictToXml(listdict: RequestMerge) -> ET.Element:
 
 
 # Important to support the comma-syntax from FDSN (f.i. GE,RO,XX)
-def lsNSLC(net: list, sta: list, loc: list, cha: list) -> Tuple:
+def lsNSLC(net: list, sta: list, loc: list, cha: list):
     """Iterator providing NSLC tuples from comma separated components.
 
     :param net: Network code(s) in comma-separated format.
