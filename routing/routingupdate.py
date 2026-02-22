@@ -25,14 +25,14 @@ import json
 import datetime
 from pprint import pprint
 from urllib.parse import urlparse
-from routing.utils import addremote
-from routing.utils import addroutes
-from routing.utils import addvirtualnets
-from routing.utils import cachestations
-from routing.utils import FDSNRules
-from routing.utils import RequestMerge
-from routing.utils import replacelast
-from routing.routing import Config
+from utils import addremote
+from utils import addroutes
+from utils import addvirtualnets
+from utils import cachestations
+from utils import FDSNRules
+from utils import RequestMerge
+from utils import replacelast
+from routing import Config
 
 
 def mergeRoutes(fileroutes: str, synchrolist: str, allowOverlaps: bool = False):
@@ -175,8 +175,6 @@ def main():
     logs = logging.getLogger('getEIDAconfig')
     logs.setLevel(verbo)
 
-    print('Skipping routing information. Config file does not allow to '
-          + 'overwrite the information. (%s)' % args.config)
     try:
         os.remove('routing-tmp.xml.bin')
     except Exception:

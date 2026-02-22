@@ -28,27 +28,20 @@ from datetime import date
 from datetime import timedelta
 import logging
 import configparser
-from http import HTTPStatus
-from routing import __version__
-from routing.wsgicomm import WIContentError
-from routing.wsgicomm import WIClientError
-from routing.wsgicomm import WIError
-from routing.wsgicomm import send_plain_response
-from routing.wsgicomm import send_json_response
-from routing.wsgicomm import send_xml_response
-from routing.wsgicomm import send_error_response
-from routing.basemodels import Stream
-from routing.basemodels import TW
-from routing.basemodels import GeoRectangle
-from routing.utils import RequestMerge
-from routing.utils import RoutingCache
-from routing.utils import RoutingException
-from routing.utils import str2date
-from routing.utils import lsNSLC
-from routing.utils import applyFormat
+from basemodels import Stream
+from basemodels import TW
+from basemodels import GeoRectangle
+from utils import RequestMerge
+from utils import RoutingCache
+from utils import RoutingException
+from utils import str2date
+from utils import lsNSLC
+from utils import applyFormat
+from utils import __version__
 from typing import Union
 from typing import List
 from typing import Literal
+
 
 
 class XMLResponse(Response):
@@ -443,29 +436,6 @@ def application(environ, start_response):
                                        start_response)
 
         return send_error_response("400 Bad Request", str(e), start_response)
-
-    elif fname == 'query':
-        makeQuery = globals()['makeQuery%s' % environ['REQUEST_METHOD']]
-        try:
-            iterObj = makeQuery(form)
-
-            iterObj = applyFormat(iterObj, outForm)
-
-            status = '200 OK'
-            if outForm == 'xml':
-                return send_xml_response(status, iterObj, start_response)
-            elif outForm == 'json':
-                return send_json_response(status, iterObj, start_response)
-            else:
-                return send_plain_response(status, iterObj, start_response)
-
-        except WIError as w:
-            if isinstance(w, WIContentError) and 'nodata' in form:
-                retcode = getParam(form, ['nodata'], '204')
-                retstatus = '%s %s' % (retcode, HTTPStatus(int(retcode)).phrase)
-            else:
-                retstatus = w.status
-            return send_error_response(retstatus, w.body, start_response)
 
 
 def main():
