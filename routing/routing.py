@@ -258,181 +258,152 @@ def simplifyparam(p1: Union[str, float, datetime], p2: Union[str, float, datetim
     return result
 
 
-def makeQueryPOST(postText) -> RequestMerge:
-    """Process a request made via a POST method."""
-    global routes
-
-    # These are the parameters accepted appart from N.S.L.C
-    extraParams = ['format', 'service', 'alternative', 'nodata',
-                   'minlat', 'minlatitude',
-                   'maxlat', 'maxlatitude',
-                   'minlon', 'minlongitude',
-                   'maxlon', 'maxlongitude']
-
-    # Default values
-    ser = 'dataselect'
-    alt = False
-
-    result = RequestMerge()
-    # Check if we are still processing the header of the POST body. This has a
-    # format like key=value, one per line.
-    inHeader = True
-
-    minlat = -90.0
-    maxlat = 90.0
-    minlon = -180.0
-    maxlon = 180.0
-
-    filterdefined = False
-    for line in postText.splitlines():
-        if not len(line):
-            continue
-
-        if inHeader and ('=' not in line):
-            inHeader = False
-
-        if inHeader:
-            try:
-                key, value = line.split('=')
-                key = key.strip()
-                value = value.strip()
-            except Exception:
-                msg = 'Wrong format detected while processing: %s' % line
-                raise WIClientError(msg)
-
-            if key not in extraParams:
-                msg = 'Unknown parameter "%s"' % key
-                raise WIClientError(msg)
-
-            if key == 'service':
-                ser = value
-            elif key == 'alternative':
-                alt = True if value.lower() == 'true' else False
-            elif key == 'minlat':
-                minlat = float(value.lower())
-            elif key == 'maxlat':
-                maxlat = float(value.lower())
-            elif key == 'minlon':
-                minlon = float(value.lower())
-            elif key == 'maxlon':
-                maxlon = float(value.lower())
-
-            continue
-
-        # I'm already in the main part of the POST body, where the streams are
-        # specified
-        filterdefined = True
-
-        net, sta, loc, cha, start, endt = line.split()
-        net = net.upper()
-        sta = sta.upper()
-        loc = loc.upper()
-        try:
-            if start.strip() == '*':
-                start = None
-            else:
-                start = str2date(start)
-        except Exception:
-            msg = 'Error while converting %s to datetime' % start
-            raise WIClientError(msg)
-
-        try:
-            if endt.strip() == '*':
-                endt = None
-            else:
-                endt = str2date(endt)
-        except Exception:
-            msg = 'Error while converting %s to datetime' % endt
-            raise WIClientError(msg)
-
-        if ((minlat == -90.0) and (maxlat == 90.0) and (minlon == -180.0) and
-                (maxlon == 180.0)):
-            geoLoc = None
-        else:
-            geoLoc = GeoRectangle(minlat, maxlat, minlon, maxlon)
-
-        try:
-            st = Stream(net, sta, loc, cha)
-            tw = TW(start, endt)
-            result.extend(routes.getRoute(st, tw, ser, geoLoc, alt))
-        except RoutingException:
-            pass
-
-    if not filterdefined:
-        st = Stream('*', '*', '*', '*')
-        tw = TW(None, None)
-        geoLoc = None
-        result.extend(routes.getRoute(st, tw, ser, geoLoc, alt))
-
-    if len(result) == 0:
-        raise WIContentError()
-    return result
-
-
-# This variable will be treated as GLOBAL by all the other functions
-routes = None
+# def makeQueryPOST(postText) -> RequestMerge:
+#     """Process a request made via a POST method."""
+#     global routes
+#
+#     # These are the parameters accepted appart from N.S.L.C
+#     extraParams = ['format', 'service', 'alternative', 'nodata',
+#                    'minlat', 'minlatitude',
+#                    'maxlat', 'maxlatitude',
+#                    'minlon', 'minlongitude',
+#                    'maxlon', 'maxlongitude']
+#
+#     # Default values
+#     ser = 'dataselect'
+#     alt = False
+#
+#     result = RequestMerge()
+#     # Check if we are still processing the header of the POST body. This has a
+#     # format like key=value, one per line.
+#     inHeader = True
+#
+#     minlat = -90.0
+#     maxlat = 90.0
+#     minlon = -180.0
+#     maxlon = 180.0
+#
+#     filterdefined = False
+#     for line in postText.splitlines():
+#         if not len(line):
+#             continue
+#
+#         if inHeader and ('=' not in line):
+#             inHeader = False
+#
+#         if inHeader:
+#             try:
+#                 key, value = line.split('=')
+#                 key = key.strip()
+#                 value = value.strip()
+#             except Exception:
+#                 msg = 'Wrong format detected while processing: %s' % line
+#                 raise WIClientError(msg)
+#
+#             if key not in extraParams:
+#                 msg = 'Unknown parameter "%s"' % key
+#                 raise WIClientError(msg)
+#
+#             if key == 'service':
+#                 ser = value
+#             elif key == 'alternative':
+#                 alt = True if value.lower() == 'true' else False
+#             elif key == 'minlat':
+#                 minlat = float(value.lower())
+#             elif key == 'maxlat':
+#                 maxlat = float(value.lower())
+#             elif key == 'minlon':
+#                 minlon = float(value.lower())
+#             elif key == 'maxlon':
+#                 maxlon = float(value.lower())
+#
+#             continue
+#
+#         # I'm already in the main part of the POST body, where the streams are
+#         # specified
+#         filterdefined = True
+#
+#         net, sta, loc, cha, start, endt = line.split()
+#         net = net.upper()
+#         sta = sta.upper()
+#         loc = loc.upper()
+#         try:
+#             if start.strip() == '*':
+#                 start = None
+#             else:
+#                 start = str2date(start)
+#         except Exception:
+#             msg = 'Error while converting %s to datetime' % start
+#             raise WIClientError(msg)
+#
+#         try:
+#             if endt.strip() == '*':
+#                 endt = None
+#             else:
+#                 endt = str2date(endt)
+#         except Exception:
+#             msg = 'Error while converting %s to datetime' % endt
+#             raise WIClientError(msg)
+#
+#         if ((minlat == -90.0) and (maxlat == 90.0) and (minlon == -180.0) and
+#                 (maxlon == 180.0)):
+#             geoLoc = None
+#         else:
+#             geoLoc = GeoRectangle(minlat, maxlat, minlon, maxlon)
+#
+#         try:
+#             st = Stream(net, sta, loc, cha)
+#             tw = TW(start, endt)
+#             result.extend(routes.getRoute(st, tw, ser, geoLoc, alt))
+#         except RoutingException:
+#             pass
+#
+#     if not filterdefined:
+#         st = Stream('*', '*', '*', '*')
+#         tw = TW(None, None)
+#         geoLoc = None
+#         result.extend(routes.getRoute(st, tw, ser, geoLoc, alt))
+#
+#     if len(result) == 0:
+#         raise WIContentError()
+#     return result
 
 
-def application(environ, start_response):
-    # Warning is the default value
-    # verboNum = getattr(logging, verbo.upper(), 30)
-    # logging.info('Verbosity configured with %s' % verboNum)
-    # logging.basicConfig(level=verboNum)
 
-    # Among others, this will filter wrong function names,
-    # but also the favicon.ico request, for instance.
-    # if fname is None:
-    #     raise WIClientError('Method name not recognized!')
-    #     # return send_html_response(status, 'Error! ' + status, start_response)
-
-    if len(environ['QUERY_STRING']) > 1000:
-        return send_error_response("414 Request URI too large",
-                                   "maximum URI length is 1000 characters",
-                                   start_response)
-
-    try:
-        if environ['REQUEST_METHOD'] == 'GET':
-            form = cgi.FieldStorage(fp=environ['wsgi.input'], environ=environ)
-            try:
-                outForm = getParam(form, ['format'], default='xml').lower()
-            except Exception:
-                message = "Error while parsing parameter 'format': %s" % str(form['format'])
-                return send_error_response("400 Bad Request", message, start_response)
-
-        elif environ['REQUEST_METHOD'] == 'POST':
-            try:
-                length = int(environ.get('CONTENT_LENGTH', '0'))
-            except ValueError:
-                length = 0
-
-            # If there is a body to read
-            if length:
-                form = environ['wsgi.input'].read(length).decode()
-            else:
-                form = environ['wsgi.input'].read().decode()
-
-            for line in form.splitlines():
-                if not len(line):
-                    continue
-
-                if '=' not in line:
-                    break
-                k, v = line.split('=')
-                if k.strip() == 'format':
-                    outForm = v.strip()
-
-        else:
-            raise Exception
-
-    except ValueError as e:
-        if str(e) == "Maximum content length exceeded":
-            # Add some user-friendliness (this message triggers an alert
-            # box on the client)
-            return send_error_response("400 Bad Request",
-                                       "maximum request size exceeded",
-                                       start_response)
-
-        return send_error_response("400 Bad Request", str(e), start_response)
+# def application(environ, start_response):
+#     if len(environ['QUERY_STRING']) > 1000:
+#         return send_error_response("414 Request URI too large",
+#                                    "maximum URI length is 1000 characters",
+#                                    start_response)
+#
+#     try:
+#         if environ['REQUEST_METHOD'] == 'POST':
+#             try:
+#                 length = int(environ.get('CONTENT_LENGTH', '0'))
+#             except ValueError:
+#                 length = 0
+#
+#             # If there is a body to read
+#             if length:
+#                 form = environ['wsgi.input'].read(length).decode()
+#             else:
+#                 form = environ['wsgi.input'].read().decode()
+#
+#             for line in form.splitlines():
+#                 if not len(line):
+#                     continue
+#
+#                 if '=' not in line:
+#                     break
+#                 k, v = line.split('=')
+#                 if k.strip() == 'format':
+#                     outForm = v.strip()
+#
+#         else:
+#             raise Exception
+#
+#     except ValueError as e:
+#         return send_error_response("400 Bad Request", str(e), start_response)
 
 
 def main():
