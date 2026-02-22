@@ -20,7 +20,6 @@ import datetime
 import fnmatch
 import json
 import xml.etree.cElementTree as ET
-from routing.wsgicomm import WIClientError
 from typing import Union
 import logging
 from copy import deepcopy
@@ -31,12 +30,14 @@ from urllib.parse import urlparse
 from urllib.error import URLError
 from typing import List
 from typing import Tuple
-from routing.basemodels import Station
-from routing.basemodels import GeoRectangle
-from routing.basemodels import TW
-from routing.basemodels import Stream
-from routing.basemodels import Route
-from routing import __version__
+from basemodels import Station
+from basemodels import GeoRectangle
+from basemodels import TW
+from basemodels import Stream
+from basemodels import Route
+
+
+__version__ = "1.3.0a1"
 
 
 class RequestMerge(list):
