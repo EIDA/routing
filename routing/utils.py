@@ -1689,7 +1689,8 @@ def lsNSLC(net: list, sta: list, loc: list, cha: list):
                     yield n, s, l, c
 
 
-def applyFormat(resultRM: RequestMerge, outFormat: str = 'xml') -> str:
+def applyFormat(resultRM: RequestMerge,
+                outFormat: Literal['xml', 'json', 'get', 'post', 'fdsn'] = 'xml') -> str:
     """Apply the format specified to the RequestMerge object received.
 
     :param resultRM: List with the result of a query.
@@ -1757,4 +1758,4 @@ def applyFormat(resultRM: RequestMerge, outFormat: str = 'xml') -> str:
         iterObj = json.dumps(resultFDSN, default=datetime.datetime.isoformat)
         return iterObj
     else:
-        raise WIClientError('Wrong format requested!')
+        raise Exception('applyFormat expects only one of the following formats: xml, json, get, post, fdsn')
