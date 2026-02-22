@@ -58,7 +58,7 @@ class Config(object):
 
     def __new__(cls):
         if cls.config is None:
-            cfgfile = os.path.expanduser('~/routing/routing.cfg')
+            cfgfile = os.path.expanduser('routing.cfg')
             # Open configuration file
             config = configparser.RawConfigParser()
             config.read(cfgfile)
@@ -81,8 +81,8 @@ class Cache(object):
 
     def __new__(cls):
         if cls.routes is None:
-            cls.routes = RoutingCache(os.path.expanduser('~/routing/data/routing.xml'),
-                                      os.path.expanduser('~/routing/routing.cfg'))
+            cls.routes = RoutingCache(os.path.expanduser('./data/routing.xml'),
+                                      os.path.expanduser('./routing.cfg'))
         return cls.routes
 
 

@@ -137,7 +137,7 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
         pprint(ptVN)
         pprint(eidaDCs)
 
-    with open(os.path.expanduser('~/routing/data/%s.bin') % fileroutes, 'wb') as finalRoutes:
+    with open(os.path.expanduser('%s.bin') % fileroutes, 'wb') as finalRoutes:
         pickle.dump((ptRT, stationTable, ptVN, eidaDCs), finalRoutes)
         logs.info('Routes in main Routing Table: %s\n' % len(ptRT))
         logs.info('Stations cached: %s\n' %
@@ -176,11 +176,11 @@ def main():
     logs.setLevel(verbo)
 
     try:
-        os.remove('routing-tmp.xml.bin')
+        os.remove('./data/routing-tmp.xml.bin')
     except Exception:
         pass
 
-    mergeRoutes(os.path.expanduser('~/routing/data/routing.xml'), config['synchronize'])
+    mergeRoutes(os.path.expanduser('./data/routing.xml'), config['synchronize'])
 
 
 if __name__ == '__main__':
