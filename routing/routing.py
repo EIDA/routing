@@ -173,7 +173,7 @@ async def rsqueryget(net: str = None, network: str = None, sta: str = None, stat
                      minlon: float = None, minlongitude: float = None,
                      maxlon: float = None, maxlongitude: float = None,
                      service: str = 'dataselect', format: Literal['json', 'get', 'post', 'xml'] = 'xml',
-                     alternative: str = 'false', nodata: int = None):
+                     alternative: str = 'false', nodata: int = 204):
     """Process a request made via a GET method."""
     routingcache = Cache()
 
