@@ -249,9 +249,8 @@ def simplifyparam(p1: Union[str, float, datetime], p2: Union[str, float, datetim
     # Empty parameter2 or both
     if p2 is None:
         result = p1 if p1 is not None else default
-
-    # Empty parameter1
-    if p1 is None:
+    elif p1 is None:
+        # Empty parameter1
         result = p2
 
     if isinstance(result, str) and csv:
@@ -259,7 +258,6 @@ def simplifyparam(p1: Union[str, float, datetime], p2: Union[str, float, datetim
         return result.split(',')
 
     return result
-
 
 
 def makeQueryPOST(postText) -> RequestMerge:
