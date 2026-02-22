@@ -201,9 +201,9 @@ async def rsqueryget(net: str = None, network: str = None, sta: str = None, stat
 
     if ((minlati == -90.0) and (maxlati == 90.0) and (minlong == -180.0) and
             (maxlong == 180.0)):
-        geoLoc = None
+        geoloc = None
     else:
-        geoLoc = GeoRectangle(minlati, maxlati, minlong, maxlong)
+        geoloc = GeoRectangle(minlat=minlati, maxlat=maxlati, minlon=minlong, maxlon=maxlong)
 
     result = RequestMerge()
     # Expand lists in parameters (f.i., cha=BHZ,HHN) and yield all possible
@@ -212,7 +212,7 @@ async def rsqueryget(net: str = None, network: str = None, sta: str = None, stat
         try:
             st = Stream(n=n, s=s, l=l, c=c)
             tw = TW(start=startt, end=endt)
-            result.extend(routingcache.getRoute(st, tw, service, geoLoc, alt))
+            result.extend(routingcache.getRoute(st, tw, service, geoloc, alt))
         except RoutingException:
             pass
 
