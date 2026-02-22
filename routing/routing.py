@@ -99,7 +99,7 @@ async def rsendpoints():
 @routingws.get("/", response_class=HTMLResponse)
 async def rsroot():
     """Show a help page"""
-    with open(os.path.expanduser('~/routing/help.html')) as fin:
+    with open(os.path.expanduser('./data/help.html')) as fin:
         htmlpage = fin.read().encode()
     return HTMLResponse(content=htmlpage, status_code=200)
 
@@ -122,7 +122,7 @@ async def rsapplicationwadl():
     """Show a help page"""
     cfg = Config()
     tomorrow = date.today() + timedelta(days=1)
-    with open(os.path.expanduser('~/routing/application.wadl')) as fin:
+    with open(os.path.expanduser('./data/application.wadl')) as fin:
         awpage = fin.read() % (cfg['baseURL'], tomorrow)
     return XMLResponse(content=awpage.encode(), status_code=200)
 
@@ -441,7 +441,7 @@ def application(environ, start_response):
 
 def main():
     uvicorn.run(
-        "routing.routing:routingws",
+        "routing:routingws",
         host="0.0.0.0",
         port=8000,
         log_level="debug",
