@@ -1716,7 +1716,7 @@ def applyFormat(resultRM: RequestMerge,
                                '&'.join([k + '=' + (str(item[k]) if not
                                          isinstance(item[k], datetime.datetime)
                                          else item[k].isoformat()) for k in
-                                         item if item[k] not in ('', '*') and
+                                         item if item[k] not in ('', '*', None) and
                                          k != 'priority']))
         iterObj = '\n'.join(iterObj)
         return iterObj
