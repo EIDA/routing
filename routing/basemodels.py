@@ -224,6 +224,7 @@ class StreamBase(BaseModel):
     s: str = constr(min_length=1, max_length=5, to_upper=True, strip_whitespace=True)
     l: str = constr(min_length=1, max_length=2, to_upper=True, strip_whitespace=True)
     c: str = constr(min_length=1, max_length=3, to_upper=True, strip_whitespace=True)
+    model_config = {"frozen": True}  # Enables hashing
 
 
 class Stream(StreamBase):
