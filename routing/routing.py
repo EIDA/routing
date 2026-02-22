@@ -239,7 +239,7 @@ async def rsquerypost():
 
 
 def simplifyparam(p1: Union[str, float, datetime], p2: Union[str, float, datetime],
-                  default: Union[str, float, None], csv: bool = False) -> Union[str, datetime, float, List[str], None]:
+                  default: Union[str, float, datetime, None], csv: bool = False) -> Union[str, datetime, float, List[str], None]:
     """Read two parameters and return the one that is valid or a default value if there is no one.
 
     The csv parameter is used to split the value in case of multiple values separated by commas. This means
