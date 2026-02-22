@@ -74,6 +74,7 @@ class TWBase(BaseModel):
     """
     start: datetime = Field(default=datetime(1900, 1, 1))
     end: Union[datetime, None] = Field(default=None)
+    model_config = {"frozen": True}  # Enables hashing
 
     @model_validator(mode='after')
     def check_start_end_order(self):
@@ -398,3 +399,6 @@ class VirtualNetworks(RootModel):
 
     def __len__(self):
         return len(self.root)
+
+    def keys(self):
+        return self.root.keys()
