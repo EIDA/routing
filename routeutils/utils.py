@@ -1263,11 +1263,19 @@ def addremote(filename: str, url: str, method: str = 'localconfig'):
     except Exception:
         pass
 
-    # Connect to the proper Routing-WS
+    # Routing Service or files?
+    if url.endswith('.xml') and method == 'dc':
+        url = replacelast(url, '.xml', '.json')
+    elif not url.endswith('.xml'):
+        url += '/%s' % method
+    else:
+        pass
+
+    # Connect to the proper Routing-WS or file
     try:
         if url.startswith('http://') or url.startswith('https://'):
             # Prepare Request
-            req = ul.Request(url + '/%s' % method)
+            req = ul.Request(url)
             # Customize the default User-Agent header value:
             req.add_header('User-Agent', 'RoutingService/' + __version__)
             u = ul.urlopen(req)
@@ -1296,44 +1304,6 @@ def addremote(filename: str, url: str, method: str = 'localconfig'):
             logs.warning('URL non valid: %s/%s - Reason: %s' % (url, method, e.reason))
         elif hasattr(e, 'code'):
             logs.warning('URL non valid: Error code: %s', e.code)
-        logs.warning('Retrying with a static configuration file')
-
-        # TODO Think a way to do this better
-        if method == 'dc':
-            url = replacelast(url, '.xml', '.json')
-
-        # Prepare Request without the "localconfig" method
-        req = ul.Request(url)
-        # Customize the default User-Agent header value:
-        req.add_header('User-Agent', 'RoutingService/' + __version__)
-        try:
-            u = ul.urlopen(req)
-
-            with open(filename, 'w', encoding='utf-8') as routeExt:
-                logs.debug('%s opened\n%s:' % (filename, url))
-                # Read the data in blocks of predefined size
-                buf = u.read(blockSize).decode('utf-8')
-                while len(buf):
-                    logs.debug('.')
-                    # Return one block of data
-                    routeExt.write(buf)
-                    buf = u.read(blockSize).decode('utf-8')
-
-                # Close the connection to avoid overloading the server
-                u.close()
-        except URLError as e:
-            if hasattr(e, 'reason'):
-                logs.error('URL non valid: %s - Reason: %s' % (url, e.reason))
-            elif hasattr(e, 'code'):
-                logs.error('URL non valid: Error code: %s', e.code)
-            # The old data will be used because the data centre is not responding.
-            name = filename[:- len('.download')]
-            if os.path.exists(name):
-                logs.warning('Data centre not responding! Using %s with an outdated version of the routes' % (name,))
-            elif os.path.exists(name+'.bck'):
-                logs.warning('Data centre not responding! Recovering old backup to %s with an outdated version of the routes' % (name,))
-                os.rename(name + '.bck', name)
-            return
 
     name = filename[:- len('.download')]
     try:
