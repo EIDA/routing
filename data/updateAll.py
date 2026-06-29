@@ -18,6 +18,7 @@ any later version.
 """
 
 import os
+import shutil
 import sys
 import argparse
 import logging
@@ -96,10 +97,26 @@ table is saved under the same filename plus ``.bin`` (e.g. routing.xml.bin).
             # FIXME addroutes should return no Exception ever and skip a
             # problematic file returning a coherent version of the routes
             print('Adding REMOTE %s' % dcid)
-            ptRT = addroutes('./routing-%s.xml' % dcid.strip(),
-                             routingtable=ptRT, allowOverlaps=allowOverlaps)
-            ptVN = addvirtualnets('./routing-%s.xml' % dcid.strip(),
-                                  vnTable=ptVN)
+            try:
+                # Do a dryrun first to validate tha tall modifications can be done
+                addroutes('./routing-%s.xml' % dcid.strip(), dryrun=True,
+                          routingtable=ptRT, allowOverlaps=allowOverlaps)
+                addvirtualnets('./routing-%s.xml' % dcid.strip(), dryrun=True,
+                               vnTable=ptVN)
+                # Do the real update
+                ptRT = addroutes('./routing-%s.xml' % dcid.strip(),
+                                 routingtable=ptRT, allowOverlaps=allowOverlaps)
+                ptVN = addvirtualnets('./routing-%s.xml' % dcid.strip(),
+                                      vnTable=ptVN)
+            except Exception:
+                msg = 'Failure updating routing information from %s. Recovering from backup.' % (dcid,)
+                logs.error(msg)
+                shutil.copy('./routing-%s.xml.bck' % dcid.strip(), './routing-%s.xml' % dcid.strip())
+                # Do the real update
+                ptRT = addroutes('./routing-%s.xml' % dcid.strip(),
+                                 routingtable=ptRT, allowOverlaps=allowOverlaps)
+                ptVN = addvirtualnets('./routing-%s.xml' % dcid.strip(),
+                                      vnTable=ptVN)
 
         if os.path.exists('./routing-%s.json' % dcid.strip()):
             print('Adding REMOTE data center information from %s' % dcid)
