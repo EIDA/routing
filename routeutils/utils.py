@@ -1045,9 +1045,9 @@ def addroutes(filename: str, dryrun: bool = False, **kwargs) -> dict:
             msg = 'Error: %s could not be parsed. Reading backup!\n' % filename
             logs.error(msg)
             testFile.close()
-            os.rename(filename, filename + '.wrong')
+            os.replace(filename, filename + '.wrong')
             try:
-                os.rename(filename + '.bck', filename)
+                os.replace(filename + '.bck', filename)
                 testFile = open(filename, 'r', encoding='utf-8')
                 context = ET.iterparse(testFile, events=("start", "end"))
                 context = iter(context)
@@ -1311,13 +1311,13 @@ def addremote(filename: str, url: str, method: str = 'localconfig'):
             logs.warning('URL non valid: %s/%s - Reason: %s' % (url, method, e.reason))
         elif hasattr(e, 'code'):
             logs.warning('URL non valid: Error code: %s', e.code)
-
-    name = filename[:- len('.download')]
-    try:
-        os.remove(name + '.bck')
-        logs.debug('Successfully removed %s\n' % (name + '.bck'))
-    except Exception:
-        pass
+        # There was an error, so try to recover BCK and copy to the expected output
+        # to simulate a normal data workflow
+        try:
+            os.replace(filename, dwld_file)
+            logs.debug('Try to use original data from %s\n' % (filename,))
+        except Exception:
+            pass
 
     try:
         os.replace(filename, filename + '.bck')
