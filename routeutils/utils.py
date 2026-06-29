@@ -1061,7 +1061,9 @@ def addroutes(filename: str, dryrun: bool = False, **kwargs) -> dict:
                 return ptrt
             
         # Check that it is really an inventory
-        if root.tag[-len('routing'):] != 'routing':
+        try:
+            assert root.tag[-len('routing'):] == 'routing'
+        except Exception:
             msg = '%s seems not to be a routing file (XML). Skipping it!\n' \
                   % filename
             logs.error(msg)
@@ -1081,7 +1083,7 @@ def addroutes(filename: str, dryrun: bool = False, **kwargs) -> dict:
 
                     # Extract the location code
                     try:
-                        locationCode = route.get('locationCode')
+                        locationCode = route.get('locationCode', default='*')
                         if len(locationCode) == 0:
                             locationCode = '*'
 
@@ -1097,7 +1099,7 @@ def addroutes(filename: str, dryrun: bool = False, **kwargs) -> dict:
 
                     # Extract the network code
                     try:
-                        networkCode = route.get('networkCode')
+                        networkCode = route.get('networkCode', default='*')
                         if len(networkCode) == 0:
                             networkCode = '*'
 
@@ -1113,7 +1115,7 @@ def addroutes(filename: str, dryrun: bool = False, **kwargs) -> dict:
 
                     # Extract the station code
                     try:
-                        stationCode = route.get('stationCode')
+                        stationCode = route.get('stationCode', default='*')
                         if len(stationCode) == 0:
                             stationCode = '*'
 
@@ -1129,7 +1131,7 @@ def addroutes(filename: str, dryrun: bool = False, **kwargs) -> dict:
 
                     # Extract the stream code
                     try:
-                        streamCode = route.get('streamCode')
+                        streamCode = route.get('streamCode', default='*')
                         if len(streamCode) == 0:
                             streamCode = '*'
 
