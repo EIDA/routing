@@ -29,8 +29,7 @@ import urllib.request as ul
 from urllib.parse import urlparse
 from urllib.error import URLError
 from numbers import Number
-from typing import List
-from typing import Tuple
+from typing import List, Tuple, Union
 
 
 __version__ = "1.2.3"
@@ -691,7 +690,7 @@ class FDSNRules(dict):
                 self['datacenters'].append(r)
 
 
-def str2date(dstr: str) -> datetime.datetime:
+def str2date(dstr: Union[str, None]) -> Union[datetime.datetime, None]:
     """Transform a string to a datetime.
 
     :param dstr: A datetime in ISO format.
@@ -700,7 +699,7 @@ def str2date(dstr: str) -> datetime.datetime:
     :rtype: datetime
     """
     # In case of empty string
-    if not len(dstr):
+    if dstr is None or not len(dstr):
         return None
 
     dateparts = dstr.replace('-', ' ').replace('T', ' ')
