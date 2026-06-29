@@ -852,6 +852,7 @@ def addvirtualnets(filename: str, dryrun: bool = False, **kwargs) -> dict:
     :param **kwargs: See below
     :returns: Updated table containing aliases from the input file.
     :rtype: dict
+    :raises Exception: An exception is raised to signal a higher level that data should be read from somewhere else.
 
     :Keyword Arguments:
         * *vnTable* (``dict``) Table with virtual networks where aliases should be added.
@@ -867,7 +868,7 @@ def addvirtualnets(filename: str, dryrun: bool = False, **kwargs) -> dict:
     except Exception:
         msg = 'Error: %s could not be opened.\n'
         logs.error(msg % filename)
-        return ptvn
+        raise Exception(msg % filename)
 
     # Traverse through the virtual networks
     # get an iterable
@@ -875,7 +876,7 @@ def addvirtualnets(filename: str, dryrun: bool = False, **kwargs) -> dict:
         context = ET.iterparse(vnHandle, events=("start", "end"))
     except IOError as e:
         logs.error(str(e))
-        return ptvn
+        raise Exception(str(e))
 
     # turn it into an iterator
     context = iter(context)
@@ -890,7 +891,7 @@ def addvirtualnets(filename: str, dryrun: bool = False, **kwargs) -> dict:
     if root.tag[-len('routing'):] != 'routing':
         msg = 'The file parsed seems not to be a routing file (XML).\n'
         logs.error(msg)
-        return ptvn
+        raise Exception(msg)
 
     # Extract the namespace from the root node
     namesp = root.tag[:-len('routing')]
@@ -1004,6 +1005,7 @@ def addroutes(filename: str, dryrun: bool = False, **kwargs) -> dict:
     :param **kwargs: See below
     :returns: Updated routing table containing routes from the input file.
     :rtype: dict
+    :raises Exception: An exception is raised to signal a higher level that data should be read from somewhere else.
 
     :Keyword Arguments:
         * *routingtable* (``dict``) Routing Table where routes should be added to.
@@ -1029,7 +1031,7 @@ def addroutes(filename: str, dryrun: bool = False, **kwargs) -> dict:
         except IOError:
             msg = 'Error: %s could not be parsed. Skipping it!\n' % filename
             logs.error(msg)
-            return ptrt
+            raise Exception(msg)
 
         # turn it into an iterator
         context = iter(context)
@@ -1058,7 +1060,7 @@ def addroutes(filename: str, dryrun: bool = False, **kwargs) -> dict:
                 else:
                     event, root = next(context)
             except Exception:
-                return ptrt
+                raise Exception('Error: %s and even its backup version could not be loaded!\n' % filename)
             
         # Check that it is really an inventory
         try:
@@ -1067,7 +1069,7 @@ def addroutes(filename: str, dryrun: bool = False, **kwargs) -> dict:
             msg = '%s seems not to be a routing file (XML). Skipping it!\n' \
                   % filename
             logs.error(msg)
-            return ptrt
+            raise Exception(msg)
 
         # Extract the namespace from the root node
         namesp = root.tag[:-len('routing')]
