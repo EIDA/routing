@@ -1262,11 +1262,11 @@ def addremote(filename: str, url: str, method: str = 'localconfig'):
 
     blockSize = 4096 * 100
 
-    filename = filename + '.download'
+    dwld_file = filename + '.download'
 
     try:
-        os.remove(filename)
-        logs.debug('Successfully removed %s\n' % filename)
+        os.remove(dwld_file)
+        logs.debug('Successfully removed %s\n' % dwld_file)
     except Exception:
         pass
 
@@ -1289,8 +1289,8 @@ def addremote(filename: str, url: str, method: str = 'localconfig'):
         else:
             u = open(url, 'r')
 
-        with open(filename, 'w', encoding='utf-8') as routeExt:
-            logs.debug('%s opened\n%s:' % (filename, url))
+        with open(dwld_file, 'w', encoding='utf-8') as routeExt:
+            logs.debug('%s opened\n%s:' % (dwld_file, url))
             # Read the data in blocks of predefined size
             buf = u.read(blockSize)
             if isinstance(buf, bytes):
@@ -1320,14 +1320,14 @@ def addremote(filename: str, url: str, method: str = 'localconfig'):
         pass
 
     try:
-        os.rename(name, name + '.bck')
-        logs.debug('Successfully renamed %s to %s.bck\n' % (name, name))
+        os.replace(filename, filename + '.bck')
+        logs.debug('Successfully renamed %s to %s.bck\n' % (filename, filename+'.bck'))
     except Exception:
         pass
 
     try:
-        os.rename(filename, name)
-        logs.debug('Successfully renamed %s to %s\n' % (filename, name))
+        os.replace(dwld_file, filename)
+        logs.debug('Successfully renamed %s to %s\n' % (dwld_file, filename))
     except Exception:
         raise Exception('Could not create the final version of %s.xml' %
                         os.path.basename(filename))
