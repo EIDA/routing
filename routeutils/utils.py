@@ -957,7 +957,7 @@ def addvirtualnets(filename: str, dryrun: bool = False, **kwargs) -> dict:
                         cha = '*'
 
                     try:
-                        auxStart = stream.get('start')
+                        auxStart = stream.get('start', None)
                         startD = str2date(auxStart)
                     except Exception:
                         startD = None
@@ -965,7 +965,7 @@ def addvirtualnets(filename: str, dryrun: bool = False, **kwargs) -> dict:
                         logs.warning(msg)
 
                     try:
-                        auxEnd = stream.get('end')
+                        auxEnd = stream.get('end', None)
                         endD = str2date(auxEnd)
                     except Exception:
                         endD = None
