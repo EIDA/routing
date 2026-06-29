@@ -1217,10 +1217,11 @@ def addroutes(filename: str, dryrun: bool = False, **kwargs) -> dict:
                                         addIt = False
                                     break
 
-                            if addIt and not dryrun:
-                                ptrt[st].append(rt)
-                            else:
-                                logs.warning('Skip %s - %s\n' % (st, rt))
+                            if not dryrun:
+                                if addIt:
+                                    ptrt[st].append(rt)
+                                else:
+                                    logs.warning('Skip %s - %s\n' % (st, rt))
 
                         except KeyError:
                             if not dryrun:
