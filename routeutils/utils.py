@@ -1018,8 +1018,8 @@ def addroutes(filename: str, dryrun: bool = False, **kwargs) -> dict:
     # Default value is NOT to allow overlapping streams
     allowOverlaps = kwargs.get('allowOverlaps', False)
 
-    logs.info('Overlaps between routes will ' +
-              ('' if allowOverlaps else 'NOT ' + 'be allowed'))
+    logs.debug('Overlaps between routes will ' +
+               ('' if allowOverlaps else 'NOT ' + 'be allowed'))
 
     with open(filename, 'r', encoding='utf-8') as testFile:
         # Parse the routing file
