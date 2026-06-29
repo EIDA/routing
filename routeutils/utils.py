@@ -837,7 +837,7 @@ def cachestations(routingtable: dict, stationtable: dict):
                 stationtable[service][st] = result
 
 
-def addvirtualnets(filename: str, **kwargs) -> dict:
+def addvirtualnets(filename: str, dryrun: bool = False, **kwargs) -> dict:
     """Read the routing file in XML format and store its VNs in memory.
 
     All information related to virtual networks is read into a dictionary. Only
@@ -847,6 +847,8 @@ def addvirtualnets(filename: str, **kwargs) -> dict:
 
     :param filename: File with virtual networks to add to the routing table.
     :type filename: str
+    :param dryrun: If this is set, parse all the file and do all the checks, but skip any modification
+    :type dryrun: bool
     :param **kwargs: See below
     :returns: Updated table containing aliases from the input file.
     :rtype: dict
@@ -969,12 +971,13 @@ def addvirtualnets(filename: str, **kwargs) -> dict:
                         msg = 'Error while converting END attribute.\n'
                         logs.warning(msg)
 
-                    if vnCode not in ptvn:
-                        ptvn[vnCode] = [(Stream(net, sta, loc, cha),
-                                         TW(startD, endD))]
-                    else:
-                        ptvn[vnCode].append((Stream(net, sta, loc, cha),
-                                             TW(startD, endD)))
+                    if not dryrun:
+                        if vnCode not in ptvn:
+                            ptvn[vnCode] = [(Stream(net, sta, loc, cha),
+                                             TW(startD, endD))]
+                        else:
+                            ptvn[vnCode].append((Stream(net, sta, loc, cha),
+                                                 TW(startD, endD)))
 
                     stream.clear()
 
@@ -986,7 +989,7 @@ def addvirtualnets(filename: str, **kwargs) -> dict:
     return ptvn
 
 
-def addroutes(filename: str, **kwargs) -> dict:
+def addroutes(filename: str, dryrun: bool = False, **kwargs) -> dict:
     """Read the routing file in XML format and store it in memory.
 
     All the routing information is read into a dictionary. Only the
@@ -996,6 +999,8 @@ def addroutes(filename: str, **kwargs) -> dict:
 
     :param filename: File with routes to add the the routing table.
     :type filename: str
+    :param dryrun: If this is set, parse all the file and do all the checks, but skip any modification
+    :type dryrun: bool
     :param **kwargs: See below
     :returns: Updated routing table containing routes from the input file.
     :rtype: dict
@@ -1210,13 +1215,14 @@ def addroutes(filename: str, **kwargs) -> dict:
                                         addIt = False
                                     break
 
-                            if addIt:
+                            if addIt and not dryrun:
                                 ptrt[st].append(rt)
                             else:
                                 logs.warning('Skip %s - %s\n' % (st, rt))
 
                         except KeyError:
-                            ptrt[st] = [rt]
+                            if not dryrun:
+                                ptrt[st] = [rt]
                         serv.clear()
 
                     route.clear()
@@ -1224,8 +1230,9 @@ def addroutes(filename: str, **kwargs) -> dict:
                 root.clear()
 
     # Order the routes by priority
-    for keyDict in ptrt:
-        ptrt[keyDict] = sorted(ptrt[keyDict])
+    if not dryrun:
+        for keyDict in ptrt:
+            ptrt[keyDict] = sorted(ptrt[keyDict])
 
     return ptrt
 
